@@ -174,6 +174,10 @@ runtime tick, the request handler for each request, and `after_frame`.
 adapter and the host's input source; panel, IO and touch handles stay the
 program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
 the longest frame and the smallest unused stack seen.
+In JS mode `m5_pocket_app_runtime(app)` returns the running `pocket_runtime`
+for runtime operations from the app task's hooks, for example uploading a
+texture with `pocket/textures.h` and publishing its handle through the bridge;
+it returns NULL in AOT mode, where the application crate owns the `Ui`.
 
 ### Displays
 

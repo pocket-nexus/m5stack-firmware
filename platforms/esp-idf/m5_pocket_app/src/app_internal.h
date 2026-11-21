@@ -40,3 +40,4 @@ const pocket_input_source_v1 *m5_pocket_input_vtable(void);
 esp_err_t m5_pocket_backend_boot(m5_pocket_app *app);
 int32_t m5_pocket_backend_tick(m5_pocket_app *app);
 void m5_pocket_backend_destroy(m5_pocket_app *app);
+pocket_runtime *m5_pocket_backend_runtime(m5_pocket_app *app);

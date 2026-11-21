@@ -34,6 +34,11 @@ int32_t m5_pocket_backend_tick(m5_pocket_app *app) {
   return m5_pocket_aot_tick(app->backend);
 }
 
+pocket_runtime *m5_pocket_backend_runtime(m5_pocket_app *app) {
+  (void)app;
+  return NULL;
+}
+
 void m5_pocket_backend_destroy(m5_pocket_app *app) {
   if (app->backend)
     m5_pocket_aot_destroy(app->backend);
