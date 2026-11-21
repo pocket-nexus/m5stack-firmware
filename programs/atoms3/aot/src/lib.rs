@@ -36,7 +36,7 @@ impl DeviceApp for Factory {
             return Err(RuntimeError::InvalidConfiguration);
         }
         load_fonts_in_place(&mut ui);
-        load_images_in_place(&mut ui);
+        load_images_at_density(&mut ui, m5_pocket_aot::ImageStorage::Flash);
         ui.core_mut().set_texture_budget(TEXTURE_BUDGET);
         let mut app = Box::new(App::new(
             M5Host(ui),
