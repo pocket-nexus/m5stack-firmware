@@ -1,0 +1,5 @@
+{
+  "regular": "../../../third_party/pocketjs/assets/fonts/InterDisplay-Regular.ttf",
+  "bold": "../../../third_party/pocketjs/assets/fonts/InterDisplay-Bold.ttf",
+  "mono": "../../../third_party/pocketjs/assets/fonts/W95FA.otf"
+}
