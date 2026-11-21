@@ -49,7 +49,7 @@ before committing.
 | Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 3,321,932 / 1,082,928 bytes |
 | Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
 | Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
-| Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; `load_images` copies the images (about 4 MB) into PSRAM |
+| Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; `load_images` copies the 22 images into the heap at mount: 1,620,992 bytes RGBA8888 (also in flash) |
 | App task stack | 192 KiB in PSRAM, QuickJS stack limit 144 KiB | 192 KiB in PSRAM |
 
 The pack holds the images (RGB565 background tiles and charts, RGBA8888 small
@@ -70,6 +70,12 @@ device run happened.
   IMU dot, spinners) is computed by the model each frame and written as
   style values, so both modes run the same frames; nothing uses baked
   timelines or `animate()`.
+- **Artwork resolution**: the MicroTS image loader embeds each image's 1x
+  file (`<name>.png`, half size) as RGBA8888 and ignores the `@2x` variants
+  and `images.json`, so in AOT mode the factory artwork is drawn at half
+  resolution and scaled up 2x; JS mode draws the full-resolution `@2x`
+  pictures, the background tiles as RGB565. The 22 textures take 1,620,992
+  bytes of flash and the same in the heap after mount.
 - **Bridge delivery**: JS mode calls the `device.ts` host functions from
   `main.tsx`; AOT mode writes the fields directly. The board publishes
   `hostAttached` so that the AOT model also stops simulating.

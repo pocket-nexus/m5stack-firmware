@@ -115,6 +115,9 @@ Requests: `backlight <0..100>`, `volume <0..100>`,
   that is still closing restarts it from its closed key frame.
 - **Spring integration**: eight Euler steps per 30 Hz frame; the motion
   settles within 0.5 px instead of smooth_ui_toolkit's thresholds.
+- **AOT mode draws the artwork at half resolution**: MicroTS's image loader
+  takes the 1x `<name>.png` and ignores the `@2x` variants; JS mode uses the
+  full-resolution pictures (`programs/tab5/README.md`).
 - Without a board the values are simulated (above); the factory has no such
   mode.
 - LVGL theme effects (pressed-button grow, focus outlines) are not drawn.
