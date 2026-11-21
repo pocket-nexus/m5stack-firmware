@@ -38,6 +38,36 @@ most 512 px on a side: each picture is padded at its right and bottom, and
 the 1280x720 `launcher_bg` is cut into six tiles (`launcher-bg-<row>-<column>`).
 `mouse_cursor` (the USB mouse pointer) is not used.
 
+## Fonts
+
+`pocket.fonts.json` declares the faces the factory's LVGL fonts are built
+from (LVGL's `lv_font_montserrat_*` are Montserrat Medium): `regular`
+`fonts/Montserrat-Medium.ttf`, `bold` `fonts/Montserrat-SemiBold.ttf` (no
+text uses `font-bold`, so no bold atlas is baked). `tools/pocket compile`
+bakes them in JS and AOT mode (`docs/FONTS.md`).
+
+| Face | Version | Source | Licence |
+| --- | --- | --- | --- |
+| Montserrat Medium, Montserrat SemiBold | 9.000 | `github.com/JulietaUla/Montserrat` commit `555facfb2a18c72c3c0380f0d9c0f060453a9058`, `fonts/ttf/` | SIL OFL 1.1, `fonts/Montserrat-OFL.txt` |
+
+The panel runs at raster density 2: a factory font of N physical px is the
+N/2 logical px slot, baked at 2x.
+
+| Factory font (px) | Used for | Logical size | Slot | Match |
+| --- | --- | --- | --- | --- |
+| 14 (LVGL default) | calendar | 7 | `text-2xs` 10 | nearest (none smaller) |
+| 16 | IMU labels, LCD IC, record buttons, I2C addresses, capture label | 8 | `text-2xs` 10 | nearest |
+| 18 | date, CPU temperature, window titles, headphone state, RS485 text | 9 | `text-2xs` 10 | nearest |
+| 22 | time, voltage, current, GPIO toggles, antenna message, send button | 11 | `text-xs` 12 | nearest |
+| 24 | toasts, volume, window texts and buttons, rollers, "V0.5" | 12 | `text-xs` 12 | exact |
+| 28 | GPIO pin names | 14 | `text-sm` 14 | exact |
+| 36 | brightness, power window headers | 18 | `text-lg` 18 | exact |
+
+Every factory size has a slot within 2 logical px; the large numbers (36 px)
+are exact, so none is drawn as an image. Baked atlases (98 glyphs each,
+@2x): 10 px 56,856 B, 12 px 88,608 B, 14 px 113,696 B, 16 px 141,920 B (the
+default slot, always baked), 18 px 173,280 B.
+
 ## Device bridge
 
 `device.ts` holds every board value and every request. Without a board
@@ -91,10 +121,9 @@ Requests: `backlight <0..100>`, `volume <0..100>`,
 
 ## Differences from the factory firmware
 
-- **Fonts**: PocketJS bakes Inter at 10/12/14/18 logical px; the factory uses
-  Montserrat 16 to 36. Sizes map to the nearest slot at half size
-  (16, 18 -> 10; 22, 24 -> 12; 28 -> 14; 36 -> 18), so small labels are
-  slightly larger.
+- **Font sizes**: PocketJS bakes a fixed slot table, so factory sizes
+  without an `N/2` slot use the nearest one (see Fonts below): small labels
+  at 16, 18 and 22 px are 1 to 2 logical px larger.
 - **Charts** are drawn as 60 peak columns (the board computes them from the
   48 kHz capture) instead of LVGL's 512-point line series.
 - **Spinners** are a grey track and a 60 degree arc turning once a second;
