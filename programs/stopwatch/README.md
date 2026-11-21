@@ -19,19 +19,34 @@ firmware.
 `platforms/esp-idf/m5_bsp_stopwatch` brings the board up and returns the
 panel, panel IO and touch handles.
 
-## Composition (JS mode)
+## Composition
 
-`main/main.c` initialises NVS and the board, then registers with the
-PocketJS runtime:
+The program uses the shared application host
+(`platforms/esp-idf/m5_pocket_app`, [docs/APP-HOST.md](../../docs/APP-HOST.md)):
+`CMakeLists.txt` includes its `components.cmake`, and `main/CMakeLists.txt`
+embeds `apps/stopwatch-factory` with `m5_pocket_app()`.
 
-- `pocket_display_esp_lcd`: two RGB565 strips of 466 × 32 px (29,824 bytes
-  each, under the ESP32-S3 SPI DMA limit), byte-swapped for the panel;
-- `pocket_input_touch`: the CST820 contact in logical pixels;
-- `pocket_input_gpio`: KEYA → `BTN.LTRIGGER`, KEYB → `BTN.RTRIGGER`, 10 ms
-  debounce;
-- `pocket_guest_quickjs` with a 6 MiB PSRAM heap;
-- `pocket_runner` on core 1 with a 64 KiB PSRAM stack, ticking at the host
-  contract's 30 Hz cadence.
+- `main/main.c` initialises NVS and the board (`m5_stopwatch_init`), starts
+  the services and calls `m5_pocket_app_start` with the CO5300 panel
+  (`M5_POCKET_DISPLAY_ESP_LCD`, two RGB565 strips of 466 × 32 px, 29,824
+  bytes each, under the ESP32-S3 SPI DMA limit, byte-swapped), the CST820
+  contact as `touch`, KEYA/KEYB as `BTN.LTRIGGER`/`BTN.RTRIGGER`, a 6 MiB
+  QuickJS heap in PSRAM and a 64 KiB internal-RAM app task on core 1
+  (internal because the request hook writes NVS).
+- `main/services.c` is the board side of the device bridge. Before every
+  frame it publishes `uptimeMs`, the wall clock (system time, set from the
+  RX8130CE at boot), `keyA`/`keyB`, the IMU and, once per second, the
+  battery. At boot it publishes the settings, the alarms and the badge
+  state. It handles the application's requests: tones (factory sine with a
+  200-sample fade) and the factory boot sound on an audio task, vibration,
+  brightness, volume, button settings, RTC writes and alarm storage, with
+  the factory NVS keys (`system`: `bl_lev`, `spk_vol`, `btn_sfx`,
+  `btn_vibrate`, `wifi_enabled`, `launch_count`; `alarm`: `storage`).
+- `main/spectrum.c` computes the factory microphone spectrum (512-point
+  FFT every 256 samples, 20 bands, peak frequency) on a microphone task
+  while the Audio.FFT page requests it.
+- `main/assets/boot_sfx.bin` is the factory boot sound (M5StopWatch-UserDemo
+  `main/assets/sfx/boot_sfx.bin`, MIT): 16-bit mono PCM at 44.1 kHz.
 
 `pocket.host.json` is the host contract (`m5stack-stopwatch`: 466 × 466,
 native presentation, cadence 30, `input.buttons`, `input.touch`,
@@ -41,22 +56,20 @@ native presentation, cadence 30, `input.buttons`, `input.touch`,
 ## Build
 
 Requirements: ESP-IDF `>=6.0,<6.3`, Bun, the Espressif Rust toolchain
-(`rustup` toolchain `esp` with `xtensa-esp32s3-none-elf`) and the PocketJS
-layout oracle for AOT checks (`bun tools/wasm.ts` inside
+(`rustup` toolchain `esp` with `xtensa-esp32s3-none-elf`) and, for AOT
+checks, the PocketJS layout oracle (`bun tools/wasm.ts` inside
 `third_party/pocketjs`; the output is ignored).
 
 ```sh
 . $IDF_PATH/export.sh
 cd programs/stopwatch
-idf.py build                       # JS mode
+idf.py build                       # JS mode (CONFIG_M5_POCKET_APP_MODE_JS)
 idf.py -p <port> flash monitor
 ```
 
-`CMakeLists.txt` builds the runtime archive from the submodule
-(`POCKETJS_RUST_FROM_SOURCE=ON`) with `~/.rustup/toolchains/esp/bin/cargo`
-when present; pass `-DPOCKETJS_CARGO=<cargo>` otherwise. The Pocket CLI runs
-through `tools/pocket` (Bun and the submodule's `tools/pocket.ts`), selectable
-with `-DPOCKETJS_CLI=<path>`.
+`components.cmake` builds the runtime archive from the submodule with
+`~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
+`tools/pocket`.
 
 Check the application against the MicroTS subset without building firmware:
 
@@ -64,8 +77,7 @@ Check the application against the MicroTS subset without building firmware:
 bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --aot --out /tmp/stopwatch-aot
 ```
 
-AOT mode firmware is not available yet; it follows the shared application
-host (`platforms/esp-idf/m5_pocket_app`).
+AOT-mode firmware follows when the shared host's AOT mode lands.
 
 ## Partitions
 
@@ -78,5 +90,7 @@ host (`platforms/esp-idf/m5_pocket_app`).
 
 ## Validation
 
-Firmware builds only; no device run. JS mode: `m5stack_stopwatch.bin`
-7,834,832 bytes, 38 % of the 12 MiB app partition free.
+Firmware builds only; no device run. JS mode (`idf.py build`, ESP-IDF 6.x):
+`m5stack_stopwatch.bin` 8,458,448 bytes, 33 % of the 12 MiB app partition
+free (the application bundle is about 6.4 MB, 3.7 MB of it the big-number
+artwork); static DIRAM use 104,945 of 341,760 bytes.

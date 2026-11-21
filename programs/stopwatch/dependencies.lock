@@ -33,18 +33,11 @@ dependencies:
     source:
       type: idf
     version: 6.2.0
-  pocket-nexus/pocket_runtime:
-    dependencies:
-    - name: idf
-      version: '>=6.0,<6.3'
+  pocket_runtime:
+    dependencies: []
     source:
       path: ../../third_party/pocketjs/platforms/esp-idf/pocket_runtime
       type: local
-    targets:
-    - esp32p4
-    - esp32s3
-    - esp32c3
-    - esp32c6
     version: 0.1.0
 direct_dependencies:
 - espressif/esp_codec_dev
@@ -52,6 +45,6 @@ direct_dependencies:
 - espressif/quickjs-ng
 - idf
 - pocket-nexus/pocket_runtime
-manifest_hash: 980aa7ef120c55a810deb96c61f688b7273ee88f7e5ab9d1d959391bd2926050
+manifest_hash: 989e687a7b89015648180b862af8c38fcee1c2baddfa9389d73ba4dca9bbb360
 target: esp32s3
 version: 3.0.0
