@@ -4,7 +4,7 @@ idf_component_register(
     REQUIRES m5_pocket_app
     PRIV_REQUIRES esp_timer heap log
 )
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+m5_strict_warnings(${COMPONENT_LIB})
 
 m5_pocket_app(
     TARGET ${COMPONENT_LIB}
