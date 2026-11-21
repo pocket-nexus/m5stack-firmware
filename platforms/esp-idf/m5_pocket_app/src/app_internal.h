@@ -23,7 +23,7 @@ struct m5_pocket_app {
   m5_pocket_app_config config;
   m5_pocket_devices devices;
   void *display_object; /* pocket_display_esp_lcd / _dpi, when created */
-  void *ppa_device, *ppa_renderer;
+  void *ppa_devices[2], *ppa_renderers[2], *ppa_lanes;
   void *backend; /* mode state */
   uint32_t cadence_hz;
   TaskHandle_t task;

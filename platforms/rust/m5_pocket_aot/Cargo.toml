@@ -1,0 +1,23 @@
+[package]
+name = "m5-pocket-aot"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "AOT host of m5_pocket_app: runtime, C display/input adapters, device bridge, IDF allocator and panic handler"
+
+[lib]
+name = "m5_pocket_aot"
+test = false
+bench = false
+
+[dependencies]
+microts = { path = "../../../third_party/pocketjs/engine/microts-runtime", features = ["runtime"] }
+pocket-drivers = { path = "../../../third_party/pocketjs/engine/drivers" }
+pocket-raster = { path = "../../../third_party/pocketjs/engine/raster" }
+pocket-runtime = { path = "../../../third_party/pocketjs/engine/runtime" }
+
+# ESP32-P4: the C pocket_render_esp_ppa component calls the PPA renderer
+# factory that the JS-mode runtime archive also exports.
+[target.'cfg(target_arch = "riscv32")'.dependencies]
+pocket-render-esp-ppa = { path = "../../../third_party/pocketjs/devices/esp-idf/render-ppa", features = ["cabi"] }

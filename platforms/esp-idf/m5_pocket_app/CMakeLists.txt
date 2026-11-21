@@ -27,7 +27,7 @@ idf_component_register(
     REQUIRED_IDF_TARGETS esp32p4 esp32s3
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+m5_strict_warnings(${COMPONENT_LIB})
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     if(CONFIG_M5_POCKET_APP_MODE_AOT)
