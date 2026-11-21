@@ -91,6 +91,6 @@ AOT-mode firmware follows when the shared host's AOT mode lands.
 ## Validation
 
 Firmware builds only; no device run. JS mode (`idf.py build`, ESP-IDF 6.x):
-`m5stack_stopwatch.bin` 8,458,448 bytes, 33 % of the 12 MiB app partition
+`m5stack_stopwatch.bin` 8,481,024 bytes, 33 % of the 12 MiB app partition
 free (the application bundle is about 6.4 MB, 3.7 MB of it the big-number
 artwork); static DIRAM use 104,945 of 341,760 bytes.
