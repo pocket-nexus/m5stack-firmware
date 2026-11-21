@@ -2,6 +2,23 @@ include_guard(GLOBAL)
 
 set(M5_POCKET_APP_COMPONENT_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
+# m5_strict_warnings(<target>)
+#
+# The warning rule of AGENTS.md for a component library. IDF already passes
+# -Wall, -Wextra and -Werror, then relaxes them with -Wno-unused-parameter,
+# -Wno-sign-compare, -Wno-enum-conversion and -Wno-error=<group>; CMake drops
+# a repeated -Wall/-Wextra/-Werror, so repeating them changes nothing. These
+# options follow IDF's and turn those warnings back on, as errors.
+function(m5_strict_warnings target)
+    target_compile_options(${target} PRIVATE
+        -Wall -Wextra -Werror
+        -Wunused-parameter -Wsign-compare
+        $<$<COMPILE_LANGUAGE:C>:-Wenum-conversion>
+        -Werror=unused-function -Werror=unused-variable
+        -Werror=unused-but-set-variable -Werror=deprecated-declarations
+        -Werror=extra)
+endfunction()
+
 # m5_pocket_app(TARGET <target> NAME <name> HOST_CONFIG <file>
 #               [PROJECT_ROOT <dir>] [AOT_CRATE <dir>] [DEPENDS <file>...])
 #

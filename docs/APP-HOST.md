@@ -106,6 +106,27 @@ export default defineHostConfig({
 and plans go to the build directory; `pocket compile` may still create an
 ignored `.pocket/` or `dist/` beside the config.
 
+### Compiler warnings
+
+**IDF already passes `-Wall -Wextra -Werror`, then relaxes them** with
+`-Wno-unused-parameter`, `-Wno-sign-compare`, `-Wno-enum-conversion` and
+`-Wno-error=` for unused functions, variables, set-but-unused variables,
+deprecated declarations and the `-Wextra` group. CMake drops a repeated
+`-Wall`/`-Wextra`/`-Werror` from a component's options, so
+`target_compile_options(... -Wall -Wextra -Werror)` does not restore them.
+`m5_strict_warnings(<target>)` (defined by `m5_pocket_app`'s
+`project_include.cmake`, available to every component of a program that uses
+it) appends, after IDF's options: `-Wunused-parameter -Wsign-compare
+-Wenum-conversion` (C) and `-Werror=` for `unused-function`,
+`unused-variable`, `unused-but-set-variable`, `deprecated-declarations` and
+`extra`. `m5_pocket_app` and `tests/aot-smoke/main` use it; board components
+call it after `idf_component_register`:
+
+```cmake
+idf_component_register(SRCS ... REQUIRES ...)
+m5_strict_warnings(${COMPONENT_LIB})
+```
+
 ### Kconfig
 
 | Symbol | Default | Meaning |
