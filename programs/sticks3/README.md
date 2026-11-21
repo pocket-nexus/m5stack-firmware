@@ -30,6 +30,19 @@ Board bring-up is [`m5_bsp_sticks3`](../../platforms/esp-idf/m5_bsp_sticks3/).
 | `pocket_input_gpio` | KEY1 → `CIRCLE`, KEY2 → `DOWN`, 10 ms debounce |
 | `pocket_runner` | Owner task `sticks3_ui`, 128 KiB stack in PSRAM |
 
+`components/m5_sticks3_net` ports the Wi-Fi side of the UIFlow2 StickS3
+startup to ESP-IDF: at boot the station connects to the network saved in NVS
+namespace `uiflow` (`ssid0`/`pswd0`) and retries every 5 s after a
+disconnect; the Setup access point `S3_XXXX` (open, two clients, last four
+MAC hex digits) runs captive DNS answering `192.168.4.1` and the UIFlow
+portal page (`files/system/sticks3/index.html`, served from flash) with
+`/config.json` (scan) and `/wifisave` (save and connect). `/config.json`
+starts its `aps` list with an empty object because the page drops the first
+entry; UIFlow's handler omits it and so hides the first network. The
+application starts and stops the access point and reads the status through
+the device data bridge; until the bridge exists only the boot-time station
+connection runs.
+
 `main/CMakeLists.txt` compiles the application with `pocketjs_compile_app`
 from `apps/sticks3-factory/pocket.host.config.ts`. The top-level
 `CMakeLists.txt` writes `build/pocket-cli`, a wrapper that runs
@@ -67,10 +80,10 @@ ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `idf.py size`:
 
 | Item | Bytes |
 | --- | --- |
-| Application image | 3 322 773 (`0x32b410`) |
+| Application image | 3 929 805 (`0x3bf740`) |
 | Embedded bundle | 1 884 040 (artwork as RGB565 1.66 MB) |
-| `factory` partition | 7 MiB (`0x700000`), 55 % free |
-| DIRAM static use | 72 361 of 341 760 (21 %) |
+| `factory` partition | 7 MiB (`0x700000`), 46 % free |
+| DIRAM static use | 125 657 of 341 760 (37 %) |
 | IRAM | 16 384 of 16 384 |
 
 Partition table (`partitions.csv`): `nvs` 24 KiB, `phy_init` 4 KiB,

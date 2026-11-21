@@ -8,6 +8,7 @@
 #include "m5_sticks3/display.h"
 #include "m5_sticks3/power.h"
 #include "m5_sticks3/speaker.h"
+#include "m5_sticks3_net.h"
 
 #include "esp_check.h"
 #include "esp_heap_caps.h"
@@ -66,6 +67,10 @@ void app_main(void) {
     m5_sticks3_speaker_set_volume(100);
   } else {
     ESP_LOGW(TAG, "speaker unavailable");
+  }
+  // UIFlow Startup: connect to the saved network before the menu starts.
+  if (m5_sticks3_net_init() != ESP_OK) {
+    ESP_LOGW(TAG, "Wi-Fi unavailable");
   }
   ESP_LOGI(TAG, "battery %d %% (%u mV)%s", m5_sticks3_battery_level(),
            (unsigned)m5_sticks3_battery_mv(),
