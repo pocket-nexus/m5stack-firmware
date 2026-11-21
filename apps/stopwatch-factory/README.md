@@ -62,8 +62,8 @@ advances its own clock from the frame count and takes key clicks from
 | LuckyWheel: 2–18 option roller, factory colour order, rotated labels, pointer spins (A anticlockwise, B clockwise, tap random) with cubic ease-out | done |
 | IMU: ball (acceleration, size from rotation rate), orbit dot (integrated yaw), labels, tap toggle | done |
 | Audio.FFT: board-side factory spectrum (512-point FFT, 20 bands, noise floor, level, smoothing, peak frequency); 40 mirrored bars, pulsing disc, Hz label, tap toggle | done |
-| Badge: hint, A/B slot selection, long-press dialog, edit screen with the access point name | partial: no Wi-Fi access point, HTTP editor or JPEG display, so no badge picture is ever shown |
-| FluidBox | partial: 48-particle 2D fluid (factory: 450-particle 3D SPH) |
+| Badge: active JPEG picture, hint when empty, A/B slot selection, long-press dialog, edit screen; the board runs the factory access point, captive DNS, phone editor and six JPEG slots | done |
+| FluidBox | partial: 48-particle 2D fluid (factory: 450-particle 3D SPH); see the FluidBox limit below |
 
 ## Differences from the factory firmware
 
@@ -94,8 +94,31 @@ advances its own clock from the frame count and takes key clicks from
   scroll has no momentum.
 - Alarm list order, limits and storage follow the factory (NVS namespace
   `alarm`, 68-byte blob), so alarms set by the factory firmware load.
-- The badge editor screen can be left with A+B (the factory waits for the
-  web page's Close).
+- The badge editor screen can also be left with A+B (the factory waits only
+  for the web page's Close).
+- The badge picture is a run-time texture: the board decodes the active
+  JPEG (scaled by 1/2, 1/4 or 1/8 when larger than 466 px) onto the smallest
+  power-of-two RGB565 canvas that holds it and registers it under
+  `images/badge_slot.png` (JS mode: `m5_pocket_app_runtime` +
+  `pocket/textures.h` and `registerTexture` in `main.tsx`; AOT mode:
+  `Ui::register_image` in the program's crate). The view hides the image
+  for one frame when the handle changes so the node binds the new texture.
+
+## FluidBox limit
+
+The factory simulates 450 particles with a 3D double-density SPH at 80 Hz
+in C on its own task (neighbour grid, up to 14,400 pairs) and paints them
+directly into the framebuffer at 25 Hz from the other core. Here the
+simulation is model code (QuickJS in JS mode) on the app task, which also
+lays out and rasterises the frame at 30 Hz, and every particle is a UI node.
+Estimate, not measured on a device: 48 particles cost about 4,500 pair
+evaluations per frame (two passes, two sub-steps); 450 particles with the
+factory's grid cost about 13 times more, and each frame would also update
+about 1,350 node properties and repaint the full 466 × 466 frame. At the
+interpreter speeds of QuickJS on a 240 MHz S3 that is several times the
+33 ms frame budget, so the JS-mode app keeps 48 particles. AOT mode runs the
+same model as compiled Rust; a larger count there still pays the per-node
+drawing cost.
 - The 1-column offset between the factory 468-column frame and the
   466-column frame used here moves the content by at most 1 px.
 - Wi-Fi icon in the status bar: not shown (Wi-Fi is not implemented).

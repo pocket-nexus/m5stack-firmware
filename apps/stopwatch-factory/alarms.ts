@@ -77,7 +77,7 @@ export function toggle(index: i32): void {
   if (suppressTap || index < 0 || index >= count()) {
     return;
   }
-  device.setAlarmEnabled(index, !device.alarmEnabled[index]);
+  device.setAlarmEnabled(index, device.alarmEnabled[index] === 0);
   if (index < len(lastTriggered)) {
     lastTriggered[index] = -1;
   }
@@ -118,7 +118,7 @@ export function check(): void {
   }
   for (let i = 0; i < count(); i++) {
     if (
-      device.alarmEnabled[i] &&
+      device.alarmEnabled[i] !== 0 &&
       device.alarmHours[i] === device.hour &&
       device.alarmMinutes[i] === device.minute &&
       lastTriggered[i] !== key

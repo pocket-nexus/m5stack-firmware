@@ -216,4 +216,8 @@ for (let digit = 0; digit < 10; digit++) {
   });
 }
 
+// The badge view binds the texture the board decodes at run time to this
+// name; the bundle only carries a 1 × 1 transparent stand-in.
+write("badge_slot", { width: 1, height: 1, rgba: new Uint8Array(4) }, {});
+
 writeFileSync(join(appDir, "images.json"), `${JSON.stringify(meta, null, 2)}\n`);

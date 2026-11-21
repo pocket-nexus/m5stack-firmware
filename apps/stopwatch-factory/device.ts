@@ -63,11 +63,19 @@ export let guideLaunchCount: i32 = 5;
 /** Persistent alarms (at most 16), as parallel arrays. */
 export let alarmHours: i32[] = [];
 export let alarmMinutes: i32[] = [];
-export let alarmEnabled: boolean[] = [];
+/** 1 = enabled (numbers, so the AOT bridge can write the array). */
+export let alarmEnabled: i32[] = [];
 
-/** Badge slots 0..5 that hold an image, and the active slot (-1: none). */
-export let badgeSlots: boolean[] = [false, false, false, false, false, false];
+/** Badge slots 0..5 that hold an image (1), and the active slot (-1: none). */
+export let badgeSlots: i32[] = [0, 0, 0, 0, 0, 0];
 export let badgeActive: i32 = -1;
+/** Texture handle of the decoded active badge image (-1: none); the board
+ * registers it under the image name `images/badge_slot.png`. */
+export let badgeTexture: i32 = -1;
+/** Side of the square power-of-two canvas the picture is centred on. */
+export let badgeCanvas: i32 = 512;
+/** Counts the editor's Close (board event `badgeClosed`). */
+export let badgeClosed: i32 = 0;
 /** Badge editor access point name and status text. */
 export let apSsid: string = "M5StopWatch-0000";
 export let apMessage: string = "";
@@ -158,7 +166,7 @@ export function setBadgeEditing(on: boolean): void {
 function saveAlarms(): void {
   request("alarm_clear");
   for (let i = 0; i < len(alarmHours); i++) {
-    request(`alarm ${alarmHours[i]} ${alarmMinutes[i]} ${alarmEnabled[i] ? 1 : 0}`);
+    request(`alarm ${alarmHours[i]} ${alarmMinutes[i]} ${alarmEnabled[i]}`);
   }
   request("alarm_save");
 }
@@ -166,7 +174,7 @@ function saveAlarms(): void {
 export function addAlarm(h: i32, m: i32): void {
   push(alarmHours, h);
   push(alarmMinutes, m);
-  push(alarmEnabled, true);
+  push(alarmEnabled, 1);
   saveAlarms();
 }
 
@@ -178,7 +186,7 @@ export function removeAlarm(index: i32): void {
 }
 
 export function setAlarmEnabled(index: i32, enabled: boolean): void {
-  alarmEnabled[index] = enabled;
+  alarmEnabled[index] = enabled ? 1 : 0;
   saveAlarms();
 }
 
@@ -274,6 +282,12 @@ export function hostNumber(name: string, value: f64): void {
     case "badgeActive":
       badgeActive = i32(value);
       break;
+    case "badgeTexture":
+      badgeTexture = i32(value);
+      break;
+    case "badgeCanvas":
+      badgeCanvas = i32(value);
+      break;
     default:
       break;
   }
@@ -314,12 +328,12 @@ export function hostArray(name: string, values: f32[]): void {
     case "alarmEnabled":
       clear(alarmEnabled);
       for (const v of values) {
-        push(alarmEnabled, v !== 0.0);
+        push(alarmEnabled, v !== 0.0 ? 1 : 0);
       }
       break;
     case "badgeSlots":
       for (let i = 0; i < len(values) && i < 6; i++) {
-        badgeSlots[i] = values[i] !== 0.0;
+        badgeSlots[i] = values[i] !== 0.0 ? 1 : 0;
       }
       break;
     default:
@@ -328,6 +342,10 @@ export function hostArray(name: string, values: f32[]): void {
 }
 
 export function hostEvent(name: string, value: f64): void {
+  if (name === "badgeClosed") {
+    badgeClosed = badgeClosed + 1;
+    return;
+  }
   hostNumber(name, value);
 }
 

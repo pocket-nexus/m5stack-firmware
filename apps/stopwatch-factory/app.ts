@@ -205,6 +205,8 @@ export const [fftHz, setFftHz] = createSignal<string>("0.0");
 // Badge.
 export const [badgeDialog, setBadgeDialog] = createSignal<boolean>(false);
 export const [badgeEditing, setBadgeEditing] = createSignal<boolean>(false);
+export const [badgeImage, setBadgeImage] = createSignal<boolean>(false);
+export const [badgeCanvas, setBadgeCanvas] = createSignal<i32>(512);
 export const [badgeMessage, setBadgeMessage] = createSignal<string>("");
 
 // FluidBox.
@@ -579,7 +581,7 @@ function publishAlarms(): void {
     push(rows, {
       id: i,
       time: `${two(device.alarmHours[i])}:${two(device.alarmMinutes[i])}`,
-      enabled: device.alarmEnabled[i],
+      enabled: device.alarmEnabled[i] !== 0,
       y: alarms.rowTop(i),
     });
   }
@@ -750,6 +752,8 @@ export function fftTap(): void {
 function publishBadge(): void {
   setBadgeDialog(badge.dialog);
   setBadgeEditing(badge.editing);
+  setBadgeImage(badge.showImage);
+  setBadgeCanvas(device.badgeCanvas);
   setBadgeMessage(badge.message());
 }
 

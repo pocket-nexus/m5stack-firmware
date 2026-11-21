@@ -33,6 +33,8 @@ import {
   badgeDialog,
   badgeEdit,
   badgeEditing,
+  badgeImage,
+  badgeCanvas,
   badgeMessage,
   fftBars,
   fftHz,
@@ -288,7 +290,7 @@ export default function App() {
           <Fft bars={fftBars()} scale={fftScale()} labels={fftLabels()} hz={fftHz()} onTap={fftTap} />
         </Match>
         <Match when={page() === "badge"}>
-          <Badge dialog={badgeDialog()} editing={badgeEditing()} message={badgeMessage()} onEdit={badgeEdit} onCancel={badgeCancel} />
+          <Badge dialog={badgeDialog()} editing={badgeEditing()} image={badgeImage()} canvas={badgeCanvas()} message={badgeMessage()} onEdit={badgeEdit} onCancel={badgeCancel} />
         </Match>
         <Match when={page() === "fluid"}>
           <Fluid dots={fluidDots()} />
