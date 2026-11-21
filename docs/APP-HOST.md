@@ -90,12 +90,12 @@ directories, and the config names the program's host contract by relative
 path:
 
 ```cmake
-m5_pocket_app(TARGET ${COMPONENT_LIB} NAME sticks3
-    HOST_CONFIG "../../../apps/sticks3-factory/pocket.host.config.ts")
+m5_pocket_app(TARGET ${COMPONENT_LIB} NAME sticks3_demos
+    HOST_CONFIG "../../../apps/sticks3-demos/pocket.host.config.ts")
 ```
 
 ```ts
-// apps/sticks3-factory/pocket.host.config.ts
+// apps/sticks3-demos/pocket.host.config.ts
 export default defineHostConfig({
   host: "../../programs/sticks3/pocket.host.json",
   app: { entry: "main.tsx", framework: "solid", aot: true, model: "compiled", /* ... */ },
@@ -272,9 +272,9 @@ PSRAM first, internal RAM when there is no PSRAM or it is full.
 ## Device bridge
 
 **Every host-provided value and every request to the host lives in the
-application's state module `apps/<board>-factory/device.ts`.** The bridge
-moves values by name; a name is a `device.ts` field name. The application
-sees the same fields in both modes.
+application's state module `device.ts`, in the application directory.** The
+bridge moves values by name; a name is a `device.ts` field name. The
+application sees the same fields in both modes.
 
 ### Board side (`m5_pocket/bridge.h`)
 
@@ -658,7 +658,6 @@ copy out of the frame and suits a board with PSRAM to spare.
 | Program | Generated `load_images` | `load_images_at_density` |
 | --- | --- | --- |
 | Tab5 (density 2, `Heap`) | 1x, RGBA8888 | 22 pictures @2x, RGB565/RGBA8888 per `images.json`: 3,469,312 B heap and flash (same pixels as the program's former loader) |
-| StickS3 (density 1, `Heap`) | 21 pictures RGBA8888: 2,981,888 B heap and flash | 21 pictures RGB565: 1,490,944 B heap and flash; application image 4,580,480 → 3,088,800 B |
 
 AtomS3 and StopWatch have their own `Flash` loaders that predate the helper;
 `emit_images(.., 1)` with `ImageStorage::Flash` covers both (StopWatch's

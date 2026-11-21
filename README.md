@@ -1,15 +1,17 @@
 # M5Stack-sample
 
-PocketJS firmware that recreates the M5Stack factory demos of four boards.
-Each board has one ESP-IDF program that embeds one TypeScript/JSX
-application. The application runs in the QuickJS guest (JS mode, the
-default) or is compiled by MicroTS into a Rust static library (AOT mode).
+PocketJS firmware for four M5Stack boards. Each board has one ESP-IDF
+program that embeds one TypeScript/JSX application: a recreation of the
+board's factory demo on Tab5, StopWatch and AtomS3, and a set of demos of
+the board's hardware on StickS3. The application runs in the QuickJS guest
+(JS mode, the default) or is compiled by MicroTS into a Rust static library
+(AOT mode).
 
 | Board | SoC | Display | Logical viewport | Modes | Program | Application |
 | --- | --- | --- | --- | --- | --- | --- |
 | Tab5 | ESP32-P4 + ESP32-C6 | 5" 720×1280 MIPI-DSI, landscape UI | 640×360 at raster density 2 | JS (default), AOT | `programs/tab5` | `apps/tab5-factory` |
 | StopWatch (C152) | ESP32-S3, 8 MB PSRAM | 1.75" 466×466 round AMOLED | 466×466 | JS (default), AOT | `programs/stopwatch` | `apps/stopwatch-factory` |
-| StickS3 | ESP32-S3, 8 MB PSRAM | 1.14" 135×240 IPS | 135×240 | JS (default), AOT | `programs/sticks3` | `apps/sticks3-factory` |
+| StickS3 | ESP32-S3, 8 MB PSRAM | 1.14" 135×240 IPS | 135×240 | JS (default), AOT | `programs/sticks3` | `apps/sticks3-demos` |
 | AtomS3 | ESP32-S3, no PSRAM | 0.85" 128×128 IPS | 128×128 | AOT only | `programs/atoms3` | `apps/atoms3-factory` |
 
 The AtomS3 has 512 KB of SRAM and no PSRAM. Under QEMU its JS-mode boot ran

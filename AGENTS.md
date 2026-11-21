@@ -6,7 +6,9 @@ Architecture and implementation notes belong in `docs/`, not here.
 ## Scope of the repository
 
 - Each board has one firmware program that embeds one application: the
-  PocketJS recreation of that board's M5Stack factory demo. There is no
+  PocketJS recreation of that board's M5Stack factory demo. The StickS3 is
+  the exception: its program embeds `apps/sticks3-demos`, a set of demos of
+  the board's hardware, instead of a factory recreation. There is no
   launcher of installable packages, no Applet packaging and no pocket-shell
   integration.
 - PocketJS is `third_party/pocketjs`, pinned to `v0.17.0` or a later commit.
@@ -28,7 +30,7 @@ Architecture and implementation notes belong in `docs/`, not here.
 - The scope names the directory the change touches: a component
   (`m5-bsp-tab5`, `m5-bsp-stopwatch`, `m5-bsp-sticks3`, `m5-bsp-atoms3`,
   `m5-pocket-app`), a program (`tab5`, `stopwatch`, `sticks3`, `atoms3`), an
-  app (`tab5-factory`, `stopwatch-factory`, `sticks3-factory`,
+  app (`tab5-factory`, `stopwatch-factory`, `sticks3-demos`,
   `atoms3-factory`), `tools`, `docs` or `deps`. Omit the scope only for
   repository-wide changes.
 - The header is at most 72 characters; the summary is imperative, lower case,
@@ -85,11 +87,13 @@ Architecture and implementation notes belong in `docs/`, not here.
 - Firmware composition, `sdkconfig.defaults`, partitions and the host
   contract (`pocket.host.json`): `programs/<board>/`.
 - The host config (`pocket.host.config.ts`) sits in the application
-  directory, `apps/<board>-factory/`, and names the program's host contract
-  by relative path. The Pocket CLI rejects `..` in the app entry path, and
-  the AOT model check covers only files under the config's directory.
+  directory, `apps/<board>-factory/` (StickS3: `apps/sticks3-demos/`), and
+  names the program's host contract by relative path. The Pocket CLI
+  rejects `..` in the app entry path, and the AOT model check covers only
+  files under the config's directory.
 - Components that only one program uses: `programs/<board>/components/`.
-- Applications: `apps/<board>-factory/`.
+- Applications: `apps/<board>-factory/`; the StickS3 demos:
+  `apps/sticks3-demos/`.
 - Build, packaging and repository scripts: `tools/`.
 
 ## C code
@@ -128,6 +132,7 @@ Architecture and implementation notes belong in `docs/`, not here.
   English. It states the mechanism and the concrete facts (pins, sizes,
   limits, versions) without slogans or intensifiers.
 - Each application README lists the factory screens it reproduces and every
-  known difference from the factory firmware.
+  known difference from the factory firmware. The StickS3 demo README lists
+  each demo, its controls, the hardware it uses and its limits.
 - When a change alters a documented behaviour, pin, limit or command, update
   that documentation in the same commit.
