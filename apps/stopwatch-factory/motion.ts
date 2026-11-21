@@ -8,13 +8,15 @@ export const SPRING_STATUS_BAR: i32 = 0;
 export const SPRING_SECOND_DOT: i32 = 1;
 export const SPRING_STOPWATCH_LEFT: i32 = 2;
 export const SPRING_STOPWATCH_RIGHT: i32 = 3;
-export const SPRING_COUNT: i32 = 4;
+/** Number-flow digit strips: hour tens/ones, minute tens/ones, second tens/ones. */
+export const SPRING_FLOW: i32 = 4;
+export const SPRING_COUNT: i32 = 10;
 
-export let springPos: f64[] = [0.0, 0.0, 0.0, 0.0];
-export let springVel: f64[] = [0.0, 0.0, 0.0, 0.0];
-export let springTarget: f64[] = [0.0, 0.0, 0.0, 0.0];
-export let springStiffness: f64[] = [100.0, 100.0, 100.0, 100.0];
-export let springDamping: f64[] = [20.0, 20.0, 20.0, 20.0];
+export let springPos: f64[] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+export let springVel: f64[] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+export let springTarget: f64[] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+export let springStiffness: f64[] = [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0];
+export let springDamping: f64[] = [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0];
 
 export function springConfigure(index: i32, duration: f64, bounce: f64): void {
   const root: f64 = 6.2831855 / (duration * 1.2);
@@ -31,6 +33,12 @@ export function springTeleport(index: i32, value: f64): void {
 
 export function springTo(index: i32, value: f64): void {
   springTarget[index] = value;
+}
+
+/** Moves the spring by `delta` without changing its velocity (AnimateValue retarget). */
+export function springShift(index: i32, delta: f64): void {
+  springPos[index] = springPos[index] + delta;
+  springTarget[index] = springTarget[index] + delta;
 }
 
 export function springDone(index: i32): boolean {

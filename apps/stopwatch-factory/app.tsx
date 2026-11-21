@@ -39,6 +39,7 @@ import {
   fftLabels,
   fftScale,
   fftTap,
+  flowOffsets,
   fluidDots,
   imuBallSize,
   imuBallX,
@@ -199,6 +200,7 @@ export default function App() {
             dotY={dotY()}
             ticks={ticks()}
             digits={bigDigits()}
+            flow={flowOffsets()}
             dx={anchorDX()}
             dy={anchorDY()}
             onTap={watchTap}

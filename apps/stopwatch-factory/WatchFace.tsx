@@ -3,6 +3,7 @@ import { For, Image, Text, View } from "@pocketjs/framework/solid/components";
 import type { Color, Deg, i32 } from "@pocketjs/framework/solid/std";
 import type { Tick } from "./app";
 import BigNumber from "./BigNumber.tsx";
+import DigitStrip from "./DigitStrip.tsx";
 
 // Factory app_watch_face: classic, number flow, big number and simple faces
 // inside one panel that turns with the accelerometer.
@@ -30,6 +31,7 @@ export default function WatchFace(props: {
   dotY: i32;
   ticks: Tick[];
   digits: i32[];
+  flow: i32[];
   dx: i32[];
   dy: i32[];
   onTap: () => void;
@@ -75,19 +77,16 @@ export default function WatchFace(props: {
         <Match when={props.face === 1}>
           <View class="absolute left-0 top-0 w-[466] h-[466]" style={{ bgColor: props.background }}>
             <View class="absolute left-[66] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[3] ?? 0, translateY: props.dy[3] ?? 0 }}>
-              <View class="w-[100] h-[132] items-center justify-center" style={{ rotate: props.rotation }}>
-                <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.hh}</Text>
-              </View>
+              <DigitStrip left={7} dx={(props.dx[14] ?? 0) - (props.dx[3] ?? 0)} dy={(props.dy[14] ?? 0) - (props.dy[3] ?? 0)} offset={props.flow[0] ?? 0} theme={props.theme} rotation={props.rotation} />
+              <DigitStrip left={43} dx={(props.dx[15] ?? 0) - (props.dx[3] ?? 0)} dy={(props.dy[15] ?? 0) - (props.dy[3] ?? 0)} offset={props.flow[1] ?? 0} theme={props.theme} rotation={props.rotation} />
             </View>
             <View class="absolute left-[183] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[4] ?? 0, translateY: props.dy[4] ?? 0 }}>
-              <View class="w-[100] h-[132] items-center justify-center" style={{ rotate: props.rotation }}>
-                <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.mm}</Text>
-              </View>
+              <DigitStrip left={7} dx={(props.dx[16] ?? 0) - (props.dx[4] ?? 0)} dy={(props.dy[16] ?? 0) - (props.dy[4] ?? 0)} offset={props.flow[2] ?? 0} theme={props.theme} rotation={props.rotation} />
+              <DigitStrip left={43} dx={(props.dx[17] ?? 0) - (props.dx[4] ?? 0)} dy={(props.dy[17] ?? 0) - (props.dy[4] ?? 0)} offset={props.flow[3] ?? 0} theme={props.theme} rotation={props.rotation} />
             </View>
             <View class="absolute left-[300] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[5] ?? 0, translateY: props.dy[5] ?? 0 }}>
-              <View class="w-[100] h-[132] items-center justify-center" style={{ rotate: props.rotation }}>
-                <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.ss}</Text>
-              </View>
+              <DigitStrip left={7} dx={(props.dx[18] ?? 0) - (props.dx[5] ?? 0)} dy={(props.dy[18] ?? 0) - (props.dy[5] ?? 0)} offset={props.flow[4] ?? 0} theme={props.theme} rotation={props.rotation} />
+              <DigitStrip left={43} dx={(props.dx[19] ?? 0) - (props.dx[5] ?? 0)} dy={(props.dy[19] ?? 0) - (props.dy[5] ?? 0)} offset={props.flow[5] ?? 0} theme={props.theme} rotation={props.rotation} />
             </View>
             <View class="absolute left-0 top-[294] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[6] ?? 0, translateY: props.dy[6] ?? 0, rotate: props.rotation }}>
               <Text class={props.theme === 0 ? "text-2xl text-[#A0A0A0]" : props.theme === 1 ? "text-2xl text-[#525252]" : props.theme === 2 ? "text-2xl text-[#6A938F]" : props.theme === 3 ? "text-2xl text-[#948063]" : props.theme === 4 ? "text-2xl text-[#668323]" : props.theme === 5 ? "text-2xl text-[#CBCBFF]" : props.theme === 6 ? "text-2xl text-[#FFD3BC]" : props.theme === 7 ? "text-2xl text-[#A4789D]" : props.theme === 8 ? "text-2xl text-[#70CFC9]" : "text-2xl text-[#DCF3FF]"}>{props.date}</Text>

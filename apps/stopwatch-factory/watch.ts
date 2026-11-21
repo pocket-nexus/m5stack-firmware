@@ -1,10 +1,18 @@
 // WatchFace app (factory app_watch_face): classic, number flow, big number
 // and simple faces. The face and its theme reset to the first entry on every
 // open, as in the factory; nothing is saved.
-import { abs, atan2, cos, f64, round, sin, sqrt, type i32 } from "@pocketjs/framework/solid/std";
+import { abs, atan2, cos, f64, idiv, round, sin, sqrt, type i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 import * as input from "./input";
-import { SPRING_SECOND_DOT, springConfigure, springPos, springTeleport, springTo } from "./motion";
+import {
+  SPRING_FLOW,
+  SPRING_SECOND_DOT,
+  springConfigure,
+  springPos,
+  springShift,
+  springTeleport,
+  springTo,
+} from "./motion";
 
 export const FACE_CLASSIC: i32 = 0;
 export const FACE_NUMBER_FLOW: i32 = 1;
@@ -36,6 +44,54 @@ export let shownHour: i32 = 0;
 export let shownMinute: i32 = 0;
 export let shownSecond: i32 = 0;
 
+// Number flow (smooth_ui_toolkit 2.12.1 DigitFlow): each digit is a strip
+// 9,0,1,...,9,0 of 66 px rows whose offset springs (visual duration 0.6 s,
+// bounce 0.05) to the row of the new digit. A value that grew rolls every
+// changed digit up, one that shrank (59 → 00) rolls it down; at the strip
+// ends the offset wraps by ten rows without losing its velocity.
+export const FLOW_ROW = 66.0;
+let flowIndex: i32[] = [1, 1, 1, 1, 1, 1];
+let flowLast: i32[] = [0, 0, 0];
+
+function flowSet(number: i32, value: i32, animate: boolean): void {
+  const increase = flowLast[number] < value;
+  for (let d = 0; d < 2; d++) {
+    const slot = number * 2 + d;
+    const digit = d === 0 ? idiv(value, 10) : value % 10;
+    const spring = SPRING_FLOW + slot;
+    if (!animate) {
+      flowIndex[slot] = digit + 1;
+      springConfigure(spring, 0.6, 0.05);
+      springTeleport(spring, f64(flowIndex[slot]) * FLOW_ROW);
+      continue;
+    }
+    let guard = 0;
+    while (flowIndex[slot] - 1 !== digit && guard < 12) {
+      guard++;
+      if (increase) {
+        if (flowIndex[slot] >= 10) {
+          flowIndex[slot] = 1;
+          springShift(spring, -10.0 * FLOW_ROW);
+        } else {
+          flowIndex[slot] = flowIndex[slot] + 1;
+        }
+      } else if (flowIndex[slot] <= 1) {
+        flowIndex[slot] = 10;
+        springShift(spring, 10.0 * FLOW_ROW);
+      } else {
+        flowIndex[slot] = flowIndex[slot] - 1;
+      }
+    }
+    springTo(spring, f64(flowIndex[slot]) * FLOW_ROW);
+  }
+  flowLast[number] = value;
+}
+
+/** Strip offset in px of number-flow digit slot 0..5. */
+export function flowOffset(slot: i32): i32 {
+  return round(springPos[SPRING_FLOW + slot]);
+}
+
 export function open(): void {
   face = FACE_CLASSIC;
   filterX = 0.0;
@@ -52,6 +108,9 @@ function createFace(): void {
   simpleTips = true;
   createdAt = device.uptimeMs;
   lastRefresh = -10000.0;
+  flowSet(0, device.hour, false);
+  flowSet(1, device.minute, false);
+  flowSet(2, device.second, false);
   springConfigure(SPRING_SECOND_DOT, 0.3, 0.4);
   springTeleport(SPRING_SECOND_DOT, 0.0);
   lastDotAngle = 0.0;
@@ -152,6 +211,11 @@ export function update(): boolean {
     shownHour = device.hour;
     shownMinute = device.minute;
     shownSecond = device.second;
+    if (face === FACE_NUMBER_FLOW) {
+      flowSet(0, shownHour, true);
+      flowSet(1, shownMinute, true);
+      flowSet(2, shownSecond, true);
+    }
     if (face === FACE_SIMPLE) {
       const target: f64 = f64(shownSecond * 6);
       let delta: f64 = target - lastDotAngle;

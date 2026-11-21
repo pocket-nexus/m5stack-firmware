@@ -121,8 +121,9 @@ export const [titleOpacity, setTitleOpacity] = createSignal<f32>(1.0);
 // Watch faces.
 export const [face, setFace] = createSignal<i32>(0);
 export const [faceRotation, setFaceRotation] = createSignal<Deg>(0.0);
-export const [anchorDX, setAnchorDX] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-export const [anchorDY, setAnchorDY] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+export const [flowOffsets, setFlowOffsets] = createSignal<i32[]>([66, 66, 66, 66, 66, 66]);
+export const [anchorDX, setAnchorDX] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+export const [anchorDY, setAnchorDY] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 export const [classicMode, setClassicMode] = createSignal<i32>(0);
 export const [hourAngle, setHourAngle] = createSignal<Deg>(0.0);
 export const [minuteAngle, setMinuteAngle] = createSignal<Deg>(0.0);
@@ -369,8 +370,8 @@ export function watchTap(): void {
 // turned subtree loses its rounded corners in the PocketJS rasterizer, so
 // each element is turned on its own: anchors move around the screen centre
 // and text, hands, ticks and images take the rotation; round shapes only move.
-const ANCHOR_X: f32[] = [0.0, 0.0, 125.0, -117.0, 0.0, 117.0, 0.0, -42.0, 42.0, -42.0, 42.0, 0.0, 0.0, 0.0];
-const ANCHOR_Y: f32[] = [104.0, 138.0, 0.0, -22.0, -22.0, -22.0, 76.0, -51.0, -51.0, 51.0, 51.0, -24.0, 57.0, 130.0];
+const ANCHOR_X: f32[] = [0.0, 0.0, 125.0, -117.0, 0.0, 117.0, 0.0, -42.0, 42.0, -42.0, 42.0, 0.0, 0.0, 0.0, -135.0, -99.0, -18.0, 18.0, 99.0, 135.0];
+const ANCHOR_Y: f32[] = [104.0, 138.0, 0.0, -22.0, -22.0, -22.0, 76.0, -51.0, -51.0, 51.0, 51.0, -24.0, 57.0, 130.0, -22.0, -22.0, -22.0, -22.0, -22.0, -22.0];
 let ticksRotation: f64 = 1000.0;
 
 function buildTicks(rotation: f64): void {
@@ -442,6 +443,16 @@ function publishWatch(): void {
     setThemeIndex(0);
   }
   setBigDigits([idiv(watch.shownHour, 10), watch.shownHour % 10, idiv(watch.shownMinute, 10), watch.shownMinute % 10]);
+  if (watch.face === watch.FACE_NUMBER_FLOW) {
+    setFlowOffsets([
+      watch.flowOffset(0),
+      watch.flowOffset(1),
+      watch.flowOffset(2),
+      watch.flowOffset(3),
+      watch.flowOffset(4),
+      watch.flowOffset(5),
+    ]);
+  }
   setSimpleDot(watch.simpleDot);
   setSimpleTips(watch.simpleTips);
   setDotX(watch.dotX());

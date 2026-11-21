@@ -26,6 +26,7 @@ contract, `../../programs/stopwatch/pocket.host.json` (466 × 466, 30 Hz,
 | `images/`, `images.json` | Factory artwork converted to power-of-two PNG textures |
 | `scripts/import-factory-assets.ts` | Regenerates `images/` and `images.json` from a factory checkout |
 | `scripts/gen-big-number.ts` | Regenerates `BigNumber.tsx` |
+| `DigitStrip.tsx` | One rolling number-flow digit |
 
 State modules cannot declare signals in MicroTS, so the per-app modules
 keep plain fields and `app.ts` copies their results into signals once per
@@ -71,8 +72,11 @@ advances its own clock from the frame count and takes key clicks from
   (Maple Mono 28 → 24 px, Maple Mono 48 → 36 px, Commissioner 64 → 54 px,
   Commissioner 108 → 54 px; PocketJS scales the positions of a scaled text run but not its baked glyphs, so no scaling is applied). The factory's 0 → O substitution for
   Maple Mono digits is kept.
-- Number flow digits change without the smooth_ui_toolkit rolling
-  animation.
+- Number flow digits roll like smooth_ui_toolkit 2.12.1 `DigitFlow`
+  (strip 9,0..9,0, spring with visual duration 0.6 s and bounce 0.05, up
+  when the value grew, down when it shrank, velocity kept across the wrap).
+  With a turned face the 66 px digit windows stay upright and only the
+  glyphs turn, so a digit rolls along the screen's vertical axis.
 - Images: PocketJS textures are power-of-two and at most 512 px, so the
   artwork sits on padded canvases (icons and the guide are stored as
   RGB565, the big-number digits as one RGBA4444 tile per palette colour and
