@@ -69,11 +69,21 @@ esp_err_t m5_sticks3_i2c_bus(i2c_master_bus_handle_t *out);
 /// enable (G3, off), enables battery charging and switches the 5 V output off.
 esp_err_t m5_sticks3_power_init(void);
 
-/// Configures KEY1 and KEY2 as inputs.
+/// Configures KEY1 and KEY2 as inputs and installs an edge interrupt on each
+/// that timestamps presses (m5_sticks3_key_press_time_us). Installs the GPIO
+/// ISR service unless it is installed already.
 esp_err_t m5_sticks3_keys_init(void);
 
 /// Returns true while the key is held.
 bool m5_sticks3_key_pressed(m5_sticks3_key_t key);
+
+/// esp_timer time in microseconds of the key's last press (falling edge), or
+/// 0 before the first press. A falling edge within
+/// M5_STICKS3_KEY_DEBOUNCE_US of the previous rising edge is contact bounce
+/// and does not count.
+int64_t m5_sticks3_key_press_time_us(m5_sticks3_key_t key);
+
+#define M5_STICKS3_KEY_DEBOUNCE_US 20000
 
 #ifdef __cplusplus
 }
