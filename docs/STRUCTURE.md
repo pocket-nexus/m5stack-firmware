@@ -4,14 +4,20 @@
 M5Stack-sample/
 ├─ third_party/pocketjs/      PocketJS checkout pinned to v0.17.0 (submodule)
 ├─ platforms/esp-idf/         ESP-IDF components owned by this repository
-│  └─ m5_bsp_<board>/         board support taken from M5Stack sources
-├─ platforms/rust/            Rust crates of the shared AOT host
+│  ├─ m5_bsp_<board>/         board support taken from M5Stack sources
+│  └─ m5_pocket_app/          application host: JS/AOT mode, device bridge,
+│                             display and input composition
+├─ platforms/rust/
+│  ├─ m5_pocket_aot/          AOT host crate: runtime, adapters, bridge
+│  └─ m5_pocket_aot_build/    build-script helper of the per-app AOT crates
 ├─ programs/<board>/          IDF project: main, host contract,
 │                             sdkconfig.defaults, partitions
+│  └─ aot/                    the program's AOT library crate
 ├─ apps/<board>-factory/      factory demo application (TSX views, TS models)
 │                             and its host config
-├─ tools/                     formatter and repository scripts
-└─ docs/                      reference documentation
+├─ tests/                     aot-smoke (both modes, both targets) and tool tests
+├─ tools/                     Pocket CLI wrapper, formatter
+└─ docs/                      reference documentation (APP-HOST.md: the host)
 ```
 
 ## Ownership
@@ -27,6 +33,12 @@ contract. `apps/<board>-factory/pocket.host.config.ts` names that contract by
 relative path and holds the application in its `app` section; it lives beside
 the sources because the Pocket CLI rejects `..` in the app entry path and the
 AOT model check covers only files under the config's directory.
+
+**The application host is shared.** `m5_pocket_app` runs the program's one
+application in the mode Kconfig selects (`CONFIG_M5_POCKET_APP_MODE_JS`, the
+default, or `CONFIG_M5_POCKET_APP_MODE_AOT`) with the board's display and
+inputs, and moves board values and application requests through the device
+bridge. See [APP-HOST.md](APP-HOST.md).
 
 **The application is one TSX/TS project per board.** Its sources stay inside
 the MicroTS admission subset so the same files build in JS mode and in AOT

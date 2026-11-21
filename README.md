@@ -20,6 +20,9 @@ default) or is compiled by MicroTS into a Rust static library (AOT mode).
   `third_party/pocketjs/rust-toolchain.toml` with
   `riscv32imafc-unknown-none-elf` for ESP32-P4, and Espressif's `esp`
   toolchain for ESP32-S3
+- For AOT builds, `wasm32-unknown-unknown`: the first AOT build runs
+  `bun tools/wasm.ts` inside the submodule to build the MicroTS layout
+  oracle (ignored output)
 
 ## Quick start
 
@@ -38,6 +41,7 @@ Each program README gives its AOT build command and the board facts.
 ## Documentation
 
 - [Repository structure](docs/STRUCTURE.md)
+- [Application host](docs/APP-HOST.md): JS/AOT modes, device bridge, C API
 - [Engineering conventions](AGENTS.md): commits, formatting, dependencies
 
 ## PocketJS version
