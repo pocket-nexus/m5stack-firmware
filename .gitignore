@@ -1,0 +1,28 @@
+# ESP-IDF build output; sdkconfig.defaults and dependencies.lock are committed
+build/
+build-*/
+sdkconfig
+sdkconfig.old
+managed_components/
+
+# Rust build output
+target/
+
+# JavaScript dependencies
+node_modules/
+
+# PocketJS build, packaging, generated AOT sources and validation output
+.pocket-build/
+.pocket/
+dist/
+gen/
+*.pocket
+*.pkb
+
+# Editor and tool caches
+.cache/
+.clangd/
+compile_commands.json
+.DS_Store
+.idea/
+__pycache__/
