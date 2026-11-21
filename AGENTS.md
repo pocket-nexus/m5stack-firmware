@@ -79,9 +79,12 @@ Architecture and implementation notes belong in `docs/`, not here.
 - Board support for one board: `platforms/esp-idf/m5_bsp_<board>/`.
 - Components shared by several programs (the JS/AOT application host):
   `platforms/esp-idf/<name>/`; their Rust crates: `platforms/rust/<name>/`.
-- Firmware composition, `sdkconfig.defaults`, partitions, the host contract
-  (`pocket.host.json`) and host config (`pocket.host.config.ts`):
-  `programs/<board>/`.
+- Firmware composition, `sdkconfig.defaults`, partitions and the host
+  contract (`pocket.host.json`): `programs/<board>/`.
+- The host config (`pocket.host.config.ts`) sits in the application
+  directory, `apps/<board>-factory/`, and names the program's host contract
+  by relative path. The Pocket CLI rejects `..` in the app entry path, and
+  the AOT model check covers only files under the config's directory.
 - Components that only one program uses: `programs/<board>/components/`.
 - Applications: `apps/<board>-factory/`.
 - Build, packaging and repository scripts: `tools/`.
