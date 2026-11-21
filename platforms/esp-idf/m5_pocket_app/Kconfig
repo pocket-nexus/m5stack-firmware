@@ -1,0 +1,51 @@
+menu "M5 PocketJS application host"
+
+    choice M5_POCKET_APP_MODE
+        prompt "Application mode"
+        default M5_POCKET_APP_MODE_JS
+        help
+            JS compiles the application to a bundle that runs in the QuickJS
+            guest. AOT compiles the same sources with MicroTS into a Rust
+            static library. The program's top-level CMakeLists.txt reads this
+            choice before component discovery (components.cmake); change it in
+            sdkconfig.defaults or menuconfig, then reconfigure.
+
+        config M5_POCKET_APP_MODE_JS
+            bool "JS: bundle in the QuickJS guest"
+
+        config M5_POCKET_APP_MODE_AOT
+            bool "AOT: MicroTS-compiled Rust static library"
+    endchoice
+
+    config M5_POCKET_APP_TASK_STACK
+        int "App task stack bytes"
+        default 65536
+        help
+            Stack of the task that runs the runtime, the guest or the compiled
+            application, and the program's frame hooks. The JS guest's stack
+            limit (m5_pocket_app_config.js_stack_limit) must stay below it.
+
+    config M5_POCKET_APP_TASK_PRIORITY
+        int "App task priority"
+        default 5
+
+    config M5_POCKET_BRIDGE_SLOTS
+        int "Bridge value slots"
+        default 48
+        help
+            Distinct board -> app value names, including pointerX, pointerY
+            and pointerDown when touch is configured.
+
+    config M5_POCKET_BRIDGE_EVENTS
+        int "Bridge event FIFO depth"
+        default 16
+
+    config M5_POCKET_BRIDGE_TEXT_MAX
+        int "Longest text value in bytes"
+        default 96
+
+    config M5_POCKET_BRIDGE_ARRAY_MAX
+        int "Longest array value in elements"
+        default 256
+
+endmenu
