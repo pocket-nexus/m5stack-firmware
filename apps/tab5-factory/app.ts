@@ -783,7 +783,7 @@ function windowClosed(kind: i32): void {
   } else if (kind === WIN_EXT_PORT) {
     nextTone();
     setGpioReady(false);
-    setGpioTest(false, []);
+    setGpioTest(false);
     closeWindow(WIN_MBUS);
   } else if (kind === WIN_MUSIC) {
     setMusicWanted(false);
@@ -1175,11 +1175,7 @@ export const [mbusScroll, setMbusScroll] = createSignal<Px>(0);
 /** ExtPortWindow and MbusWindow: once open, every pin is an output driven
  *  low; ExtPort rows sit at 55 + 81 i, MBUS rows in two columns of nine. */
 function prepareGpio(): void {
-  const all: i32[] = copy(EXT_PORT_PINS);
-  for (let i: i32 = 0; i < len(MBUS_PINS); i++) {
-    push(all, MBUS_PINS[i]);
-  }
-  setGpioTest(true, all);
+  setGpioTest(true);
   const ext: GpioRow[] = [];
   for (let i: i32 = 0; i < len(EXT_PORT_PINS); i++) {
     push(ext, { pin: EXT_PORT_PINS[i], high: false, left: PX * (f32(273 - 230) * HALF * HALF), top: PX * (f32(55 + 81 * i) * HALF) });

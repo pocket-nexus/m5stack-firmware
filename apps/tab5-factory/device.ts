@@ -206,14 +206,11 @@ export function setI2cScanBus(bus: i32): void {
   request(`i2cScan ${bus}`);
 }
 
-/** "gpioTest <0|1> <pin>...": the pins become outputs driven low (1), or
- *  are driven low and released (0). */
-export function setGpioTest(active: boolean, pins: i32[]): void {
-  let command: string = `gpioTest ${flag(active)}`;
-  for (let i: i32 = 0; i < len(pins); i++) {
-    command = `${command} ${pins[i]}`;
-  }
-  request(command);
+/** "gpioTest <0|1>": the factory's test pins (Ext.Port1 G49 G50 G0 G1 G54
+ *  G53 and the 18 MBUS pins) become outputs driven low (1), or are driven
+ *  low and released (0). */
+export function setGpioTest(active: boolean): void {
+  request(`gpioTest ${flag(active)}`);
 }
 
 /** "gpio <pin> <0|1>" */
