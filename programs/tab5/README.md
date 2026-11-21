@@ -45,15 +45,15 @@ before committing.
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image | 7,353,920 bytes (0x703640), 58 % of the 12 MiB `factory` partition | 6,340,448 bytes (0x60bf60), 50 % |
-| Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 5,170,052 / 1,082,530 bytes |
+| Application image | 7,423,312 bytes (0x714550), 59 % of the 12 MiB `factory` partition | 6,409,104 bytes (0x61cb90), 51 % |
+| Flash contents | (bundle 4,549,240 bytes, of which 4,053,008 are the pack; 574,360 bytes of font atlases) | font atlases 562,640 bytes |
 | Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
 | Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
 | Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; the 22 pictures are copied into the heap at mount: 3,469,312 bytes (also in flash) |
 | App task stack | 192 KiB in PSRAM, QuickJS stack limit 144 KiB | 192 KiB in PSRAM |
 
 The pack holds the images (RGB565 background tiles and charts, RGBA8888 small
-pictures) and five baked Inter sizes. These numbers are build outputs; no
+pictures) and five baked Montserrat Medium sizes (`apps/tab5-factory/README.md`). These numbers are build outputs; no
 device run happened.
 
 ### What differs in AOT mode

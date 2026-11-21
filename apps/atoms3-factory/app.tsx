@@ -72,11 +72,18 @@ export default function App() {
                   >
                     <For each={wifiLines()} by={(line) => line.id}>
                       {(line) => (
-                        <View class={line().big ? "w-[256] h-[14] shrink-0" : "w-[256] h-[12] shrink-0"}>
-                          <Text class={line().big ? "text-sm leading-[14px] text-white" : "text-xs leading-[12px] text-white"}>
-                            {line().text}
-                          </Text>
-                        </View>
+                        <Show
+                          when={line().big}
+                          fallback={
+                            <View class="w-[256] h-[12] shrink-0">
+                              <Text class="text-xs font-mono leading-[12px] text-white">{line().text}</Text>
+                            </View>
+                          }
+                        >
+                          <View class="w-[128] h-[14] shrink-0 overflow-hidden">
+                            <Image class="w-[128] h-[16]" src="img/top5_list.png" />
+                          </View>
+                        </Show>
                       )}
                     </For>
                   </View>
@@ -90,9 +97,7 @@ export default function App() {
                     </View>
                   </Match>
                   <Match when={i2cState() === 1}>
-                    <View class="absolute left-0 top-[33] w-[128] h-[24] items-center">
-                      <Text class="text-2xl leading-[24px] text-[#ff0000]">Not found</Text>
-                    </View>
+                    <Image class="absolute left-0 top-[33] w-[128] h-[32]" src="img/not_found.png" />
                   </Match>
                   <Match when={i2cState() === 2}>
                     <View class="absolute left-0 top-[1] w-[128] h-[1] bg-white" />
@@ -162,13 +167,13 @@ export default function App() {
           </Switch>
           <Show when={uartRxText() !== ""}>
             <View class="absolute left-[86] top-[31] w-[42] h-[9] bg-black" />
-            <View class="absolute left-[93] top-[33] h-[8]">
+            <View class="absolute left-[93] top-[30] h-[12]">
               <RandomText color={uartRxColor()} text={uartRxText()} small={true} />
             </View>
           </Show>
           <Show when={uartTxText() !== ""}>
             <View class="absolute left-[86] top-[41] w-[42] h-[9] bg-black" />
-            <View class="absolute left-[93] top-[43] h-[8]">
+            <View class="absolute left-[93] top-[40] h-[12]">
               <RandomText color={uartTxColor()} text={uartTxText()} small={true} />
             </View>
           </Show>

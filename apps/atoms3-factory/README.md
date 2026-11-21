@@ -15,9 +15,10 @@ this bundle does not fit in the AtomS3's internal RAM).
 | `app.tsx`, `Boot.tsx`, `Menu.tsx`, `RandomText.tsx` | Views |
 | `app.ts` | Root model: the factory's `loop()`, one function object per screen, the IMU filter |
 | `device.ts` | Device state module: board values, requests, and the simulated board used without hardware |
-| `img/*.png` | The factory artwork, extracted byte-for-byte from `src/img_res.c` (128×128 RGB PNG; MIT, Copyright (c) 2023 M5Stack) |
+| `img/*.png` | The factory artwork, extracted byte-for-byte from `src/img_res.c` (128×128 RGB PNG; MIT, Copyright (c) 2023 M5Stack); `not_found.png` and `top5_list.png` are the factory's efont 24 and efont 14 text rendered from the efont bitmaps |
 | `images.json` | Bakes every artwork as RGB565 (`psm: 0`), 32 KiB per image |
 | `fonts.json` | Bakes printable ASCII (U+0020–U+007E) so SSIDs and bytes render |
+| `pocket.fonts.json`, `fonts/` | The factory's efont faces as pixel-outline TrueType: regular = efont 16, bold = efont 16 bold, mono = efont 12 ([Fonts](#fonts)) |
 
 The sources stay inside the MicroTS admission subset:
 `bun run pocket compile --config apps/atoms3-factory/pocket.host.config.ts --aot --out <dir>`
@@ -56,11 +57,12 @@ The factory's unused `io_test_img` artwork is not included.
 
 ## Known differences
 
-- **Fonts.** The factory draws with M5GFX bitmap fonts (`efontCN_12/14/16/
-  16_b/24`, `Font0`). The app uses PocketJS's baked Inter at 12, 14, 16,
-  16 bold, 24 and 10 px. Glyph shapes and widths differ; text is placed at
-  the factory's coordinates (`drawCenterString` centre and top, cursor
-  positions), so baselines can differ by one or two pixels.
+- **Fonts.** See [Fonts](#fonts): text at 12 px, 16 px and 16 px bold uses
+  the factory's efont glyphs pixel for pixel; the two 14 px and 24 px strings
+  are images of the efont glyphs; the 6×8 GLCD `Font0` of the UART screen is
+  replaced by efont 12 (glyphs about 1 px taller). Text is placed at the
+  factory's coordinates; line boxes follow the PocketJS layout, so a string
+  can sit a pixel off.
 - **Random colours.** I2C addresses and UART bytes use one of 16 fixed
   colours picked by a pseudo-random index (`RandomText.tsx`). A Text node in
   the AOT view subset takes no dynamic colour, so the factory's random 24-bit
@@ -90,6 +92,44 @@ The factory's unused `io_test_img` artwork is not included.
 - **IR.** The repeat code follows the frame after its 32.8 ms gap (about
   100 ms after the frame start) instead of the factory's 110 ms delay.
 - **PWM / IR.** At most 8 USB bytes are taken per frame.
+
+## Fonts
+
+M5GFX draws the factory's text with u8g2-format bitmap fonts built from
+/efont/ Unicode BDF 0.4.2 (`efontCN_12`, `_14`, `_16`, `_16_b`, `_24`) and
+the GLCD `Font0`. No TrueType edition of these faces exists, so
+`fonts/EfontBiwidth12-Regular.ttf`, `EfontBiwidth16-Regular.ttf` and
+`EfontBiwidth16-Bold.ttf` were generated from the u8g2 data of M5GFX 0.2.19
+(`src/lgfx/Fonts/efont/lgfx_efont_cn.c`, arrays `lgfx_efont_cn_12`,
+`lgfx_efont_cn_16`, `lgfx_efont_cn_16_b`; the 117 glyphs U+0020–U+00FF
+present there): every set pixel became a square of the outline, the
+units-per-em are 12 × 100 and 16 × 64, so at 12 px and 16 px each square
+covers exactly one pixel. The PocketJS baker (`bakeSlot`) renders them with
+no partially covered pixel (checked for `1. Mg-45` at 12 px and `F:1Kz` at
+16 px bold).
+
+| Role | Face | Used for |
+| --- | --- | --- |
+| `regular` | efont 16 | "Scaning...", I2C addresses (`text-base`) |
+| `bold` | efont 16 bold | "F: 1Khz", PWM duty, ADC volts, IR command (`text-base font-bold`) |
+| `mono` | efont 12 | Wi-Fi lines and UART bytes (`text-xs font-mono`) |
+
+The app needs three sizes in three roles, so no other size can be
+pixel-exact; "Top 5 list:" (efont 14) and "Not found" (efont 24, red) are
+the only texts at other sizes and are static, so they are PNG images
+(`img/top5_list.png`, `img/not_found.png`) drawn from the same efont data
+at the factory's positions. The three atlases take 38,064 B of flash
+(Inter took 193 KB for the six sizes before).
+
+`tools/fonts/efont/build_efont.py` regenerates the three faces and the two
+images byte for byte from `lgfx_efont_cn.c`; see
+`tools/fonts/efont/README.md`.
+
+Licence: /efont/ licence (BSD 3-clause style), (c) Copyright 2000-2003
+/efont/ The Electronic Font Open Laboratory; the text is
+`fonts/efont-COPYRIGHT.txt`, copied from M5GFX
+`src/lgfx/Fonts/efont/COPYRIGHT.txt`. The TrueType files and the two images
+are binary redistributions and carry that notice.
 
 ## Device bridge
 
