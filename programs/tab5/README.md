@@ -72,14 +72,15 @@ device run happened.
   timelines or `animate()`.
 - **Picture loading**: MicroTS's generated `load_images` would embed each
   image's 1x file as RGBA8888 and ignore the `@2x` variants and
-  `images.json`. `aot/build.rs` replaces it: it reads the image names the
-  generated `include.rs` registers, decodes each `@2x` PNG of
-  `apps/tab5-factory` and embeds it in the format `images.json` names (the
-  background tiles and I2C charts as RGB565, the rest RGBA8888);
-  `aot/src/lib.rs` uploads them with `Core::upload_texture` and
-  `Ui::register_image` under the same names. Both modes therefore draw the
-  same full-resolution pictures. The 22 textures take 3,469,312 bytes of
-  flash and the same in the heap after mount.
+  `images.json`. `aot/build.rs` calls `m5_pocket_aot_build::emit_images`
+  with `apps/tab5-factory` and density 2: it reads the image names the
+  generated `include.rs` registers, decodes each `@2x` PNG and embeds it in
+  the format `images.json` names (the background tiles and I2C charts as
+  RGB565, the rest RGBA8888); `aot/src/lib.rs` uploads them under the same
+  names with `load_images_at_density(.., ImageStorage::Heap)`
+  (docs/APP-HOST.md, "Images"). Both modes therefore draw the same
+  full-resolution pictures. The 22 textures take 3,469,312 bytes of flash
+  and the same in the heap after mount.
 - **Bridge delivery**: JS mode calls the `device.ts` host functions from
   `main.tsx`; AOT mode writes the fields directly. The board publishes
   `hostAttached` so that the AOT model also stops simulating.

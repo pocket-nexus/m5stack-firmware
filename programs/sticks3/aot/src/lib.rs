@@ -15,6 +15,7 @@ mod profile {
 }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
 include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
+include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 
@@ -31,7 +32,9 @@ impl DeviceApp for StickS3 {
             return Err(RuntimeError::InvalidConfiguration);
         }
         load_fonts_in_place(&mut ui);
-        load_images(&mut ui);
+        // RGB565 as images.json declares, not the generated RGBA8888
+        // load_images: half the heap.
+        load_images_at_density(&mut ui, m5_pocket_aot::ImageStorage::Heap);
         let mut app = Box::new(App::new(
             M5Host(ui),
             generated::AppProps {},
