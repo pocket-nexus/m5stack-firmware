@@ -1,6 +1,7 @@
 import { Match, Show, Switch } from "solid-js";
 import { Text, View } from "@pocketjs/framework/solid/components";
 import { idiv, type i32 } from "@pocketjs/framework/solid/std";
+import GlyphsLarge0 from "./GlyphsLarge0.tsx";
 import MenuItem from "./MenuItem.tsx";
 import OkButton from "./OkButton.tsx";
 import Roller from "./RollerView.tsx";
@@ -12,6 +13,10 @@ export default function Setup(props: {
   screen: i32;
   scroll: i32;
   level: i32;
+  levelIds: i32[];
+  levelXs: i32[];
+  sadIds: i32[];
+  sadXs: i32[];
   summary: string;
   dateStage: i32;
   sfx: boolean;
@@ -52,8 +57,8 @@ export default function Setup(props: {
           </View>
         </Match>
         <Match when={props.screen === 1 || props.screen === 2}>
-          <View class="absolute left-0 top-[54] w-[466] h-[110] items-center justify-center">
-            <Text class="text-5xl text-white">{`${props.level}`}</Text>
+          <View class="absolute left-0 top-[54] w-[466] h-[98]">
+            <GlyphsLarge0 ids={props.levelIds} base={0} xs={props.levelXs} />
           </View>
           <View class="absolute left-[46] top-[213] w-[374] h-[24] rounded-[12] bg-[#343434]">
             <View class="absolute left-0 top-0 h-[24] rounded-[12] bg-[#4AD78C]" style={{ width: props.screen === 1 ? idiv((props.level - 10) * 374, 90) : idiv(props.level * 374, 100) }} />
@@ -111,8 +116,8 @@ export default function Setup(props: {
         </Match>
         <Match when={props.screen === 7}>
           <View class="absolute left-0 top-0 w-[466] h-[466] bg-[#0078D7]">
-            <View class="absolute left-[80] top-[80] w-[110] h-[110] items-center justify-center">
-              <Text class="text-5xl text-white">:(</Text>
+            <View class="absolute left-0 top-[80] w-[466] h-[98]">
+              <GlyphsLarge0 ids={props.sadIds} base={0} xs={props.sadXs} />
             </View>
             <Text class="absolute left-[82] top-[216] w-[340] h-[60] text-sm text-white">
               {"Your StopWatch ran into a problem and\nneeds to restart. We're just collecting some\nerror info, and then we'll restart for you."}
