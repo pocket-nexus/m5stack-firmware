@@ -101,8 +101,9 @@ advances its own clock from the frame count and takes key clicks from
   JPEG (scaled by 1/2, 1/4 or 1/8 when larger than 466 px) onto the smallest
   power-of-two RGB565 canvas that holds it and registers it under
   `images/badge_slot.png` with `m5_pocket_app_set_texture` in both modes
-  (`main.tsx` also binds the published handle in JS mode). The view hides the image
-  for one frame when the handle changes so the node binds the new texture.
+  (in JS mode `connectDevice` binds it). The view hides the image for one
+  frame when the published handle changes so the node binds the new
+  texture.
 
 ## Fonts
 
