@@ -121,6 +121,10 @@ the only texts at other sizes and are static, so they are PNG images
 at the factory's positions. The three atlases take 38,064 B of flash
 (Inter took 193 KB for the six sizes before).
 
+`tools/fonts/efont/build_efont.py` regenerates the three faces and the two
+images byte for byte from `lgfx_efont_cn.c`; see
+`tools/fonts/efont/README.md`.
+
 Licence: /efont/ licence (BSD 3-clause style), (c) Copyright 2000-2003
 /efont/ The Electronic Font Open Laboratory; the text is
 `fonts/efont-COPYRIGHT.txt`, copied from M5GFX
