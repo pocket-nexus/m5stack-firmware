@@ -68,8 +68,8 @@ ESP-IDF v6.1-dev-8142-g188e3e55bb2, esp32s3, AOT mode:
 
 | Item | Bytes |
 | --- | --- |
-| `m5_atoms3.bin` | 2,228,288 (factory partition 7,340,032: 5,111,744 free) |
-| Flash code / data | 1,150,316 / 977,472 (data includes 18 × 32 KiB RGB565 artwork and the font atlases) |
+| `m5_atoms3.bin` | 2,089,744 (factory partition 7,340,032: 5,250,288 free) |
+| Flash data | 838,640 (includes 18 × 32 KiB RGB565 artwork, two text images and three efont atlases, 38,064 B) |
 | Static internal RAM (DIRAM) | 105,797 used of 341,760 (`.data` 21,694, `.bss` 21,840, IRAM-in-DIRAM text 62,263) |
 
 ## Memory budget
@@ -93,6 +93,7 @@ menu → Wi-Fi → menu → IMU. Harness: `.pocket-build/validation/atoms3-memor
 | Mode | Free before start | While running | Minimum | Result |
 | --- | --- | --- | --- | --- |
 | AOT (32 KiB task stack) | 389,136 | 183,436–188,184 | 168,108 | 402 frames, 0 errors, longest frame 27,052 µs, 5,320 B of the stack never used |
+| AOT with the efont faces | 389,136 | 185,616 | 170,256 | 401 frames, 0 errors, longest frame 34,361 µs |
 | JS (bundle 985,544 B: 786,912 B assets in flash, about 195 KB QuickJS bytecode) | 387,248 | — | 220 | boot fails: QuickJS `InternalError` (out of memory) before the first frame |
 
 So the AOT application, runtime, layout and one decoded artwork take at most
