@@ -42,6 +42,7 @@ Each program README gives its AOT build command and the board facts.
 
 - [Repository structure](docs/STRUCTURE.md)
 - [Application host](docs/APP-HOST.md): JS/AOT modes, device bridge, C API
+- [Fonts](docs/FONTS.md): per-app faces, slot sizes, atlas budgets
 - [Engineering conventions](AGENTS.md): commits, formatting, dependencies
 
 ## PocketJS version
