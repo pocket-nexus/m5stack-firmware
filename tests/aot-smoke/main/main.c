@@ -81,6 +81,9 @@ void app_main(void) {
   config.display.custom_buffer_bytes = display.capacity * 2;
 #if CONFIG_IDF_TARGET_ESP32P4
   config.display.ppa = true;
+  /* Two PPA lanes; 2 rows of 480 bytes keep each half 64-byte aligned. */
+  config.display.ppa_lanes = 2;
+  config.display.ppa_row_alignment = 2;
 #endif
   config.input.context = &state;
   config.input.buttons = buttons;

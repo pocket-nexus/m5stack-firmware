@@ -16,7 +16,10 @@ pointer state. Pressing the counter and tapping the view queue the requests
 lands on the view at frames 50–53, the bridge receives numbers, text and an
 array every frame and the event `alarm` at frame 40. It then stops the app and
 logs `PASS`/`FAIL` with the frame statistics, the request count and the
-internal heap. On ESP32-P4 the PPA renderer is registered.
+internal heap. On ESP32-P4 two PPA lanes are registered
+(`display.ppa_lanes = 2`, split on 2-row multiples).
+
+`aot/` is the per-app AOT crate, the template for `programs/<board>/aot/`.
 
 ## Build
 
@@ -27,23 +30,58 @@ cd tests/aot-smoke
 # JS mode (default)
 idf.py -B build-js-s3 -DSDKCONFIG=build-js-s3/sdkconfig set-target esp32s3 build
 idf.py -B build-js-p4 -DSDKCONFIG=build-js-p4/sdkconfig set-target esp32p4 build
+
+# AOT mode; esp32s3 without PSRAM, as on the AtomS3
+idf.py -B build-aot-s3 -DSDKCONFIG=build-aot-s3/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot;sdkconfig.nopsram" set-target esp32s3 build
+idf.py -B build-aot-p4 -DSDKCONFIG=build-aot-p4/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot" set-target esp32p4 build
 ```
 
-`sdkconfig.defaults.esp32s3` enables PSRAM for the JS build;
-`sdkconfig.aot` selects AOT mode and `sdkconfig.nopsram` disables PSRAM (the
-AtomS3 configuration). They are added through `SDKCONFIG_DEFAULTS`; AOT
-commands are listed with the AOT results.
+`sdkconfig.defaults.esp32s3` enables PSRAM; `sdkconfig.aot` selects AOT mode;
+`sdkconfig.nopsram`, added last, disables PSRAM. AOT builds need rustup with
+the `esp` toolchain (esp32s3) or the 1.98.1 toolchain with
+`riscv32imafc-unknown-none-elf` (esp32p4); the first AOT build also builds the
+MicroTS layout oracle (`bun tools/wasm.ts` in the submodule, wasm32 target).
+
+Run the AOT esp32s3 image under Espressif's QEMU
+(`idf_tools.py install qemu-xtensa`):
+
+```sh
+cd build-aot-s3
+python -m esptool --chip esp32s3 merge-bin --fill-flash-size 8MB -o flash.bin @flash_args
+qemu-system-xtensa -nographic -machine esp32s3 -drive file=flash.bin,if=mtd,format=raw \
+    -serial mon:stdio -monitor none
+```
 
 ## Results
 
-Firmware builds only. Nothing was flashed or run; no M5Stack hardware was
-connected. ESP-IDF v6.1-dev-8142 (6.2 tools), Bun 1.4.2, rustup 1.98.1 (P4
-runtime archive) and `esp` 1.97 nightly (S3 runtime archive), macOS arm64.
+ESP-IDF v6.1-dev-8142 (6.2 tools), Bun 1.4.2, rustup 1.98.1 (P4) and `esp`
+1.97 nightly (S3), macOS arm64. No M5Stack hardware was connected; nothing
+was flashed.
 
-| Mode | Target | Result | App image | DIRAM used (static) |
-| --- | --- | --- | --- | --- |
-| JS | esp32s3 (PSRAM) | builds | 1,638,880 B | 56,215 B (16.45 %) |
-| JS | esp32p4 (PSRAM) | builds | 1,795,744 B | 84,852 B (14.82 %) |
+| Mode | Target | Build | App image | Flash code + data | DIRAM static (.data + .bss) |
+| --- | --- | --- | --- | --- | --- |
+| JS | esp32s3, PSRAM | links | 1,638,864 B | 1,102,436 + 470,868 B | 20,044 B |
+| JS | esp32p4, PSRAM | links | 1,797,696 B | 1,721,614 B | 22,336 B |
+| AOT | esp32s3, no PSRAM | links, QEMU PASS | 694,576 B | 473,624 + 161,904 B | 18,860 B |
+| AOT | esp32p4, PSRAM | links | 803,568 B | 729,484 B | 21,160 B |
+
+The Rust library before the link: 5.6 MB (`xtensa-esp32s3-none-elf`) and
+12.3 MB (`riscv32imafc`, after removing 36 soft-float compiler-rt objects);
+the linker keeps what the firmware uses.
+
+QEMU run of the AOT esp32s3 image without PSRAM (`PASS mode=aot frames=121
+errors=0 requests=3`): the two CROSS presses produced `tone 880 …`, the tap
+produced `vibrate 30`, the display hashed 51 strip flushes, the longest frame
+took 12.9 ms (emulated, not a timing measurement). Internal RAM: 377,872 B
+free after the display buffers (2 × 7,680 B) were allocated, 273,928 B free
+while running, 270,744 B minimum: host, runtime, app and the 64 KiB app task
+stack took at most 107,128 B. The app task used at most 19,400 B of its stack.
+
+The JS image does not reach `app_main` under QEMU (USB-Serial-JTAG
+connection monitor, linked through VFS, waits for a BBPLL calibration QEMU
+does not emulate); QEMU has no ESP32-P4 machine.
 
 The component manager writes `dependencies.lock` for the last target and mode
 built; this test does not keep it (`.gitignore`).
