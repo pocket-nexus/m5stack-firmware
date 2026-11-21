@@ -165,7 +165,7 @@ with `~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
 `src/lib.rs` writes every board value into the `device.ts` fields
 (`device_fields!`, the counterpart of the `hostNumber`/`hostText`/
 `hostArray` switches; `uptimeMs` also sets `bridged`, the `badgeClosed`
-event counts), and uploads the badge picture through `Ui::register_image`.
+event counts, `badgeTexture` and `badgeCanvas` arrive like any field).
 `build.rs` replaces the generated `load_images`, which would embed every
 picture as RGBA8888 and copy it into the heap at mount (about 10 MB of flash
 and 10 MB of heap with the 116 big-number tiles), with
@@ -174,9 +174,10 @@ selects (RGB565, RGBA4444 or RGBA8888, as in the JS bundle) and registered
 with `upload_texture_from`, which reads flash when the texture is drawn.
 
 The badge picture is handed to PocketJS in one function,
-`badge_texture_update` in `main/services.c`: JS mode uploads it with
-`m5_pocket_app_runtime` and `pocket/textures.h`; AOT mode leaves it to the
-crate.
+`badge_texture_update` in `main/services.c`, the same in both modes:
+`m5_pocket_app_set_texture` uploads it and binds `images/badge_slot.png`
+(docs/APP-HOST.md, "Program textures"), and the published `badgeTexture`
+handle makes the view rebind it.
 
 `main` and `m5_bsp_stopwatch` call `m5_strict_warnings()` after their
 `-Wall -Wextra -Werror` (IDF relaxes `-Wextra`); both build without

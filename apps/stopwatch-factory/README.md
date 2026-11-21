@@ -99,9 +99,8 @@ advances its own clock from the frame count and takes key clicks from
 - The badge picture is a run-time texture: the board decodes the active
   JPEG (scaled by 1/2, 1/4 or 1/8 when larger than 466 px) onto the smallest
   power-of-two RGB565 canvas that holds it and registers it under
-  `images/badge_slot.png` (JS mode: `m5_pocket_app_runtime` +
-  `pocket/textures.h` and `registerTexture` in `main.tsx`; AOT mode:
-  `Ui::register_image` in the program's crate). The view hides the image
+  `images/badge_slot.png` with `m5_pocket_app_set_texture` in both modes
+  (`main.tsx` also binds the published handle in JS mode). The view hides the image
   for one frame when the handle changes so the node binds the new texture.
 
 ## FluidBox limit
