@@ -8,6 +8,7 @@
 #include <string.h>
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "pocket/render_esp_ppa.h"
+#include "pocketjs/esp32p4_ppa_lanes.h"
 #include "pocketjs/esp32p4_ppa_status.h"
 #endif
 
@@ -74,31 +75,54 @@ static esp_err_t create_renderer(m5_pocket_app *app) {
   const m5_pocket_app_image *image = app->config.image;
   if (!display->ppa)
     return ESP_OK;
-  pocketjs_esp32p4_ppa_t *device = NULL;
-  esp_err_t err = pocketjs_esp32p4_ppa_create(&device);
-  if (err != ESP_OK)
-    return err;
-  uint32_t scale =
-      image->logical_width ? image->physical_width / image->logical_width : 1;
+  const uint32_t lanes = display->ppa_lanes ? display->ppa_lanes : 1;
+  if (lanes > 2 || display->ppa_helper_core < 0 ||
+      display->ppa_helper_core >= portNUM_PROCESSORS)
+    return ESP_ERR_INVALID_ARG;
+  /* The renderer draws at the raster density: logical pixels times it. */
+  const uint32_t density = image->facts && image->facts->display
+                               ? image->facts->display->raster_density
+                               : 1;
   const pocket_ppa_config config = {
       .struct_size = sizeof(config),
-      .scale = scale ? scale : 1,
+      .scale = density ? density : 1,
       .min_fill_pixels = 1024,
       .min_blend_pixels = 256,
       .min_srm_pixels = 256,
       .mask_budget = display->ppa_mask_budget ? display->ppa_mask_budget
                                               : app->devices.display_bytes / 2,
   };
-  pocket_render_esp_ppa *renderer = pocket_render_esp_ppa_create(
-      &config, pocketjs_esp32p4_ppa_status_ops(device));
-  if (!renderer) {
-    pocketjs_esp32p4_ppa_destroy(device);
-    return ESP_ERR_NO_MEM;
+  for (uint32_t i = 0; i < lanes; i++) {
+    pocketjs_esp32p4_ppa_t *device = NULL;
+    esp_err_t err = pocketjs_esp32p4_ppa_create(&device);
+    if (err != ESP_OK)
+      return err;
+    app->ppa_devices[i] = device;
+    app->ppa_renderers[i] = pocket_render_esp_ppa_create(
+        &config, pocketjs_esp32p4_ppa_status_ops(device));
+    if (!app->ppa_renderers[i])
+      return ESP_ERR_NO_MEM;
   }
-  app->ppa_device = device;
-  app->ppa_renderer = renderer;
-  app->devices.renderer = pocket_render_esp_ppa_vtable();
-  app->devices.renderer_context = renderer;
+  if (lanes == 1) {
+    app->devices.renderer = pocket_render_esp_ppa_vtable();
+    app->devices.renderer_context = app->ppa_renderers[0];
+    return ESP_OK;
+  }
+  uint32_t row_alignment = display->ppa_row_alignment;
+  if (!row_alignment)
+    row_alignment =
+        display->kind == M5_POCKET_DISPLAY_ESP_DPI && display->dpi.row_alignment
+            ? display->dpi.row_alignment
+            : 1;
+  pocketjs_esp32p4_ppa_lanes_t *pair = NULL;
+  esp_err_t err = pocketjs_esp32p4_ppa_lanes_create(
+      app->ppa_renderers[0], app->ppa_renderers[1], display->ppa_helper_core,
+      row_alignment, &pair);
+  if (err != ESP_OK)
+    return err;
+  app->ppa_lanes = pair;
+  app->devices.renderer = pocketjs_esp32p4_ppa_lanes_vtable();
+  app->devices.renderer_context = pair;
 #else
   (void)app;
 #endif
@@ -125,10 +149,17 @@ static esp_err_t create_inputs(m5_pocket_app *app) {
 
 static void destroy_devices(m5_pocket_app *app) {
 #if CONFIG_IDF_TARGET_ESP32P4
-  if (app->ppa_renderer)
-    pocket_render_esp_ppa_destroy(app->ppa_renderer);
-  if (app->ppa_device)
-    pocketjs_esp32p4_ppa_destroy(app->ppa_device);
+  /* The lanes before their renderers, the renderers before their devices. */
+  if (app->ppa_lanes)
+    pocketjs_esp32p4_ppa_lanes_destroy(app->ppa_lanes);
+  for (int i = 0; i < 2; i++) {
+    if (app->ppa_renderers[i])
+      pocket_render_esp_ppa_destroy(app->ppa_renderers[i]);
+    if (app->ppa_devices[i])
+      pocketjs_esp32p4_ppa_destroy(app->ppa_devices[i]);
+    app->ppa_renderers[i] = app->ppa_devices[i] = NULL;
+  }
+  app->ppa_lanes = NULL;
   if (app->display_object &&
       app->config.display.kind == M5_POCKET_DISPLAY_ESP_DPI)
     pocket_display_esp_dpi_destroy(app->display_object);
@@ -136,7 +167,7 @@ static void destroy_devices(m5_pocket_app *app) {
   if (app->display_object &&
       app->config.display.kind == M5_POCKET_DISPLAY_ESP_LCD)
     pocket_display_esp_lcd_destroy(app->display_object);
-  app->ppa_renderer = app->ppa_device = app->display_object = NULL;
+  app->display_object = NULL;
 }
 
 static void update_stack(m5_pocket_app *app) {

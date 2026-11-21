@@ -163,10 +163,31 @@ the longest frame and the smallest unused stack seen.
 | `M5_POCKET_DISPLAY_CUSTOM` | Any `pocket_display_output_v1` the program owns | `display.custom`, `custom_context`, `custom_buffer_bytes` |
 
 On ESP32-P4, `display.ppa = true` registers the PPA renderer
-(`pocket_render_esp_ppa`, scale = physical ÷ logical width, mask budget
-`ppa_mask_budget` or half the display buffer bytes); otherwise the software
-rasterizer draws. `struct_size` of the embedded configs is set by the host.
-The display's buffer bytes become the runtime's `frame_buffer_budget`.
+(`pocket_render_esp_ppa`) at the profile's raster density, with a glyph mask
+budget of `ppa_mask_budget` bytes per renderer (default half the display
+buffer bytes); otherwise the software rasterizer draws.
+`display.ppa_lanes = 2` creates two PPA devices and two renderers behind
+`pocketjs_esp32p4_ppa_lanes`: every strip is split at a multiple of
+`ppa_row_alignment` raster rows (default `dpi.row_alignment` for the DPI
+display, else 1); the app task renders the upper rows and a helper task pinned
+to `ppa_helper_core` (default 1) the lower rows, at the same time. Keep each
+half of a strip a multiple of the 64-byte DMA cache line, or that half renders
+in software. `ppa_lanes` 0 or 1 is the single renderer. For Tab5 (two 48-row
+× 1280-px RGB565 strips, 640×360 logical at raster density 2 turned onto the
+720×1280 panel):
+
+```c
+config.display.kind = M5_POCKET_DISPLAY_ESP_DPI;
+config.display.dpi = (pocket_display_esp_dpi_config){ /* framebuffer, 720, 1280,
+    .width = 1280, .height = 720, .turned = true, .scale = 1,
+    .strip_rows = 48, .row_alignment = 2,
+    .frame_buffer_budget = 2 * 48 * 1280 * 2, ... */ };
+config.display.ppa = true;
+config.display.ppa_lanes = 2;
+```
+
+`struct_size` of the embedded configs is set by the host. The display's buffer
+bytes become the runtime's `frame_buffer_budget`.
 
 ### Inputs
 
@@ -344,8 +365,14 @@ display, renderer and input objects and passes their vtables to
 `pocket_drivers::abi::{CDisplay, CRenderer, CInputSource}`, registers the
 software rasterizer and an `AotGuest`, calls
 `Runtime::boot_aot_deferred(profile hash, profile viewport, false, TICK_HZ)`
-and presents the first frame. On ESP32-P4 the library also exports the
-`pocket_render_esp_ppa_*` factory the C PPA renderer component calls.
+and presents the first frame.
+
+**On ESP32-P4, AOT mode uses the same PPA renderers as JS mode**, one renderer
+or two lanes: the library exports the `pocket_render_esp_ppa_*` factory the C
+component calls (as the JS-mode runtime archive does) and registers the C
+renderer through `CRenderer`. This path is validated by firmware builds only;
+a board that sees a problem on hardware sets `display.ppa = false` for the
+software rasterizer.
 
 ### Build steps
 
@@ -516,7 +543,7 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
   app's three atlases are 76 KB). `load_images` still uploads image pixels
   to the heap.
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
-  The smoke app used at most 19,256 B of it under QEMU (see below); a larger
+  The smoke app used at most 19,400 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
   `stack_free_min`.
 
@@ -529,6 +556,10 @@ bridge and requests; it does not validate timing or a real panel.
 
 ## Validation
 
-`tests/aot-smoke` builds the host with a transfer-only display. See its
-README for commands and results. No M5Stack hardware was used: these are
-firmware builds, not device validation.
+`tests/aot-smoke` builds the host with a transfer-only display in both modes
+for esp32s3 and esp32p4; its README has the commands and results. The AOT
+esp32s3 build (no PSRAM) also ran under Espressif's QEMU and passed. The JS
+build does not reach `app_main` under QEMU: the USB-Serial-JTAG connection
+monitor, which the JS build links through VFS, waits for a BBPLL calibration
+that QEMU does not emulate. QEMU has no ESP32-P4 machine. No M5Stack hardware
+was used: none of this is device validation.
