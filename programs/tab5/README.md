@@ -45,8 +45,8 @@ before committing.
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image | 7,353,920 bytes (0x703640), 58 % of the 12 MiB `factory` partition | 6,341,136 bytes (0x60c210), 50 % |
-| Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 5,170,332 / 1,082,938 bytes |
+| Application image | 7,353,920 bytes (0x703640), 58 % of the 12 MiB `factory` partition | 6,340,128 bytes (0x60be20), 50 % |
+| Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 5,170,004 / 1,082,270 bytes |
 | Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
 | Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
 | Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; the 22 pictures are copied into the heap at mount: 3,469,312 bytes (also in flash) |
@@ -72,14 +72,15 @@ device run happened.
   timelines or `animate()`.
 - **Picture loading**: MicroTS's generated `load_images` would embed each
   image's 1x file as RGBA8888 and ignore the `@2x` variants and
-  `images.json`. `aot/build.rs` replaces it: it reads the image names the
-  generated `include.rs` registers, decodes each `@2x` PNG of
-  `apps/tab5-factory` and embeds it in the format `images.json` names (the
-  background tiles and I2C charts as RGB565, the rest RGBA8888);
-  `aot/src/lib.rs` uploads them with `Core::upload_texture` and
-  `Ui::register_image` under the same names. Both modes therefore draw the
-  same full-resolution pictures. The 22 textures take 3,469,312 bytes of
-  flash and the same in the heap after mount.
+  `images.json`. `aot/build.rs` calls `m5_pocket_aot_build::emit_images`
+  with `apps/tab5-factory` and density 2: it reads the image names the
+  generated `include.rs` registers, decodes each `@2x` PNG and embeds it in
+  the format `images.json` names (the background tiles and I2C charts as
+  RGB565, the rest RGBA8888); `aot/src/lib.rs` uploads them under the same
+  names with `load_images_at_density(.., ImageStorage::Heap)`
+  (docs/APP-HOST.md, "Images"). Both modes therefore draw the same
+  full-resolution pictures. The 22 textures take 3,469,312 bytes of flash
+  and the same in the heap after mount.
 - **Bridge delivery**: JS mode calls the `device.ts` host functions from
   `main.tsx`; AOT mode writes the fields directly. The board publishes
   `hostAttached` so that the AOT model also stops simulating.
