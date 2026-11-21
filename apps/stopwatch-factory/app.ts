@@ -2,7 +2,7 @@
 // views render; the state modules beside it hold the per-app logic in plain
 // fields, and `frame` publishes their results once per frame.
 import { createSignal } from "solid-js";
-import { cos, f32, frames, idiv, len, round, sin, type Color, type Deg, type f64, type i32 } from "@pocketjs/framework/solid/std";
+import { cos, f32, frames, idiv, len, push, round, sin, type Color, type Deg, type f64, type i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 import * as input from "./input";
 import * as launcher from "./launcher";
@@ -10,8 +10,18 @@ import * as motion from "./motion";
 import * as statusbar from "./statusbar";
 import * as stopwatch from "./stopwatch";
 import * as watch from "./watch";
+import * as alarms from "./alarms";
+import * as badge from "./badge";
+import * as fft from "./fft";
+import * as fluid from "./fluid";
+import * as imu from "./imu";
+import * as roller from "./roller";
+import * as setup from "./setup";
+import * as wheel from "./wheel";
+import type { Sector } from "./wheel";
 
 export type Page =
+  | "boot"
   | "launcher"
   | "guide"
   | "fluid"
@@ -29,6 +39,27 @@ export interface LapRow {
   title: string;
   time: string;
   y: i32;
+}
+
+export interface AlarmRow {
+  id: i32;
+  time: string;
+  enabled: boolean;
+  y: i32;
+}
+
+export interface Bar {
+  id: i32;
+  angle: Deg;
+  length: i32;
+  level: i32;
+}
+
+export interface Dot {
+  id: i32;
+  x: i32;
+  y: i32;
+  level: i32;
 }
 
 export interface Tick {
@@ -64,7 +95,7 @@ const FLOW_DATE: Color[] = ["#A0A0A0", "#525252", "#6A938F", "#948063", "#668323
 
 // --------------------------------- shell -----------------------------------
 
-export const [page, setPage] = createSignal<Page>("launcher");
+export const [page, setPage] = createSignal<Page>("boot");
 export const [bridged, setBridged] = createSignal<boolean>(false);
 export const [clockText, setClockText] = createSignal<string>("OO:OO");
 export const [clock0, setClock0] = createSignal<string>("O");
@@ -120,6 +151,62 @@ export const [swLapScroll, setSwLapScroll] = createSignal<i32>(0);
 export const [swLeftOffset, setSwLeftOffset] = createSignal<i32>(0);
 export const [swRightOffset, setSwRightOffset] = createSignal<i32>(0);
 
+// Rollers (three slots, five visible rows each).
+export const [rollerRows, setRollerRows] = createSignal<string[]>(["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
+export const [rollerShift, setRollerShift] = createSignal<i32[]>([0, 0, 0]);
+
+// Alarm clock.
+export const [alarmScreen, setAlarmScreen] = createSignal<i32>(0);
+export const [alarmRows, setAlarmRows] = createSignal<AlarmRow[]>([]);
+export const [alarmScroll, setAlarmScroll] = createSignal<i32>(0);
+export const [alarmAddY, setAlarmAddY] = createSignal<i32>(88);
+export const [alarmDialog, setAlarmDialog] = createSignal<boolean>(false);
+export const [ringing, setRinging] = createSignal<boolean>(false);
+export const [ringTime, setRingTime] = createSignal<string>("00:00");
+
+// Settings.
+export const [setupScreen, setSetupScreen] = createSignal<i32>(0);
+export const [setupScroll, setSetupScroll] = createSignal<i32>(0);
+export const [setupLevel, setSetupLevel] = createSignal<i32>(80);
+export const [setupSummary, setSetupSummary] = createSignal<string>("");
+export const [setupDateStage, setSetupDateStage] = createSignal<i32>(0);
+export const [sfxOn, setSfxOn] = createSignal<boolean>(true);
+export const [vibrateOn, setVibrateOn] = createSignal<boolean>(true);
+export const [wifiStatus, setWifiStatus] = createSignal<string>("Off");
+export const [aboutProgress, setAboutProgress] = createSignal<string>("0% Complete");
+
+// Lucky wheel.
+export const [wheelScreen, setWheelScreen] = createSignal<i32>(0);
+export const [wheelRight, setWheelRight] = createSignal<Sector[]>([]);
+export const [wheelLeft, setWheelLeft] = createSignal<Sector[]>([]);
+export const [wheelLabels, setWheelLabels] = createSignal<Sector[]>([]);
+export const [wheelPointer, setWheelPointer] = createSignal<Deg>(0.0);
+
+// IMU.
+export const [imuBallX, setImuBallX] = createSignal<i32>(0);
+export const [imuBallY, setImuBallY] = createSignal<i32>(0);
+export const [imuBallSize, setImuBallSize] = createSignal<i32>(80);
+export const [imuOrbitX, setImuOrbitX] = createSignal<i32>(0);
+export const [imuOrbitY, setImuOrbitY] = createSignal<i32>(-214);
+export const [imuLabels, setImuLabels] = createSignal<boolean>(true);
+export const [imuTextX, setImuTextX] = createSignal<string>("X: 0.0");
+export const [imuTextY, setImuTextY] = createSignal<string>("Y: 0.0");
+export const [imuTextZ, setImuTextZ] = createSignal<string>("Z: 0.0");
+
+// Audio FFT.
+export const [fftBars, setFftBars] = createSignal<Bar[]>([]);
+export const [fftScale, setFftScale] = createSignal<f32>(1.0);
+export const [fftLabels, setFftLabels] = createSignal<boolean>(true);
+export const [fftHz, setFftHz] = createSignal<string>("0.0");
+
+// Badge.
+export const [badgeDialog, setBadgeDialog] = createSignal<boolean>(false);
+export const [badgeEditing, setBadgeEditing] = createSignal<boolean>(false);
+export const [badgeMessage, setBadgeMessage] = createSignal<string>("");
+
+// FluidBox.
+export const [fluidDots, setFluidDots] = createSignal<Dot[]>([]);
+
 // ------------------------------ shell state --------------------------------
 
 let firstLauncherOpen: boolean = true;
@@ -164,11 +251,32 @@ function openPage(next: Page): void {
   if (page() === "launcher") {
     statusbar.destroy();
   }
+  roller.disableAll();
   if (next === "launcher") {
     openLauncher();
   } else if (next === "watch") {
     watch.open();
     publishWatch();
+  } else if (next === "alarm") {
+    alarms.open();
+    publishAlarms();
+  } else if (next === "setup") {
+    setup.open();
+    publishSetup();
+  } else if (next === "wheel") {
+    wheel.open();
+    publishWheel();
+  } else if (next === "imu") {
+    imu.open();
+    publishImu();
+  } else if (next === "fft") {
+    fft.open();
+  } else if (next === "badge") {
+    badge.open();
+    publishBadge();
+  } else if (next === "fluid") {
+    fluid.open();
+    publishFluid();
   } else if (next === "stopwatch") {
     lapScroll = 0;
     motion.springConfigure(motion.SPRING_STOPWATCH_LEFT, 0.3, 0.5);
@@ -233,7 +341,7 @@ function launcherFrame(): void {
   statusbar.update();
   const offsets: i32[] = [];
   for (let i = 0; i < launcher.APP_COUNT; i++) {
-    offsets[i] = launcher.iconOffset(i);
+    push(offsets, launcher.iconOffset(i));
   }
   setIconOffsets(offsets);
   const index = launcher.currentIndex();
@@ -262,13 +370,13 @@ function buildTicks(): void {
     const length: f32 = hourTick ? 28.0 : 14.0;
     const middle: f32 = 224.0 - length / 2.0;
     const radians: f32 = (f32(i * 6) - 90.0) * 0.017453292;
-    list[i] = {
+    push(list, {
       id: i,
       x: round(middle * cos(radians)),
       y: round(middle * sin(radians)),
       angle: f32(i * 6 - 90) as Deg,
       hour: hourTick,
-    };
+    });
   }
   setTicks(list);
 }
@@ -335,12 +443,12 @@ function publishStopwatch(): void {
   if (len(swLaps()) !== count) {
     const rows: LapRow[] = [];
     for (let i = 0; i < count; i++) {
-      rows[i] = {
+      push(rows, {
         id: i,
         title: `LAP ${i + 1}`,
         time: stopwatch.format(stopwatch.laps[i]),
         y: (count - 1 - i) * 48,
-      };
+      });
     }
     setSwLaps(rows);
   }
@@ -387,6 +495,241 @@ function stopwatchFrame(): void {
   publishStopwatch();
 }
 
+
+// Rollers -------------------------------------------------------------------
+
+/** Row label of `value` for roller kind: 0 "07", 1 "2026", 2 "07" (1-based), 3 "7" (2-based). */
+function rollerLabel(kind: i32, value: i32): string {
+  if (value < 0) {
+    return "";
+  }
+  if (kind === 1) {
+    return `${2000 + value}`;
+  }
+  if (kind === 2) {
+    return two(value + 1);
+  }
+  if (kind === 3) {
+    return `${value + 2}`;
+  }
+  return two(value);
+}
+
+function publishRollers(k0: i32, k1: i32, k2: i32): void {
+  const rows: string[] = [];
+  const kinds: i32[] = [k0, k1, k2];
+  for (let slot = 0; slot < 3; slot++) {
+    for (let k = -2; k <= 2; k++) {
+      push(rows, rollerLabel(kinds[slot], roller.rowAt(slot, k)));
+    }
+  }
+  setRollerRows(rows);
+  setRollerShift([roller.shift(0), roller.shift(1), roller.shift(2)]);
+}
+
+// Alarm clock --------------------------------------------------------------
+
+function publishAlarms(): void {
+  setAlarmScreen(alarms.screen);
+  const rows: AlarmRow[] = [];
+  for (let i = 0; i < alarms.count(); i++) {
+    push(rows, {
+      id: i,
+      time: `${two(device.alarmHours[i])}:${two(device.alarmMinutes[i])}`,
+      enabled: device.alarmEnabled[i],
+      y: alarms.rowTop(i),
+    });
+  }
+  setAlarmRows(rows);
+  setAlarmScroll(alarms.scroll);
+  setAlarmAddY(alarms.rowTop(alarms.count()));
+  setAlarmDialog(alarms.deleteRow >= 0);
+  if (alarms.screen === alarms.ADD) {
+    publishRollers(0, 0, 0);
+  }
+}
+
+export function alarmToggle(index: i32): void {
+  alarms.toggle(index);
+  publishAlarms();
+}
+
+export function alarmAdd(): void {
+  alarms.openAdd();
+  publishAlarms();
+}
+
+export function alarmConfirmAdd(): void {
+  alarms.confirmAdd();
+  publishAlarms();
+}
+
+export function alarmDelete(): void {
+  alarms.confirmDelete();
+  publishAlarms();
+}
+
+export function alarmCancel(): void {
+  alarms.cancelDelete();
+  publishAlarms();
+}
+
+export function alarmDismiss(): void {
+  alarms.dismiss();
+  setRinging(false);
+}
+
+function publishRinging(): void {
+  setRinging(alarms.ringing >= 0);
+  setRingTime(`${two(alarms.ringHour)}:${two(alarms.ringMinute)}`);
+}
+
+// Settings -----------------------------------------------------------------
+
+function publishSetup(): void {
+  setSetupScreen(setup.screen);
+  setSetupScroll(setup.scroll);
+  setSetupLevel(setup.level);
+  setSetupDateStage(setup.dateStage);
+  setSfxOn(device.buttonSfx);
+  setVibrateOn(device.buttonVibrate);
+  setWifiOn(device.wifiEnabled);
+  setWifiStatus(setup.wifiStatus());
+  setAboutProgress(`${setup.progress}% Complete`);
+  if (setup.screen === setup.TIME) {
+    setSetupSummary(setup.summary());
+    publishRollers(0, 0, 0);
+  } else if (setup.screen === setup.DATE) {
+    setSetupSummary(setup.summary());
+    publishRollers(1, 2, 2);
+  }
+}
+
+export function setupOpen(item: i32): void {
+  setup.openItem(item);
+  publishSetup();
+}
+
+export function setupVersion(): void {
+  setup.tapVersion();
+  publishSetup();
+}
+
+export function setupConfirm(): void {
+  setup.confirm();
+  publishSetup();
+}
+
+export function setupToggleSfx(): void {
+  setup.toggleSfx();
+  publishSetup();
+}
+
+export function setupToggleVibrate(): void {
+  setup.toggleVibrate();
+  publishSetup();
+}
+
+export function setupToggleWifi(): void {
+  setup.toggleWifi();
+  publishSetup();
+}
+
+// Lucky wheel --------------------------------------------------------------
+
+function publishWheel(): void {
+  setWheelScreen(wheel.screen);
+  setWheelPointer(f32(wheel.pointerAngle()) as Deg);
+  if (wheel.screen === wheel.SELECT) {
+    publishRollers(3, 0, 0);
+  }
+}
+
+export function wheelConfirm(): void {
+  wheel.confirm();
+  setWheelRight(wheel.rightHalf);
+  setWheelLeft(wheel.leftHalf);
+  setWheelLabels(wheel.labels);
+  publishWheel();
+}
+
+export function wheelTap(): void {
+  wheel.spin(0);
+}
+
+// IMU ------------------------------------------------------------------------
+
+function publishImu(): void {
+  const size = round(imu.ballSize);
+  setImuBallSize(size);
+  setImuBallX(233 + round(imu.ballX) - idiv(size, 2));
+  setImuBallY(233 + round(imu.ballY) - idiv(size, 2));
+  setImuOrbitX(imu.orbitX());
+  setImuOrbitY(imu.orbitY());
+  setImuLabels(imu.labels);
+  setImuTextX(imu.label("X", device.accelX));
+  setImuTextY(imu.label("Y", device.accelY));
+  setImuTextZ(imu.label("Z", device.accelZ));
+}
+
+export function imuTap(): void {
+  imu.tap();
+  publishImu();
+}
+
+// Audio FFT --------------------------------------------------------------------
+
+function publishFft(): void {
+  const bars: Bar[] = [];
+  for (let i = 0; i < 20; i++) {
+    const radius = fft.bars[i];
+    const angle = f32(i * 9 + 90) + 4.5;
+    push(bars, { id: i, angle: angle as Deg, length: round(radius), level: fft.level(radius) });
+  }
+  for (let i = 0; i < 20; i++) {
+    const radius = fft.bars[i];
+    const angle = f32(i * 9 + 90) + 4.5;
+    push(bars, { id: i + 20, angle: (180.0 - angle) as Deg, length: round(radius), level: fft.level(radius) });
+  }
+  setFftBars(bars);
+  setFftScale(f32(fft.discScale));
+  setFftLabels(fft.labels);
+  setFftHz(`${round(device.peakHz)}`);
+}
+
+export function fftTap(): void {
+  fft.tap();
+  setFftLabels(fft.labels);
+}
+
+// Badge ------------------------------------------------------------------------
+
+function publishBadge(): void {
+  setBadgeDialog(badge.dialog);
+  setBadgeEditing(badge.editing);
+  setBadgeMessage(badge.message());
+}
+
+export function badgeEdit(): void {
+  badge.startEdit();
+  publishBadge();
+}
+
+export function badgeCancel(): void {
+  badge.cancel();
+  publishBadge();
+}
+
+// FluidBox -----------------------------------------------------------------------
+
+function publishFluid(): void {
+  const dots: Dot[] = [];
+  for (let i = 0; i < fluid.COUNT; i++) {
+    push(dots, { id: i, x: round(fluid.px[i]) - 11, y: round(fluid.py[i]) - 11, level: fluid.speedLevel(i) });
+  }
+  setFluidDots(dots);
+}
+
 // --------------------------------- frame -----------------------------------
 
 /** Key fallback while no bridge reports raw keys: ActionHandler clicks. */
@@ -415,8 +758,16 @@ function frame(): void {
   lastFrameMs = device.uptimeMs;
   input.updateKeys();
   input.updatePointer();
-  motion.springStepAll(dt > 100.0 ? 0.1 : dt / 1000.0);
+  const seconds = dt > 100.0 ? 0.1 : dt / 1000.0;
+  motion.springStepAll(seconds);
   updateClock(false);
+  if (alarms.ringing >= 0) {
+    // The trigger screen blocks the app underneath until OK.
+    alarms.check();
+    publishRinging();
+    publishStatus();
+    return;
+  }
   const current = page();
   if (current === "launcher") {
     launcherFrame();
@@ -426,8 +777,52 @@ function frame(): void {
     watchFrame();
   } else if (current === "stopwatch") {
     stopwatchFrame();
-  } else if (input.keyEvent === input.KEY_HOME) {
-    openPage("launcher");
+  } else if (current === "alarm") {
+    if (alarms.update()) {
+      openPage("launcher");
+    } else {
+      publishAlarms();
+    }
+  } else if (current === "setup") {
+    if (setup.update()) {
+      openPage("launcher");
+    } else {
+      publishSetup();
+    }
+  } else if (current === "wheel") {
+    if (wheel.update()) {
+      openPage("launcher");
+    } else {
+      publishWheel();
+    }
+  } else if (current === "imu") {
+    if (imu.update(seconds)) {
+      openPage("launcher");
+    } else {
+      publishImu();
+    }
+  } else if (current === "fft") {
+    if (fft.update()) {
+      openPage("launcher");
+    } else {
+      publishFft();
+    }
+  } else if (current === "badge") {
+    if (badge.update()) {
+      openPage("launcher");
+    } else {
+      publishBadge();
+    }
+  } else if (current === "fluid") {
+    if (fluid.update(seconds)) {
+      openPage("launcher");
+    } else {
+      publishFluid();
+    }
+  }
+  if (current !== "boot") {
+    alarms.check();
+    publishRinging();
   }
   publishStatus();
 }
@@ -435,17 +830,41 @@ function frame(): void {
 export async function run(): Promise<void> {
   buildTicks();
   updateClock(true);
-  if (device.guideLaunchCount < 5) {
-    device.countGuide();
-    device.playBootSfx();
-    setPage("guide");
-    firstLauncherOpen = true;
-  } else {
-    device.playBootSfx();
-    openLauncher();
-  }
   for (let step: i32 = 0; step < 2147483647; step++) {
     await frames(1);
+    if (step === 1) {
+      // The board publishes its settings before the first frame; decide on
+      // the home-gesture guide once they arrived (factory: first 5 boots).
+      updateClock(true);
+      device.playBootSfx();
+      if (device.guideLaunchCount < 5) {
+        device.countGuide();
+        setPage("guide");
+      } else {
+        openPage("launcher");
+      }
+    }
     frame();
   }
+}
+
+// Host entry points for the JS-mode bridge (docs/APP-HOST.md).
+export function hostNumber(name: string, value: f64): void {
+  device.hostNumber(name, value);
+}
+
+export function hostText(name: string, value: string): void {
+  device.hostText(name, value);
+}
+
+export function hostArray(name: string, values: f32[]): void {
+  device.hostArray(name, values);
+}
+
+export function hostEvent(name: string, value: f64): void {
+  device.hostEvent(name, value);
+}
+
+export function takeRequests(): string[] {
+  return device.takeRequests();
 }
