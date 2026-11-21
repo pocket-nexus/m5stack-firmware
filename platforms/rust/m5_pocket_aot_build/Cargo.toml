@@ -13,3 +13,5 @@ bench = false
 
 [dependencies]
 pocket-profile-build = { path = "../../../third_party/pocketjs/engine/profile-build" }
+# Decodes the application pictures for emit_images.
+png = "0.17.16"
