@@ -43,6 +43,16 @@ uint32_t m5_pocket_aot_cadence_hz(const m5_pocket_aot *app);
  * Returns a POCKET_STATUS_* code. */
 int32_t m5_pocket_aot_tick(m5_pocket_aot *app);
 void m5_pocket_aot_destroy(m5_pocket_aot *app);
+/* m5_pocket_app_set_texture, between frames on the app task: upload
+ * width x height texels of format `psm` into the app's Ui (a handle or -1),
+ * free a handle, and register `name` (name_length bytes of UTF-8) for a
+ * handle (-1 unbinds), returning a POCKET_STATUS_* code. */
+int32_t m5_pocket_aot_upload_texture(m5_pocket_aot *app, const void *pixels,
+                                     size_t length, uint32_t width,
+                                     uint32_t height, uint32_t psm);
+void m5_pocket_aot_free_texture(m5_pocket_aot *app, int32_t handle);
+int32_t m5_pocket_aot_register_image(m5_pocket_aot *app, const char *name,
+                                     size_t name_length, int32_t handle);
 
 #ifdef __cplusplus
 }

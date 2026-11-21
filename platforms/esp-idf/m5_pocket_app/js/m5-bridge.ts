@@ -4,11 +4,15 @@
 //
 // The C host installs `globalThis.m5` after boot (src/app_js.c). Every frame,
 // before the app's own frame handlers, this callback
+//   0. binds the image names m5_pocket_app_set_texture uploaded pictures for
+//      (registerTexture), so a view that remounts on the next value draws
+//      them;
 //   1. delivers each board value changed since the previous frame to the root
 //      model's hostNumber / hostText / hostArray, then queued board events to
 //      hostEvent;
 //   2. takes the request strings device.ts queued and passes each to the
 //      program's request handler.
+import { registerTexture } from "@pocketjs/framework";
 import { onFrame } from "@pocketjs/framework/solid/lifecycle";
 
 /** The realm namespace the C host installs. */
@@ -20,6 +24,7 @@ export interface M5Namespace {
     event: (name: string, value: number) => void,
   ): number;
   request(text: string): boolean;
+  textures(bind: (name: string, handle: number) => void): number;
   readonly mode: "js";
 }
 
@@ -42,6 +47,7 @@ export function connectDevice(host: DeviceHost): void {
   onFrame(() => {
     const bridge = globalThis.m5;
     if (!bridge) return;
+    bridge.textures(registerTexture);
     bridge.sync(host.hostNumber, host.hostText, host.hostArray, host.hostEvent);
     for (const request of host.takeRequests()) bridge.request(request);
   });

@@ -9,6 +9,10 @@
  *   m5.request(text)
  *       Passes one request string to the program's request handler. Returns
  *       true when a handler received it.
+ *   m5.textures(bind)
+ *       Calls bind(name, handle) for every image name
+ *       m5_pocket_app_set_texture bound or unbound (-1) since the previous
+ *       call; js/m5-bridge.ts passes registerTexture. Returns the call count.
  *   m5.mode
  *       "js".
  *
@@ -17,6 +21,7 @@
 #include "esp_log.h"
 #include "pocket/guest_idf.h"
 #include "pocket/package_source.h"
+#include "pocket/textures.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,7 +31,15 @@ typedef struct {
   pocket_runtime *runtime;
   pocket_guest_idf *guest;
   pocket_memory_package package;
+  /* Name bindings m5.textures has not delivered yet. */
+  struct {
+    char *name;
+    int32_t handle;
+  } bindings[M5_POCKET_APP_TEXTURES_MAX];
 } js_backend;
+
+/* The booted backend, for the m5 namespace (one app runs at a time). */
+static js_backend *active;
 
 static JSValue call_value(JSContext *ctx, JSValueConst callback,
                           const m5_pocket_value *value) {
@@ -106,6 +119,31 @@ static JSValue m5_request(JSContext *ctx, JSValueConst this_value, int argc,
   return JS_NewBool(ctx, err == ESP_OK);
 }
 
+static JSValue m5_textures(JSContext *ctx, JSValueConst this_value, int argc,
+                           JSValueConst *argv) {
+  (void)this_value;
+  if (argc < 1 || !JS_IsFunction(ctx, argv[0]))
+    return JS_ThrowTypeError(ctx, "m5.textures expects a function");
+  int32_t calls = 0;
+  for (int i = 0; active && i < M5_POCKET_APP_TEXTURES_MAX; i++) {
+    if (!active->bindings[i].name)
+      continue;
+    JSValue args[2] = {JS_NewString(ctx, active->bindings[i].name),
+                       JS_NewInt32(ctx, active->bindings[i].handle)};
+    free(active->bindings[i].name);
+    active->bindings[i].name = NULL;
+    JSValue result = JS_IsException(args[0])
+                         ? JS_EXCEPTION
+                         : JS_Call(ctx, argv[0], JS_UNDEFINED, 2, args);
+    JS_FreeValue(ctx, args[0]);
+    if (JS_IsException(result))
+      return result;
+    JS_FreeValue(ctx, result);
+    calls++;
+  }
+  return JS_NewInt32(ctx, calls);
+}
+
 static esp_err_t install_namespace(JSContext *ctx) {
   JSValue m5 = JS_NewObject(ctx);
   if (JS_IsException(m5))
@@ -115,6 +153,8 @@ static esp_err_t install_namespace(JSContext *ctx) {
                         JS_NewCFunction(ctx, m5_sync, "sync", 4)) < 0 ||
       JS_SetPropertyStr(ctx, m5, "request",
                         JS_NewCFunction(ctx, m5_request, "request", 1)) < 0 ||
+      JS_SetPropertyStr(ctx, m5, "textures",
+                        JS_NewCFunction(ctx, m5_textures, "textures", 1)) < 0 ||
       JS_SetPropertyStr(ctx, m5, "mode", JS_NewString(ctx, "js")) < 0;
   if (failed) {
     JS_FreeValue(ctx, m5);
@@ -206,6 +246,7 @@ esp_err_t m5_pocket_backend_boot(m5_pocket_app *app) {
   err = install_namespace(pocket_guest_idf_context(js->guest));
   if (err != ESP_OK)
     return err;
+  active = js;
   pocket_runtime_timing timing = {.struct_size = sizeof(timing)};
   if (pocket_runtime_get_timing(js->runtime, &timing) != POCKET_STATUS_OK)
     return ESP_FAIL;
@@ -234,6 +275,47 @@ void m5_pocket_backend_destroy(m5_pocket_app *app) {
     pocket_runtime_destroy(js->runtime);
   if (js->guest)
     pocket_guest_idf_destroy(js->guest);
+  for (int i = 0; i < M5_POCKET_APP_TEXTURES_MAX; i++)
+    free(js->bindings[i].name);
+  if (active == js)
+    active = NULL;
   free(js);
   app->backend = NULL;
+}
+
+int32_t m5_pocket_backend_upload_texture(m5_pocket_app *app,
+                                         const uint16_t *pixels, uint32_t width,
+                                         uint32_t height) {
+  js_backend *js = app->backend;
+  return pocket_texture_upload(js->runtime, pixels,
+                               (size_t)width * height * sizeof(uint16_t), width,
+                               height, 0 /* PSM_5650 */);
+}
+
+void m5_pocket_backend_free_texture(m5_pocket_app *app, int32_t handle) {
+  js_backend *js = app->backend;
+  pocket_texture_free(js->runtime, handle);
+}
+
+esp_err_t m5_pocket_backend_bind_texture(m5_pocket_app *app, const char *name,
+                                         int32_t handle) {
+  js_backend *js = app->backend;
+  int slot = -1;
+  for (int i = 0; i < M5_POCKET_APP_TEXTURES_MAX; i++) {
+    if (js->bindings[i].name && strcmp(js->bindings[i].name, name) == 0) {
+      slot = i; /* a newer binding replaces an undelivered one */
+      break;
+    }
+    if (!js->bindings[i].name && slot < 0)
+      slot = i;
+  }
+  if (slot < 0)
+    return ESP_ERR_NO_MEM;
+  if (!js->bindings[slot].name) {
+    js->bindings[slot].name = strdup(name);
+    if (!js->bindings[slot].name)
+      return ESP_ERR_NO_MEM;
+  }
+  js->bindings[slot].handle = handle;
+  return ESP_OK;
 }

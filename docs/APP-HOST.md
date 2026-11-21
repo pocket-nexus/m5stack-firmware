@@ -174,10 +174,31 @@ runtime tick, the request handler for each request, and `after_frame`.
 adapter and the host's input source; panel, IO and touch handles stay the
 program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
 the longest frame and the smallest unused stack seen.
-In JS mode `m5_pocket_app_runtime(app)` returns the running `pocket_runtime`
-for runtime operations from the app task's hooks, for example uploading a
-texture with `pocket/textures.h` and publishing its handle through the bridge;
-it returns NULL in AOT mode, where the application crate owns the `Ui`.
+
+### Program textures
+
+`m5_pocket_app_set_texture(app, name, rgb565, width, height, stride_bytes, &handle)`
+uploads a picture the program produced (a decoded photo, a camera frame) and
+binds it to an image name the views draw (`<Image src={name}>`), in both
+modes. Pixels are PSM_5650 (red in the low five bits, as the JS pak stores
+RGB565), `width` and `height` powers of two, rows `stride_bytes` apart; the
+host repacks a padded stride. Calling it again for the name frees the
+previous texture; NULL pixels free it and unbind the name. Call it from the
+app task hooks (`before_frame`, `on_request`, `after_frame`); at most
+`M5_POCKET_APP_TEXTURES_MAX` (8) names are bound at once.
+
+| Mode | Upload | Name binding |
+| --- | --- | --- |
+| JS | `pocket/textures.h` (`uploadTexture` op) into the guest's core | `m5.textures(registerTexture)` at the start of the next frame (`connectDevice`) |
+| AOT | `m5_pocket_aot_upload_texture` into the compiled app's `Ui` | `Ui::register_image`, immediately |
+
+An image node resolves its name when it is created or re-bound, so publish a
+`device.ts` value with the change (the returned handle, for example) that
+remounts the view; the StopWatch badge publishes `badgeTexture`.
+
+In JS mode `m5_pocket_app_runtime(app)` still returns the running
+`pocket_runtime` for other runtime operations from the hooks; it returns NULL
+in AOT mode, where the application crate owns the `Ui`.
 
 ### Displays
 
@@ -365,10 +386,11 @@ installs `globalThis.m5` after boot:
 | --- | --- |
 | `m5.sync(number, text, array, event)` | Calls the callback of each changed value's kind with `(name, value)`, then `event(name, value)` per queued event; returns the call count |
 | `m5.request(text)` | Passes one request to the program's handler; `true` when a handler took it |
+| `m5.textures(bind)` | Calls `bind(name, handle)` for each image name `m5_pocket_app_set_texture` bound or unbound (-1) since the previous call; returns the call count |
 | `m5.mode` | `"js"` |
 
-`connectDevice` registers an `onFrame` callback that calls `m5.sync` with the
-root exports and passes every string from `takeRequests()` to `m5.request`.
+`connectDevice` registers an `onFrame` callback that calls
+`m5.textures(registerTexture)`, then `m5.sync` with the root exports and passes every string from `takeRequests()` to `m5.request`.
 Field writes made through model functions are settled in the same frame, so
 views that read them update in that frame. A request made by a handler during
 dispatch is delivered at the next frame's callback.

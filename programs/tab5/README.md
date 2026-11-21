@@ -45,8 +45,8 @@ before committing.
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image | 7,353,920 bytes (0x703640), 58 % of the 12 MiB `factory` partition | 6,340,128 bytes (0x60be20), 50 % |
-| Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 5,170,004 / 1,082,270 bytes |
+| Application image | 7,353,920 bytes (0x703640), 58 % of the 12 MiB `factory` partition | 6,340,448 bytes (0x60bf60), 50 % |
+| Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 5,170,052 / 1,082,530 bytes |
 | Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
 | Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
 | Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; the 22 pictures are copied into the heap at mount: 3,469,312 bytes (also in flash) |

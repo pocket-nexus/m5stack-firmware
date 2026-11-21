@@ -116,8 +116,8 @@ ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `idf.py size`:
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image (`.bin`) | 3 994 576 | 3 088 800 |
-| `factory` partition (7 MiB) free | 3 345 456 (46 %) | 4 251 232 (58 %) |
+| Application image (`.bin`) | 3 994 576 | 3 088 832 |
+| `factory` partition (7 MiB) free | 3 345 456 (46 %) | 4 251 200 (58 %) |
 | Application content | bundle 1 891 096 (artwork RGB565 1.66 MB) | generated code, styles, fonts, RGB565 images 1 490 944 |
 | DIRAM static use (of 341 760) | 132 137 (39 %) | 129 841 (38 %) |
 | `.data` / `.bss` | 22 530 / 25 784 | 22 514 / 25 640 |
