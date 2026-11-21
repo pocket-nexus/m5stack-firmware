@@ -46,7 +46,8 @@ the 1280x720 `launcher_bg` is cut into six tiles (`launcher-bg-<row>-<column>`).
 9:41:00, fixed power readings (7.72 V, 0.24 A), the Tab5's internal I2C
 addresses, quiet microphone columns and a 6 s record test.
 
-Board values (published by `programs/tab5` under these names): `rtcYear`,
+Board values (published by `programs/tab5` under these names; in AOT mode
+`programs/tab5/aot/src/lib.rs` maps the same list): `hostAttached`, `rtcYear`,
 `rtcMonth` (1..12), `rtcDay`, `rtcHour`, `rtcMinute`, `rtcSecond`,
 `busVoltage`, `shuntCurrent`, `cpuTemperature`, `accelX/Y/Z`, `gyroX/Y/Z`,
 `usbCConnected`, `usbAConnected`, `headphoneConnected`, `panelIc`, `sdList`
@@ -129,6 +130,7 @@ bun apps/tab5-factory/tools/preview.ts apps/tab5-factory/.pocket-build/js \
   third_party/pocketjs/platforms/web/pocketjs.wasm .pocket-build/validation/preview
 ```
 
+`programs/tab5` builds the AOT output into firmware (`programs/tab5/README.md`).
 `--aot` needs the wasm core at `third_party/pocketjs/platforms/web/pocketjs.wasm`
 (`bun tools/wasm.ts` inside the submodule; ignored output). The preview tool
 runs the JS bundle in PocketJS's deterministic simulator and writes one PNG

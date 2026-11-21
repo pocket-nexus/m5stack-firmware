@@ -37,7 +37,7 @@ and calls `m5_pocket_app_start` with:
 | Host contract | `pocket.host.json` (`m5-sticks3`: 135×240, native, density 1, `repaint`, cadence 30 Hz, `input.buttons`, `text.glyphs.baked`) |
 | Display | `M5_POCKET_DISPLAY_ESP_LCD`: two 40-row RGB565 strips (2 × 10 800 bytes), `byte_swap` for the big-endian panel |
 | Input | `buttons` callback: KEY1 → `POCKET_BTN_CIRCLE`, KEY2 → `POCKET_BTN_DOWN`, sampled once per frame |
-| Memory | runtime heap 2 MiB, QuickJS heap 4 MiB and stack limit 96 KiB in PSRAM, app task stack 128 KiB in PSRAM |
+| Memory | runtime heap limit 4 MiB, QuickJS heap 4 MiB and stack limit 96 KiB in PSRAM (JS mode), app task stack 128 KiB in PSRAM |
 | `before_frame` | publishes `batteryLevel`, `charging` (PMIC, every 500 ms), `wifiConfigured`, `wifiStatus`, `apStations`, `portalClients`, `apSsid` |
 | `on_request` | `tone`, `volume`, `brightness`; `setup 0/1` is passed to a task that stops/starts the access point |
 
@@ -65,7 +65,7 @@ Requirements: ESP-IDF `>=6.0,<6.3`, Bun, `bun install` at the repository
 root, and Espressif's Rust toolchain `esp` with `xtensa-esp32s3-none-elf`
 (the runtime archive builds with `-Zbuild-std=core,alloc`).
 
-JS mode (default):
+JS mode (default), build directory `build/`:
 
 ```sh
 . $IDF_PATH/export.sh
@@ -75,30 +75,59 @@ idf.py build
 idf.py -p <port> flash monitor
 ```
 
-`components.cmake` defaults `POCKETJS_CARGO` to
-`~/.rustup/toolchains/esp/bin/cargo` for ESP32-S3; pass
-`-DPOCKETJS_CARGO=<path>` for another location.
+AOT mode, build directory `build-aot/` (`sdkconfig.aot` selects
+`CONFIG_M5_POCKET_APP_MODE_AOT`):
 
-AOT mode: not available yet; `m5_pocket_app` does not build AOT
-applications so far. The application passes AOT admission
-(`bun run pocket compile --config apps/sticks3-factory/pocket.host.config.ts --aot --out <dir>`).
+```sh
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot" set-target esp32s3 build
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig -p <port> flash monitor
+```
+
+`components.cmake` defaults `POCKETJS_CARGO` (JS-mode runtime archive) and
+the AOT toolchain to Espressif's `esp` Rust toolchain for ESP32-S3. The AOT
+step needs the MicroTS layout oracle `third_party/pocketjs/platforms/web/pocketjs.wasm`
+and builds it with `bun tools/wasm.ts` when it is missing.
+
+The per-app crate is `aot/` (`Cargo.lock` committed). Its `device_fields!`
+list maps every board → app field to its `device_<name>_mut` accessor and
+matches the `hostNumber`/`hostText` switches of `device.ts`. The two modes
+resolve different managed components (AOT has no QuickJS), so AOT builds use
+`dependencies.aot.lock` and JS builds `dependencies.lock`.
+
+### Differences in AOT mode
+
+- **Artwork memory.** `load_images` uploads every image as RGBA8888 at mount:
+  about 2.9 MB of PSRAM heap for the 11 full-screen images, and the same
+  bytes again in flash. JS mode stores the artwork as RGB565 in the bundle
+  (1.66 MB) and decodes textures on first draw. The runtime heap limit is
+  4 MiB for this reason.
+- **Keys.** Both modes see KEY1/KEY2 as `CIRCLE`/`DOWN` button bits; the
+  app's `ActionHandler`s and its 500 ms click decision behave the same.
+  There is no touch panel, so the AOT touch-to-press mapping does not apply.
+- **Animations.** The app has none.
+- **Tasks and timing.** `after(ms)` runs on the virtual clock in both modes.
 
 ## Size
 
 ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `idf.py size`:
 
-| Item | Bytes |
-| --- | --- |
-| Application image | 3 994 469 (`0x3cf3e0`) |
-| Embedded bundle | 1 891 096 (artwork as RGB565 1.66 MB) |
-| `factory` partition | 7 MiB (`0x700000`), 46 % free |
-| DIRAM static use | 132 137 of 341 760 (39 %) |
-| IRAM | 16 384 of 16 384 |
+| Item | JS mode | AOT mode |
+| --- | --- | --- |
+| Application image (`.bin`) | 3 994 576 | 4 580 480 |
+| `factory` partition (7 MiB) free | 3 345 456 (46 %) | 2 759 552 (38 %) |
+| Application content | bundle 1 891 096 (artwork RGB565 1.66 MB) | generated code, styles, fonts, RGBA8888 images 2.9 MB |
+| DIRAM static use (of 341 760) | 132 137 (39 %) | 129 841 (38 %) |
+| `.data` / `.bss` | 22 530 / 25 784 | 22 514 / 25 640 |
+| IRAM | 16 384 of 16 384 | 16 384 of 16 384 |
+
+Runtime internal-RAM use was not measured: no device run, and the board
+bring-up (PMIC, panel) does not run under QEMU.
 
 Partition table (`partitions.csv`): `nvs` 24 KiB, `phy_init` 4 KiB,
 `factory` 7 MiB.
 
 ## Validation
 
-`idf.py build` with `-Wall -Wextra -Werror` on every component of this
-repository. No device run: the program has not been flashed to a StickS3.
+`idf.py build` in JS and AOT mode, with `m5_strict_warnings` on `main`,
+`m5_sticks3_net` and `m5_bsp_sticks3`. No device run: the program has not been flashed to a StickS3.

@@ -375,6 +375,10 @@ static esp_err_t panel_st7123_reset(esp_lcd_panel_t *panel) {
 
 static esp_err_t panel_st7123_invert_color(esp_lcd_panel_t *panel,
                                            bool invert_color_data) {
+  /* No-op in the factory driver; the panel keeps its init state. */
+  (void)panel;
+  (void)invert_color_data;
+
   // st7123_panel_t *st7123 = (st7123_panel_t *)panel->user_data;
   // esp_lcd_panel_io_handle_t io = st7123->io;
   // uint8_t command = 0;
@@ -394,6 +398,11 @@ static esp_err_t panel_st7123_invert_color(esp_lcd_panel_t *panel,
 
 static esp_err_t panel_st7123_mirror(esp_lcd_panel_t *panel, bool mirror_x,
                                      bool mirror_y) {
+  /* No-op in the factory driver; the panel keeps its init state. */
+  (void)panel;
+  (void)mirror_x;
+  (void)mirror_y;
+
   // st7123_panel_t *st7123 = (st7123_panel_t *)panel->user_data;
   // esp_lcd_panel_io_handle_t io = st7123->io;
   // uint8_t madctl_val = st7123->madctl_val;
@@ -422,6 +431,10 @@ static esp_err_t panel_st7123_mirror(esp_lcd_panel_t *panel, bool mirror_x,
 }
 
 static esp_err_t panel_st7123_disp_on_off(esp_lcd_panel_t *panel, bool on_off) {
+  /* No-op in the factory driver; the panel keeps its init state. */
+  (void)panel;
+  (void)on_off;
+
   // st7123_panel_t *st7123 = (st7123_panel_t *)panel->user_data;
   // esp_lcd_panel_io_handle_t io = st7123->io;
   // int command = 0;
@@ -437,6 +450,10 @@ static esp_err_t panel_st7123_disp_on_off(esp_lcd_panel_t *panel, bool on_off) {
 }
 
 static esp_err_t panel_st7123_sleep(esp_lcd_panel_t *panel, bool sleep) {
+  /* No-op in the factory driver; the panel keeps its init state. */
+  (void)panel;
+  (void)sleep;
+
   // st7123_panel_t *st7123 = (st7123_panel_t *)panel->user_data;
   // esp_lcd_panel_io_handle_t io = st7123->io;
   // int command = 0;

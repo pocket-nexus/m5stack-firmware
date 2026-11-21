@@ -11,7 +11,7 @@
   "scripts": {
     "format": "bun tools/format.ts",
     "format:check": "bun tools/format.ts --check",
-    "pocket": "bun third_party/pocketjs/tools/pocket.ts"
+    "pocket": "tools/pocket"
   },
   "dependencies": {
     "@pocketjs/framework": "workspace:*",

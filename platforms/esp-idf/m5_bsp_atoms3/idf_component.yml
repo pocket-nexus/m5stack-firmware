@@ -1,0 +1,7 @@
+version: "0.1.0"
+description: M5Stack AtomS3 board support (GC9107 panel, button, MPU6886, IR, Port A)
+license: MIT
+targets:
+  - esp32s3
+dependencies:
+  idf: ">=6.0,<6.3"

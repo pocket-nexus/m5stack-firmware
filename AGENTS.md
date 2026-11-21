@@ -91,8 +91,11 @@ Architecture and implementation notes belong in `docs/`, not here.
 
 ## C code
 
-- Every component compiles with `-Wall -Wextra -Werror`. Fix warnings; do not
-  silence them with pragmas, casts that hide a defect, or by removing flags.
+- Every component library calls `m5_strict_warnings(${COMPONENT_LIB})` from
+  `m5_pocket_app`. ESP-IDF passes `-Wall -Wextra -Werror` and then appends
+  `-Wno-unused-parameter -Wno-sign-compare`; the helper restores those
+  warnings as errors after IDF's options. Fix warnings; do not silence them
+  with pragmas, casts that hide a defect, or by removing flags.
   Imported third-party sources that do not build warning-free keep their
   warnings scoped to that component with a comment naming the source.
 - Every component states the IDF targets it supports (`REQUIRED_IDF_TARGETS`

@@ -15,32 +15,74 @@ source (`POCKETJS_RUST_FROM_SOURCE=ON`, set by `components.cmake`).
 ```sh
 . $IDF_PATH/export.sh
 cd programs/tab5
-idf.py set-target esp32p4      # once
-idf.py build                   # JS mode (CONFIG_M5_POCKET_APP_MODE_JS, the default)
-idf.py -p <port> flash monitor
+# JS mode (CONFIG_M5_POCKET_APP_MODE_JS, the default), build directory build/
+idf.py set-target esp32p4 build
+# AOT mode (CONFIG_M5_POCKET_APP_MODE_AOT), build directory build-aot/
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot" set-target esp32p4 build
+idf.py -p <port> flash monitor          # or -B build-aot ... flash monitor
 ```
 
-AOT mode (`CONFIG_M5_POCKET_APP_MODE_AOT`) is not wired yet: the shared app
-host's AOT build is still in progress. The application already passes
-`pocket compile --aot` (see `apps/tab5-factory/README.md`).
+The JS build compiles `apps/tab5-factory/pocket.host.config.ts` against this
+program's host contract `pocket.host.json` and embeds the bundle. The AOT
+build runs `pocket compile --aot` on the same config, builds the crate
+`aot/` (`libm5_pocket_app_aot.a`, Rust 1.98.1 for
+`riscv32imafc-unknown-none-elf`) and links it in place of the runtime archive
+and QuickJS. The AOT step needs the MicroTS layout oracle
+`third_party/pocketjs/platforms/web/pocketjs.wasm` (ignored by the
+submodule; the build runs `bun tools/wasm.ts` there when it is missing).
+AOT mode keeps its own `dependencies.aot.lock`, since it fetches no
+`quickjs-ng`. Both builds leave an ignored `__pycache__` in
+`third_party/pocketjs/platforms/esp-idf/pocket_runtime/tools/`; delete it
+before committing.
 
-The build compiles `apps/tab5-factory/pocket.host.config.ts` against this
-program's host contract `pocket.host.json` and embeds the bundle. It leaves
-an ignored `__pycache__` in `third_party/pocketjs/platforms/esp-idf/pocket_runtime/tools/`;
-delete it before committing.
+`aot/src/lib.rs` maps every board value to its `device.ts` field
+(`device_fields!`) and the three events, in the same order as the
+`hostNumber`, `hostText`, `hostArray` and `hostEvent` switches of
+`apps/tab5-factory/device.ts`; the two lists change together.
 
-### Build results (JS mode)
+### Build results
 
-| Item | Size |
-| --- | --- |
-| Application image | 7,351,598 bytes (0x702df0), 58 % of the 12 MiB `factory` partition |
-| Bundle (`tab5.pkb`) | 4,479,704 bytes, of which 3,983,440 are the pack (images: RGB565 background tiles and charts, RGBA8888 small pictures; five baked Inter sizes) |
-| Internal RAM, static | 102,420 of 441,296 bytes (DIRAM: .text 72,284, .data 15,456, .bss 14,680) |
-| Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) |
-| QuickJS heap limit, runtime heap limit | 24 MiB each, PSRAM preferred |
-| App task stack | 192 KiB in PSRAM, QuickJS stack limit 144 KiB |
+| Item | JS mode | AOT mode |
+| --- | --- | --- |
+| Application image | 7,353,920 bytes (0x703640), 58 % of the 12 MiB `factory` partition | 6,341,136 bytes (0x60c210), 50 % |
+| Flash .rodata / .text | (bundle 4,479,704 bytes, of which 3,983,440 are the pack) | 5,170,332 / 1,082,938 bytes |
+| Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
+| Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
+| Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; the 22 pictures are copied into the heap at mount: 3,469,312 bytes (also in flash) |
+| App task stack | 192 KiB in PSRAM, QuickJS stack limit 144 KiB | 192 KiB in PSRAM |
 
-No device run happened for these numbers: they are build outputs.
+The pack holds the images (RGB565 background tiles and charts, RGBA8888 small
+pictures) and five baked Inter sizes. These numbers are build outputs; no
+device run happened.
+
+### What differs in AOT mode
+
+- **Touch**: the host turns the contact into a press: the focusable node under
+  the finger is armed at touch-down and pressed when the finger lifts over it;
+  lifting elsewhere cancels. In JS mode the framework's tap recognizer does
+  the same within its tap slop. Every button of the app is an `onPress`, so
+  both modes act on release.
+- **Drags and scrolling**: neither mode uses framework gestures. The rollers
+  and the Ext.Port1/MBUS scrolling are model code driven by `pointerX`,
+  `pointerY` and `pointerDown`, identical in both modes.
+- **Animations**: all motion (startup, window springs, toasts, label bumps,
+  IMU dot, spinners) is computed by the model each frame and written as
+  style values, so both modes run the same frames; nothing uses baked
+  timelines or `animate()`.
+- **Picture loading**: MicroTS's generated `load_images` would embed each
+  image's 1x file as RGBA8888 and ignore the `@2x` variants and
+  `images.json`. `aot/build.rs` replaces it: it reads the image names the
+  generated `include.rs` registers, decodes each `@2x` PNG of
+  `apps/tab5-factory` and embeds it in the format `images.json` names (the
+  background tiles and I2C charts as RGB565, the rest RGBA8888);
+  `aot/src/lib.rs` uploads them with `Core::upload_texture` and
+  `Ui::register_image` under the same names. Both modes therefore draw the
+  same full-resolution pictures. The 22 textures take 3,469,312 bytes of
+  flash and the same in the heap after mount.
+- **Bridge delivery**: JS mode calls the `device.ts` host functions from
+  `main.tsx`; AOT mode writes the fields directly. The board publishes
+  `hostAttached` so that the AOT model also stops simulating.
 
 ## Board facts
 
@@ -84,13 +126,13 @@ by DMA in under 20 ms and an icon-sized region in under 10 ms. The launcher
 repaints only small label rectangles once per poll period; the window springs
 repaint the union of the window's old and new rectangles each frame (up to
 800x480 raster for the RTC and camera windows), which can exceed one frame
-on a single PPA renderer.
+on hardware we have not measured.
 
-**Single PPA renderer.** `m5_pocket_app` registers one `pocket_render_esp_ppa`
-renderer for an ESP_DPI display. The two-lane renderer
-(`pocketjs_esp32p4_ppa_lanes`, one lane per core) needs a host option the
-app host does not have yet; the program's first version, before the app host
-landed, used it.
+**Two PPA lanes.** `display.ppa_lanes = 2` registers two PPA renderers behind
+`pocketjs_esp32p4_ppa_lanes`: each strip splits at a multiple of the 8-row
+quantum, the app task (core 0) renders the upper rows and a helper task on
+core 1 the lower ones. Each half stays a multiple of the 64-byte cache line
+(8 rows are 20,480 bytes). The split is the same in both modes.
 
 ## Device bridge
 
@@ -125,12 +167,13 @@ and turns 20 ms capture chunks into the chart columns.
   ESP32-C6 through esp_hosted): the window shows the factory text only.
 - **USB-A host** (HID mouse and the USB-A detect arrow): `usbAConnected` is
   always false.
-- Two-lane PPA rendering (above).
 
 ## Validation
 
-`idf.py build` in JS mode succeeds with `-Wall -Wextra -Werror` on every
-component of this repository. No M5Stack hardware was connected: no device
+`idf.py build` succeeds in JS mode and in AOT mode for esp32p4. The program's
+`main` and `m5_bsp_tab5` compile with `m5_strict_warnings` (the warnings IDF
+relaxes restored as errors); the six "value assigned is never read" Rust
+warnings of an AOT build come from MicroTS-generated code. No M5Stack hardware was connected: no device
 run, flash or measurement happened. The application was checked with
 `pocket compile` (JS bundle and `--aot` admission) and simulator screenshots
 (`apps/tab5-factory/tools/preview.ts`).

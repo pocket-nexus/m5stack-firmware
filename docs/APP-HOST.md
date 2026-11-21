@@ -23,7 +23,7 @@ board bring-up; it passes handles and callbacks to `m5_pocket_app_start`.
 | `platforms/rust/m5_pocket_aot/` | Shared AOT crate: runtime, adapters, bridge, allocator, panic handler |
 | `platforms/rust/m5_pocket_aot_build/` | `build.rs` support of per-app crates |
 | `tests/aot-smoke/aot/` | Per-app AOT crate template |
-| `tools/pocket` | Pocket CLI of the submodule (`bun third_party/pocketjs/tools/pocket.ts`) |
+| `tools/pocket` | Pocket CLI of the submodule, run through `tools/pocket.ts`, which applies the app's `pocket.fonts.json` ([FONTS.md](FONTS.md)) |
 | `tests/aot-smoke/` | Smoke program: the reference adoption |
 
 ## Adopt the component in a program

@@ -161,7 +161,8 @@ void app_main(void) {
       .byte_swap = true, // the panel takes big-endian RGB565
   };
   config.input.buttons = read_keys;
-  config.heap_limit = 2 * 1024 * 1024;
+  // AOT uploads the artwork as RGBA8888 textures (about 2.9 MB) at mount.
+  config.heap_limit = 4 * 1024 * 1024;
   config.js_heap_limit = 4 * 1024 * 1024;
   config.js_stack_limit = 96 * 1024;
   config.js_prefer_psram = true;

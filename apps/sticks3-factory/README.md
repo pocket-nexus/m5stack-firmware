@@ -101,6 +101,14 @@ makes. The model reads the fields every 100 ms into signals.
 At startup the app requests `brightness 230`, `volume 100` and
 `tone 4000 50`, as the UIFlow startup does.
 
+In AOT mode `programs/sticks3/aot/src/lib.rs` writes the same fields
+through the generated `device_<name>_mut` accessors (`device_fields!`) and
+drains `requests`; its name list equals the `hostNumber`/`hostText` switches.
+Both modes run the same model: the keys arrive as `CIRCLE`/`DOWN` button
+bits, clicks are decided after 500 ms of virtual time, and the app has no
+animations. AOT stores the artwork as RGBA8888 textures uploaded at mount;
+JS mode keeps it as RGB565 in the bundle.
+
 `pocket.host.config.ts` lives here, not in `programs/sticks3/`: PocketJS
 resolves `app.entry` relative to the config file and rejects `..`, and AOT
 model admission registers the config's directory as the application
@@ -157,7 +165,8 @@ Unused factory files: `1c.jpg` (APP.LIST), `1d.jpg` (LoRa.CHAT) and
 ## Validation
 
 - `bun run pocket compile --config apps/sticks3-factory/pocket.host.config.ts --aot --out <dir>`:
-  AOT admission and source generation pass.
+  AOT admission and source generation pass; `programs/sticks3` builds in
+  AOT mode (`idf.py -B build-aot ...`).
 - JS bundle: 1.88 MB (`pak` 1.66 MB, script 222 KB).
 - Sim screenshots (PocketJS `programs/sim` with the bundle, 135×240): boot
   Cloud screen, launcher CLOUD/USB/SETUP cycling, USB, double-click back and
