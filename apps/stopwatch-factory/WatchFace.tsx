@@ -4,6 +4,17 @@ import type { Color, Deg, i32 } from "@pocketjs/framework/solid/std";
 import type { Tick } from "./app";
 import BigNumber from "./BigNumber.tsx";
 import DigitStrip from "./DigitStrip.tsx";
+import GlyphsClassicTime from "./GlyphsClassicTime.tsx";
+import GlyphsLarge0 from "./GlyphsLarge0.tsx";
+import GlyphsLarge1 from "./GlyphsLarge1.tsx";
+import GlyphsLarge2 from "./GlyphsLarge2.tsx";
+import GlyphsLarge3 from "./GlyphsLarge3.tsx";
+import GlyphsLarge4 from "./GlyphsLarge4.tsx";
+import GlyphsLarge5 from "./GlyphsLarge5.tsx";
+import GlyphsLarge6 from "./GlyphsLarge6.tsx";
+import GlyphsLarge7 from "./GlyphsLarge7.tsx";
+import GlyphsLarge8 from "./GlyphsLarge8.tsx";
+import GlyphsLarge9 from "./GlyphsLarge9.tsx";
 
 // Factory app_watch_face: classic, number flow, big number and simple faces
 // inside one panel that turns with the accelerometer.
@@ -14,8 +25,10 @@ export default function WatchFace(props: {
   hourAngle: Deg;
   minuteAngle: Deg;
   secondAngle: Deg;
-  time: string;
-  plainTime: string;
+  timeIds: i32[];
+  timeXs: i32[];
+  plainIds: i32[];
+  plainXs: i32[];
   weekday: string;
   day: string;
   date: string;
@@ -53,14 +66,14 @@ export default function WatchFace(props: {
           <Show when={props.mode === 0}>
             <View class="absolute left-[54] top-[54] w-[358] h-[358] rounded-full bg-[#1B1B1B]" />
             <View class="absolute left-0 top-[320] w-[466] h-[34] items-center justify-center" style={{ translateX: props.dx[0] ?? 0, translateY: props.dy[0] ?? 0, rotate: props.rotation }}>
-              <Text class="text-2xl text-[#D9D9D9]">{props.time}</Text>
+              <GlyphsClassicTime ids={props.timeIds} base={0} xs={props.timeXs} />
             </View>
             <View class="absolute left-0 top-[357] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[1] ?? 0, translateY: props.dy[1] ?? 0, rotate: props.rotation }}>
-              <Text class="text-xl text-[#717171]">{props.weekday}</Text>
+              <Text class="text-2xl text-[#717171]">{props.weekday}</Text>
             </View>
             <View class="absolute left-[334] top-[216] w-[48] h-[34] rounded-full bg-[#101010] items-center justify-center" style={{ translateX: props.dx[2] ?? 0, translateY: props.dy[2] ?? 0 }}>
               <View class="w-[48] h-[34] items-center justify-center" style={{ rotate: props.rotation }}>
-                <Text class="text-xl text-[#8B8B8B]">{props.day}</Text>
+                <Text class="text-2xl text-[#8B8B8B]">{props.day}</Text>
               </View>
             </View>
           </Show>
@@ -77,16 +90,16 @@ export default function WatchFace(props: {
         <Match when={props.face === 1}>
           <View class="absolute left-0 top-0 w-[466] h-[466]" style={{ bgColor: props.background }}>
             <View class="absolute left-[66] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[3] ?? 0, translateY: props.dy[3] ?? 0 }}>
-              <DigitStrip left={7} dx={(props.dx[14] ?? 0) - (props.dx[3] ?? 0)} dy={(props.dy[14] ?? 0) - (props.dy[3] ?? 0)} offset={props.flow[0] ?? 0} theme={props.theme} rotation={props.rotation} />
-              <DigitStrip left={43} dx={(props.dx[15] ?? 0) - (props.dx[3] ?? 0)} dy={(props.dy[15] ?? 0) - (props.dy[3] ?? 0)} offset={props.flow[1] ?? 0} theme={props.theme} rotation={props.rotation} />
+              <DigitStrip left={7} dx={(props.dx[14] ?? 0) - (props.dx[3] ?? 0)} dy={(props.dy[14] ?? 0) - (props.dy[3] ?? 0)} offset={props.flow[0] ?? 0} theme={props.theme} />
+              <DigitStrip left={43} dx={(props.dx[15] ?? 0) - (props.dx[3] ?? 0)} dy={(props.dy[15] ?? 0) - (props.dy[3] ?? 0)} offset={props.flow[1] ?? 0} theme={props.theme} />
             </View>
             <View class="absolute left-[183] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[4] ?? 0, translateY: props.dy[4] ?? 0 }}>
-              <DigitStrip left={7} dx={(props.dx[16] ?? 0) - (props.dx[4] ?? 0)} dy={(props.dy[16] ?? 0) - (props.dy[4] ?? 0)} offset={props.flow[2] ?? 0} theme={props.theme} rotation={props.rotation} />
-              <DigitStrip left={43} dx={(props.dx[17] ?? 0) - (props.dx[4] ?? 0)} dy={(props.dy[17] ?? 0) - (props.dy[4] ?? 0)} offset={props.flow[3] ?? 0} theme={props.theme} rotation={props.rotation} />
+              <DigitStrip left={7} dx={(props.dx[16] ?? 0) - (props.dx[4] ?? 0)} dy={(props.dy[16] ?? 0) - (props.dy[4] ?? 0)} offset={props.flow[2] ?? 0} theme={props.theme} />
+              <DigitStrip left={43} dx={(props.dx[17] ?? 0) - (props.dx[4] ?? 0)} dy={(props.dy[17] ?? 0) - (props.dy[4] ?? 0)} offset={props.flow[3] ?? 0} theme={props.theme} />
             </View>
             <View class="absolute left-[300] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[5] ?? 0, translateY: props.dy[5] ?? 0 }}>
-              <DigitStrip left={7} dx={(props.dx[18] ?? 0) - (props.dx[5] ?? 0)} dy={(props.dy[18] ?? 0) - (props.dy[5] ?? 0)} offset={props.flow[4] ?? 0} theme={props.theme} rotation={props.rotation} />
-              <DigitStrip left={43} dx={(props.dx[19] ?? 0) - (props.dx[5] ?? 0)} dy={(props.dy[19] ?? 0) - (props.dy[5] ?? 0)} offset={props.flow[5] ?? 0} theme={props.theme} rotation={props.rotation} />
+              <DigitStrip left={7} dx={(props.dx[18] ?? 0) - (props.dx[5] ?? 0)} dy={(props.dy[18] ?? 0) - (props.dy[5] ?? 0)} offset={props.flow[4] ?? 0} theme={props.theme} />
+              <DigitStrip left={43} dx={(props.dx[19] ?? 0) - (props.dx[5] ?? 0)} dy={(props.dy[19] ?? 0) - (props.dy[5] ?? 0)} offset={props.flow[5] ?? 0} theme={props.theme} />
             </View>
             <View class="absolute left-0 top-[294] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[6] ?? 0, translateY: props.dy[6] ?? 0, rotate: props.rotation }}>
               <Text class={props.theme === 0 ? "text-2xl text-[#A0A0A0]" : props.theme === 1 ? "text-2xl text-[#525252]" : props.theme === 2 ? "text-2xl text-[#6A938F]" : props.theme === 3 ? "text-2xl text-[#948063]" : props.theme === 4 ? "text-2xl text-[#668323]" : props.theme === 5 ? "text-2xl text-[#CBCBFF]" : props.theme === 6 ? "text-2xl text-[#FFD3BC]" : props.theme === 7 ? "text-2xl text-[#A4789D]" : props.theme === 8 ? "text-2xl text-[#70CFC9]" : "text-2xl text-[#DCF3FF]"}>{props.date}</Text>
@@ -107,8 +120,39 @@ export default function WatchFace(props: {
         </Match>
         <Match when={props.face === 3}>
           <View class="absolute left-0 top-0 w-[466] h-[466]" style={{ bgColor: props.background }}>
-            <View class="absolute left-0 top-[150] w-[466] h-[118] items-center justify-center" style={{ translateX: props.dx[11] ?? 0, translateY: props.dy[11] ?? 0, rotate: props.rotation }}>
-              <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.plainTime}</Text>
+            <View class="absolute left-0 top-[160] w-[466] h-[98]" style={{ translateX: props.dx[11] ?? 0, translateY: props.dy[11] ?? 0, rotate: props.rotation }}>
+              <Switch>
+                <Match when={props.theme === 0}>
+                  <GlyphsLarge0 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 1}>
+                  <GlyphsLarge1 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 2}>
+                  <GlyphsLarge2 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 3}>
+                  <GlyphsLarge3 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 4}>
+                  <GlyphsLarge4 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 5}>
+                  <GlyphsLarge5 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 6}>
+                  <GlyphsLarge6 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 7}>
+                  <GlyphsLarge7 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 8}>
+                  <GlyphsLarge8 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+                <Match when={props.theme === 9}>
+                  <GlyphsLarge9 ids={props.plainIds} base={0} xs={props.plainXs} />
+                </Match>
+              </Switch>
             </View>
             <View class="absolute left-0 top-[275] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[12] ?? 0, translateY: props.dy[12] ?? 0, rotate: props.rotation }}>
               <Text class={props.theme === 0 ? "text-2xl text-[#A0A0A0]" : props.theme === 1 ? "text-2xl text-[#525252]" : props.theme === 2 ? "text-2xl text-[#6A938F]" : props.theme === 3 ? "text-2xl text-[#948063]" : props.theme === 4 ? "text-2xl text-[#668323]" : props.theme === 5 ? "text-2xl text-[#CBCBFF]" : props.theme === 6 ? "text-2xl text-[#FFD3BC]" : props.theme === 7 ? "text-2xl text-[#A4789D]" : props.theme === 8 ? "text-2xl text-[#70CFC9]" : "text-2xl text-[#DCF3FF]"}>{props.date}</Text>

@@ -14,6 +14,7 @@ import StatusBar from "./StatusBarView.tsx";
 import Stopwatch from "./StopwatchView.tsx";
 import TopClock from "./TopClock.tsx";
 import WatchFace from "./WatchFace.tsx";
+import GlyphsLarge0 from "./GlyphsLarge0.tsx";
 import {
   aboutProgress,
   anchorDX,
@@ -86,12 +87,15 @@ import {
   batteryText,
   bridged,
   charging,
+  clockPens,
+  clockText,
+  glyphIds,
+  largeCentred,
+  largeFrom,
+  m28Centred,
+  m48Centred,
+  numberText,
   classicMode,
-  clock0,
-  clock1,
-  clock2,
-  clock3,
-  clock4,
   dotX,
   dotY,
   face,
@@ -172,7 +176,7 @@ export default function App() {
             onPrevious={launcherPrevious}
             onNext={launcherNext}
           />
-          <TopClock c0={clock0()} c1={clock1()} c2={clock2()} c3={clock3()} c4={clock4()} tint={false} />
+          <TopClock ids={glyphIds(clockText())} pens={clockPens("0")} tint={false} />
           <Show when={statusShown()}>
             <StatusBar y={statusY()} level={batteryLevel()} text={batteryText()} charging={charging()} onTap={statusTap} />
           </Show>
@@ -185,8 +189,10 @@ export default function App() {
             hourAngle={hourAngle()}
             minuteAngle={minuteAngle()}
             secondAngle={secondAngle()}
-            time={watchTime()}
-            plainTime={plainTime()}
+            timeIds={glyphIds(watchTime())}
+            timeXs={m28Centred(watchTime(), 233)}
+            plainIds={glyphIds(plainTime())}
+            plainXs={largeCentred(plainTime(), 233)}
             weekday={watchWeekday()}
             day={watchDay()}
             date={watchDate()}
@@ -211,7 +217,10 @@ export default function App() {
         <Match when={page() === "stopwatch"}>
           <Stopwatch
             state={swState()}
-            time={swTime()}
+            timeIds={glyphIds(swTime())}
+            timeXs={m48Centred(swTime(), 233)}
+            emptyIds={glyphIds("-.-")}
+            emptyXs={m28Centred("-.-", 233)}
             laps={swLaps()}
             scroll={swLapScroll()}
             leftOffset={swLeftOffset()}
@@ -219,7 +228,7 @@ export default function App() {
             onLeft={stopwatchLeft}
             onRight={stopwatchRight}
           />
-          <TopClock c0={clock0()} c1={clock1()} c2={clock2()} c3={clock3()} c4={clock4()} tint={true} />
+          <TopClock ids={glyphIds(clockText())} pens={clockPens("0")} tint={true} />
         </Match>
         <Match when={page() === "alarm"}>
           <AlarmClock
@@ -242,6 +251,10 @@ export default function App() {
             screen={setupScreen()}
             scroll={setupScroll()}
             level={setupLevel()}
+            levelIds={glyphIds(numberText(setupLevel()))}
+            levelXs={largeCentred(numberText(setupLevel()), 233)}
+            sadIds={glyphIds(":(")}
+            sadXs={largeFrom(":(", 80)}
             summary={setupSummary()}
             dateStage={setupDateStage()}
             sfx={sfxOn()}
@@ -299,8 +312,8 @@ export default function App() {
       <Show when={ringing()}>
         <View class="absolute left-0 top-0 w-[466] h-[466] bg-black">
           <Image class="absolute left-[169] top-[90] w-[128] h-[32]" src="images/alarm_icon.png" />
-          <View class="absolute left-0 top-[130] w-[466] h-[110] items-center justify-center">
-            <Text class="text-5xl text-white">{ringTime()}</Text>
+          <View class="absolute left-0 top-[136] w-[466] h-[98]">
+            <GlyphsLarge0 ids={glyphIds(ringTime())} base={0} xs={largeCentred(ringTime(), 233)} />
           </View>
           <View class="absolute left-[67] top-[283] w-[333] h-[103] rounded-[52] bg-[#4AD78C] items-center justify-center" focusable onPress={alarmDismiss}>
             <Text class="text-2xl text-[#0F5831]">OK</Text>

@@ -10,6 +10,8 @@ import * as motion from "./motion";
 import * as statusbar from "./statusbar";
 import * as stopwatch from "./stopwatch";
 import * as watch from "./watch";
+import * as glyphs from "./glyphs";
+import * as textlayout from "./textlayout";
 import * as alarms from "./alarms";
 import * as badge from "./badge";
 import * as fft from "./fft";
@@ -37,6 +39,10 @@ export type Page =
 export interface LapRow {
   id: i32;
   title: string;
+  titleIds: i32[];
+  titleXs: i32[];
+  timeIds: i32[];
+  timeXs: i32[];
   time: string;
   y: i32;
 }
@@ -491,7 +497,16 @@ function publishStopwatch(): void {
       push(rows, {
         id: i,
         title: `LAP ${i + 1}`,
+        titleIds: textlayout.ids(`LAP ${i + 1}`),
+        titleXs: textlayout.pens(`LAP ${i + 1}`, glyphs.M28_CODES, glyphs.M28_ADVANCE, 64),
         time: stopwatch.format(stopwatch.laps[i]),
+        timeIds: textlayout.ids(stopwatch.format(stopwatch.laps[i])),
+        timeXs: textlayout.pens(
+          stopwatch.format(stopwatch.laps[i]),
+          glyphs.M28_CODES,
+          glyphs.M28_ADVANCE,
+          402 - textlayout.width(stopwatch.format(stopwatch.laps[i]), glyphs.M28_CODES, glyphs.M28_ADVANCE),
+        ),
         y: (count - 1 - i) * 48,
       });
     }
@@ -893,6 +908,37 @@ export async function run(): Promise<void> {
     }
     frame();
   }
+}
+
+// Text drawn with the factory glyph images (Maple Mono 28/48 px,
+// Commissioner 108 px); bindings of the root view call these.
+export function glyphIds(text: string): i32[] {
+  return textlayout.ids(text);
+}
+
+export function m28Centred(text: string, centre: i32): i32[] {
+  return textlayout.centred(text, glyphs.M28_CODES, glyphs.M28_ADVANCE, centre);
+}
+
+export function m48Centred(text: string, centre: i32): i32[] {
+  return textlayout.centred(text, glyphs.M48_CODES, glyphs.M48_ADVANCE, centre);
+}
+
+export function largeCentred(text: string, centre: i32): i32[] {
+  return textlayout.centred(text, glyphs.C108_CODES, glyphs.C108_ADVANCE, centre);
+}
+
+export function largeFrom(text: string, x: i32): i32[] {
+  return textlayout.pens(text, glyphs.C108_CODES, glyphs.C108_ADVANCE, x);
+}
+
+export function numberText(value: i32): string {
+  return `${value}`;
+}
+
+/** Pen of a single Maple Mono 28 character in its 20 px clock box. */
+export function clockPens(text: string): i32[] {
+  return textlayout.pens(text, glyphs.M28_CODES, glyphs.M28_ADVANCE, 1);
 }
 
 // Host entry points for the JS-mode bridge (docs/APP-HOST.md).
