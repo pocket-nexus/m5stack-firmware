@@ -3,7 +3,8 @@
 PocketJS recreation of the M5Stack AtomS3 factory demo,
 [m5stack/M5AtomS3-UserDemo](https://github.com/m5stack/M5AtomS3-UserDemo)
 at `8eaf37b3ccf9a8d7c4bf4c2dea0e7925ede6328d` (`src/main.cpp`,
-`src/img_res.c`). It runs in `programs/atoms3`.
+`src/img_res.c`). It runs in `programs/atoms3`, in AOT mode only (the QuickJS guest with
+this bundle does not fit in the AtomS3's internal RAM).
 
 ## Files
 
@@ -103,5 +104,8 @@ slow IMU wobble.
 
 ## Validation
 
-AOT admission (`pocket compile --aot`) and the JS bundle compile pass. No
-desktop/web screenshots were taken and no device run happened.
+`pocket compile --aot` (admission) and the JS bundle compile pass;
+`programs/atoms3` builds in AOT mode, and under QEMU the application ran 402
+frames through boot, menu, Wi-Fi and IMU with simulated board values and 0
+frame errors (`programs/atoms3/README.md`). No desktop/web screenshots were
+taken and no device run happened.
