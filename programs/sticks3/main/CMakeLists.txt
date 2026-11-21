@@ -1,13 +1,12 @@
 idf_component_register(
     SRCS "main.c"
     INCLUDE_DIRS "."
-    REQUIRES m5_bsp_sticks3 m5_sticks3_net pocket_runtime pocket_guest_quickjs
-             pocket_display_esp_lcd pocket_input_gpio pocket_runner
-    PRIV_REQUIRES esp_timer freertos
+    REQUIRES m5_pocket_app m5_bsp_sticks3 m5_sticks3_net
+    PRIV_REQUIRES esp_app_format esp_timer freertos heap log
 )
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
 
-pocketjs_compile_app(
+m5_pocket_app(
     TARGET ${COMPONENT_LIB}
     NAME sticks3_factory
-    HOST_CONFIG "${CMAKE_CURRENT_LIST_DIR}/../../../apps/sticks3-factory/pocket.host.config.ts")
+    HOST_CONFIG "../../../apps/sticks3-factory/pocket.host.config.ts")

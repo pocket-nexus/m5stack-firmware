@@ -1,4 +1,14 @@
 dependencies:
+  espressif/esp_lcd_touch:
+    component_hash: 3f85a7d95af876f1a6ecca8eb90a81614890d0f03a038390804e5a77e2caf862
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.4.2'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.2.1
   espressif/quickjs-ng:
     component_hash: 51ead31abca34af01a44df24128e9ea10331cf35beb976a18fae62a03d36d6e2
     dependencies:
@@ -13,79 +23,17 @@ dependencies:
     source:
       type: idf
     version: 6.2.0
-  pocket-nexus/pocket_display_esp_lcd:
-    dependencies:
-    - name: idf
-      version: '>=6.0,<6.3'
-    - name: pocket-nexus/pocket_runtime
-      version: 0.1.0
-    source:
-      path: ../../third_party/pocketjs/platforms/esp-idf/pocket_display_esp_lcd
-      type: local
-    version: 0.1.0
-  pocket-nexus/pocket_guest_quickjs:
-    dependencies:
-    - name: idf
-      version: '>=6.0,<6.3'
-    - name: pocket-nexus/pocket_runtime
-      version: 0.1.0
-    - name: espressif/quickjs-ng
-      version: 0.14.0
-    source:
-      path: ../../third_party/pocketjs/platforms/esp-idf/pocket_guest_quickjs
-      type: local
-    targets:
-    - esp32p4
-    - esp32s3
-    - esp32c3
-    - esp32c6
-    version: 0.1.0
-  pocket-nexus/pocket_input_gpio:
-    dependencies:
-    - name: idf
-      version: '>=6.0,<6.3'
-    - name: pocket-nexus/pocket_runtime
-      version: 0.1.0
-    source:
-      path: ../../third_party/pocketjs/platforms/esp-idf/pocket_input_gpio
-      type: local
-    version: 0.1.0
-  pocket-nexus/pocket_runner:
-    dependencies:
-    - name: idf
-      version: '>=6.0,<6.3'
-    - name: pocket-nexus/pocket_runtime
-      version: 0.1.0
-    source:
-      path: ../../third_party/pocketjs/platforms/esp-idf/pocket_runner
-      type: local
-    targets:
-    - esp32p4
-    - esp32s3
-    - esp32c3
-    - esp32c6
-    version: 0.1.0
-  pocket-nexus/pocket_runtime:
-    dependencies:
-    - name: idf
-      version: '>=6.0,<6.3'
+  pocket_runtime:
+    dependencies: []
     source:
       path: ../../third_party/pocketjs/platforms/esp-idf/pocket_runtime
       type: local
-    targets:
-    - esp32p4
-    - esp32s3
-    - esp32c3
-    - esp32c6
     version: 0.1.0
 direct_dependencies:
+- espressif/esp_lcd_touch
 - espressif/quickjs-ng
 - idf
-- pocket-nexus/pocket_display_esp_lcd
-- pocket-nexus/pocket_guest_quickjs
-- pocket-nexus/pocket_input_gpio
-- pocket-nexus/pocket_runner
 - pocket-nexus/pocket_runtime
-manifest_hash: 29cc77bed4149f3ecc7ee36befc8246f7fbb5d77956616ddf092626c0d537b20
+manifest_hash: c849798d4778f35b63125c7b47c5803362266c2b263f6feb41672f92622b7d6a
 target: esp32s3
 version: 3.0.0

@@ -17,38 +17,47 @@ UIFlow2 StickS3 startup menu.
 
 Board bring-up is [`m5_bsp_sticks3`](../../platforms/esp-idf/m5_bsp_sticks3/).
 
-## Composition (JS mode)
+## Composition
+
+The program brings the board up and runs the application through the shared
+host [`m5_pocket_app`](../../docs/APP-HOST.md). `CMakeLists.txt` includes
+`platforms/esp-idf/m5_pocket_app/components.cmake` (mode from
+`CONFIG_M5_POCKET_APP_MODE_*`, JS by default in `sdkconfig.defaults`; Pocket
+CLI `tools/pocket`; runtime archive from source with the `esp` toolchain's
+cargo) and adds `m5_bsp_sticks3`. `main/CMakeLists.txt` embeds the
+application with `m5_pocket_app()` from
+`apps/sticks3-factory/pocket.host.config.ts`.
 
 `main/main.c` powers the board, clears the panel, sets the backlight to
-230/255 (UIFlow's 90 %), starts the speaker at volume 100 and registers:
+230/255 (UIFlow's 90 %), starts the speaker at volume 100, initialises Wi-Fi
+and calls `m5_pocket_app_start` with:
 
-| PocketJS component | Configuration |
+| Setting | Value |
 | --- | --- |
-| `pocket_runtime` | Host contract `pocket.host.json` (`m5-sticks3`: 135×240, native, density 1, `repaint`, cadence 30 Hz, `input.buttons`, `text.glyphs.baked`) |
-| `pocket_guest_quickjs` | 4 MiB heap, 96 KiB stack limit, PSRAM |
-| `pocket_display_esp_lcd` | Two 40-row RGB565 strips (2 × 10 800 bytes), `byte_swap` for the big-endian panel |
-| `pocket_input_gpio` | KEY1 → `CIRCLE`, KEY2 → `DOWN`, 10 ms debounce |
-| `pocket_runner` | Owner task `sticks3_ui`, 128 KiB stack in PSRAM |
+| Host contract | `pocket.host.json` (`m5-sticks3`: 135×240, native, density 1, `repaint`, cadence 30 Hz, `input.buttons`, `text.glyphs.baked`) |
+| Display | `M5_POCKET_DISPLAY_ESP_LCD`: two 40-row RGB565 strips (2 × 10 800 bytes), `byte_swap` for the big-endian panel |
+| Input | `buttons` callback: KEY1 → `POCKET_BTN_CIRCLE`, KEY2 → `POCKET_BTN_DOWN`, sampled once per frame |
+| Memory | runtime heap 2 MiB, QuickJS heap 4 MiB and stack limit 96 KiB in PSRAM, app task stack 128 KiB in PSRAM |
+| `before_frame` | publishes `batteryLevel`, `charging` (PMIC, every 500 ms), `wifiConfigured`, `wifiStatus`, `apStations`, `portalClients`, `apSsid` |
+| `on_request` | `tone`, `volume`, `brightness`; `setup 0/1` is passed to a task that stops/starts the access point |
+
+`firmwareVersion` (`v` + `PROJECT_VER`, 0.1.0) and `cloudStatus` (-1, no
+UIFlow cloud client) are published once before the start. The field and
+request list is in the [application README](../../apps/sticks3-factory/README.md#device-bridge).
+
+## Wi-Fi
 
 `components/m5_sticks3_net` ports the Wi-Fi side of the UIFlow2 StickS3
 startup to ESP-IDF: at boot the station connects to the network saved in NVS
 namespace `uiflow` (`ssid0`/`pswd0`) and retries every 5 s after a
-disconnect; the Setup access point `S3_XXXX` (open, two clients, last four
-MAC hex digits) runs captive DNS answering `192.168.4.1` and the UIFlow
-portal page (`files/system/sticks3/index.html`, served from flash) with
-`/config.json` (scan) and `/wifisave` (save and connect). `/config.json`
-starts its `aps` list with an empty object because the page drops the first
-entry; UIFlow's handler omits it and so hides the first network. The
-application starts and stops the access point and reads the status through
-the device data bridge; until the bridge exists only the boot-time station
-connection runs.
-
-`main/CMakeLists.txt` compiles the application with `pocketjs_compile_app`
-from `apps/sticks3-factory/pocket.host.config.ts`. The top-level
-`CMakeLists.txt` writes `build/pocket-cli`, a wrapper that runs
-`third_party/pocketjs/tools/pocket.ts` with Bun, and passes it as
-`POCKETJS_CLI`. The PocketJS runtime archive is built from source
-(`POCKETJS_RUST_FROM_SOURCE=ON`).
+disconnect; on `setup 1` the station disconnects and the access point
+`S3_XXXX` (open, two clients, last four MAC hex digits) starts with captive
+DNS answering `192.168.4.1` and the UIFlow portal page
+(`files/system/sticks3/index.html`, served from flash) with `/config.json`
+(scan) and `/wifisave` (save and connect); `setup 0` stops them and
+reconnects an idle station. `/config.json` starts its `aps` list with an
+empty object because the page drops the first entry; UIFlow's handler omits
+it and so hides the first network.
 
 ## Build
 
@@ -61,18 +70,18 @@ JS mode (default):
 ```sh
 . $IDF_PATH/export.sh
 cd programs/sticks3
-idf.py -DPOCKETJS_CARGO=$HOME/.rustup/toolchains/esp/bin/cargo set-target esp32s3
+idf.py set-target esp32s3
 idf.py build
 idf.py -p <port> flash monitor
 ```
 
-`POCKETJS_CARGO` selects the `esp` toolchain's cargo; the `rustc` beside it
-is used. Without it CMake takes `cargo` from `PATH`, whose rustup toolchain
-(pinned by the submodule's `rust-toolchain.toml`) has no Xtensa target.
+`components.cmake` defaults `POCKETJS_CARGO` to
+`~/.rustup/toolchains/esp/bin/cargo` for ESP32-S3; pass
+`-DPOCKETJS_CARGO=<path>` for another location.
 
-AOT mode: not available yet. It needs the shared application host
-(`platforms/esp-idf/m5_pocket_app`); the application already passes AOT
-admission (`bun run pocket compile --config apps/sticks3-factory/pocket.host.config.ts --aot --out <dir>`).
+AOT mode: not available yet; `m5_pocket_app` does not build AOT
+applications so far. The application passes AOT admission
+(`bun run pocket compile --config apps/sticks3-factory/pocket.host.config.ts --aot --out <dir>`).
 
 ## Size
 
@@ -80,10 +89,10 @@ ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `idf.py size`:
 
 | Item | Bytes |
 | --- | --- |
-| Application image | 3 929 805 (`0x3bf740`) |
-| Embedded bundle | 1 884 040 (artwork as RGB565 1.66 MB) |
+| Application image | 3 994 469 (`0x3cf3e0`) |
+| Embedded bundle | 1 891 096 (artwork as RGB565 1.66 MB) |
 | `factory` partition | 7 MiB (`0x700000`), 46 % free |
-| DIRAM static use | 125 657 of 341 760 (37 %) |
+| DIRAM static use | 132 137 of 341 760 (39 %) |
 | IRAM | 16 384 of 16 384 |
 
 Partition table (`partitions.csv`): `nvs` 24 KiB, `phy_init` 4 KiB,
