@@ -233,20 +233,20 @@ default and is not baked.
 
 | Use | Utility | Slot | Atlas bytes |
 | --- | --- | --- | --- |
-| Hints, labels | `text-2xs` | 19 | 15,267 |
-| Subtitles, status text | `text-xs` | 0 | 23,448 |
-| Title bar titles | `text-xs font-bold` | 7 | 23,448 |
-| "milliseconds" | `text-sm` | 1 | 29,912 |
-| Home title, card headings | `text-sm font-bold` | 8 | 29,912 |
-| Default style (baked always) | `text-base` | 2 | 37,184 |
-| Overlay titles, level angles | `text-lg font-bold` | 10 | 47,486 |
-| Card titles, ratings | `text-xl font-bold` | 11 | 58,899 |
-| Times, scores, messages | `text-2xl font-bold` | 12 | 82,634 |
-| Dice total, sound level, roll | `text-4xl font-bold` | 13 | 187,169 |
-| Reaction time, "GO!", BPM | `text-5xl font-bold` | 15 | 407,450 |
+| Hints, labels | `text-2xs` | 19 | 15,116 |
+| Subtitles, status text | `text-xs` | 0 | 23,216 |
+| Title bar titles | `text-xs font-bold` | 7 | 23,216 |
+| "milliseconds" | `text-sm` | 1 | 29,616 |
+| Home title, card headings | `text-sm font-bold` | 8 | 29,616 |
+| Default style (baked always) | `text-base` | 2 | 36,816 |
+| Overlay titles, level angles | `text-lg font-bold` | 10 | 47,016 |
+| Card titles, ratings | `text-xl font-bold` | 11 | 58,316 |
+| Times, scores, messages | `text-2xl font-bold` | 12 | 81,816 |
+| Dice total, sound level, roll | `text-4xl font-bold` | 13 | 185,316 |
+| Reaction time, "GO!", BPM | `text-5xl font-bold` | 15 | 403,416 |
 
-The atlases hold 101 glyphs each (ASCII, the non-ASCII characters of the
-sources such as `·`, `°` and `…`, and the tofu glyph): 952,384 bytes in the
+The atlases hold 100 glyphs each (ASCII, the non-ASCII characters of the
+sources such as `·`, `°` and `…`, and the tofu glyph): 943,312 bytes in the
 JS bundle's pak; AOT mode embeds the same atlases with `include_bytes!` and
 reads them in place from flash.
 
@@ -270,7 +270,7 @@ reads them in place from flash.
 - `tools/pocket compile --config apps/sticks3-demos/pocket.host.config.ts --aot --out <dir>`:
   AOT admission and source generation pass. `programs/sticks3` builds in JS
   and in AOT mode.
-- JS bundle 1,405,336 bytes (pak 952,384, script about 453 KB).
+- JS bundle 1,405,304 bytes (pak 943,312, script 460,463).
 - Headless runs of the JS bundle in the PocketJS wasm core at 135 × 240 with
   a stand-in `globalThis.m5` (keys with press timestamps, IMU, microphone
   levels, battery, power key): screenshots of the home carousel (all cards,

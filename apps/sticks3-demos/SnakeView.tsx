@@ -51,7 +51,7 @@ export default function SnakeView(props: {
           <Show when={props.newBest} fallback={<Text class="text-xs text-[#94A3B8]">Best {props.best}</Text>}>
             <Text class="text-xs font-bold text-[#FDE047]">New best!</Text>
           </Show>
-          <Text class="mt-[6] text-2xs text-[#6B7585]">Press to play again</Text>
+          <Text class="mt-[6] text-2xs text-[#6B7585]">Press to play</Text>
         </View>
       </Show>
     </View>

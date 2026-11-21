@@ -77,7 +77,7 @@ export default function LevelView(props: {
         />
       </Show>
       <View class="absolute left-0 top-[222] w-[135] h-[14] flex-col items-center">
-        <Text class="text-2xs text-[#6B7585]">FRONT zero · SIDE clear</Text>
+        <Text class="text-2xs text-[#6B7585]">FRONT zero · SIDE off</Text>
       </View>
     </View>
   );

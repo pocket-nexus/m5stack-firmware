@@ -39,7 +39,7 @@ export default function MetronomeView(props: {
       </View>
       <Show when={!props.running}>
         <View class="absolute left-0 top-[224] w-[135] h-[14] flex-col items-center">
-          <Text class="text-2xs text-[#6B7585]">FRONT start · SIDE tempo</Text>
+          <Text class="text-2xs text-[#6B7585]">FRONT play · SIDE BPM</Text>
         </View>
       </Show>
     </View>
