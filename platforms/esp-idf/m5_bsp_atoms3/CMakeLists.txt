@@ -20,4 +20,11 @@ idf_component_register(
         log
     REQUIRED_IDF_TARGETS esp32s3
 )
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+# The repository warning rule (AGENTS.md). m5_strict_warnings comes from
+# m5_pocket_app's project_include.cmake; a program without it gets the plain
+# flags, which IDF partly relaxes.
+if(COMMAND m5_strict_warnings)
+    m5_strict_warnings(${COMPONENT_LIB})
+else()
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+endif()
