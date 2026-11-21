@@ -1,0 +1,10 @@
+description: Board support for the M5Stack StopWatch (C152, ESP32-S3)
+license: MIT
+targets:
+  - esp32s3
+dependencies:
+  idf: ">=6.0,<6.3"
+  espressif/esp_lcd_touch:
+    version: "1.2.1"
+    public: true
+  espressif/esp_codec_dev: "1.6.2"

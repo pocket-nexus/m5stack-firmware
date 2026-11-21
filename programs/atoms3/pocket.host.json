@@ -1,0 +1,22 @@
+{
+  "$schema": "https://pocketjs.dev/schema/pocket-host-2.json",
+  "format": "pocket-host/2",
+  "id": "m5stack-atoms3",
+  "platform": "esp-idf",
+  "form": "takeover",
+  "cadences": [30],
+  "display": {
+    "logicalViewports": [[128, 128]],
+    "presentations": ["native"],
+    "rasterDensity": 1,
+    "animation": "repaint"
+  },
+  "panel": {
+    "primary": [128, 128]
+  },
+  "capabilities": ["input.buttons", "text.glyphs.baked"],
+  "bytecode": {
+    "engine": "esp-idf-quickjs-ng-0.14.0",
+    "source": "drop"
+  }
+}

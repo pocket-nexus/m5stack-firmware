@@ -13,10 +13,10 @@ M5Stack-sample/
 ├─ programs/<board>/          IDF project: main, host contract,
 │                             sdkconfig.defaults, partitions
 │  └─ aot/                    the program's AOT library crate
-├─ apps/<board>-factory/      factory demo application (TSX views, TS models)
-│                             and its host config
+├─ apps/<board>-factory/      factory demo application (TSX views, TS models),
+│                             its host config, pocket.fonts.json and fonts/
 ├─ tests/                     aot-smoke (both modes, both targets) and tool tests
-├─ tools/                     Pocket CLI wrapper, formatter
+├─ tools/                     Pocket CLI wrapper (per-app fonts), formatter
 └─ docs/                      reference documentation (APP-HOST.md: the host)
 ```
 

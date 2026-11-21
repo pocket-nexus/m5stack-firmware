@@ -221,6 +221,11 @@ int32_t m5_pocket_backend_tick(m5_pocket_app *app) {
   return status;
 }
 
+pocket_runtime *m5_pocket_backend_runtime(m5_pocket_app *app) {
+  js_backend *js = app->backend;
+  return js ? js->runtime : NULL;
+}
+
 void m5_pocket_backend_destroy(m5_pocket_app *app) {
   js_backend *js = app->backend;
   if (!js)

@@ -1,0 +1,2 @@
+# AOT mode: add after sdkconfig.defaults (see README.md).
+CONFIG_M5_POCKET_APP_MODE_AOT=y

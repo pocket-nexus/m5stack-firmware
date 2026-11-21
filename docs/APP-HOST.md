@@ -23,7 +23,7 @@ board bring-up; it passes handles and callbacks to `m5_pocket_app_start`.
 | `platforms/rust/m5_pocket_aot/` | Shared AOT crate: runtime, adapters, bridge, allocator, panic handler |
 | `platforms/rust/m5_pocket_aot_build/` | `build.rs` support of per-app crates |
 | `tests/aot-smoke/aot/` | Per-app AOT crate template |
-| `tools/pocket` | Pocket CLI of the submodule (`bun third_party/pocketjs/tools/pocket.ts`) |
+| `tools/pocket` | Pocket CLI of the submodule, run through `tools/pocket.ts`, which applies the app's `pocket.fonts.json` ([FONTS.md](FONTS.md)) |
 | `tests/aot-smoke/` | Smoke program: the reference adoption |
 
 ## Adopt the component in a program
@@ -174,6 +174,10 @@ runtime tick, the request handler for each request, and `after_frame`.
 adapter and the host's input source; panel, IO and touch handles stay the
 program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
 the longest frame and the smallest unused stack seen.
+In JS mode `m5_pocket_app_runtime(app)` returns the running `pocket_runtime`
+for runtime operations from the app task's hooks, for example uploading a
+texture with `pocket/textures.h` and publishing its handle through the bridge;
+it returns NULL in AOT mode, where the application crate owns the `Ui`.
 
 ### Displays
 
