@@ -6,9 +6,10 @@ M5Stack-sample/
 ├─ platforms/esp-idf/         ESP-IDF components owned by this repository
 │  └─ m5_bsp_<board>/         board support taken from M5Stack sources
 ├─ platforms/rust/            Rust crates of the shared AOT host
-├─ programs/<board>/          IDF project: main, host contract, host config,
+├─ programs/<board>/          IDF project: main, host contract,
 │                             sdkconfig.defaults, partitions
 ├─ apps/<board>-factory/      factory demo application (TSX views, TS models)
+│                             and its host config
 ├─ tools/                     formatter and repository scripts
 └─ docs/                      reference documentation
 ```
@@ -21,9 +22,11 @@ buttons, sensors, audio) and returns ESP-IDF handles.
 
 **The program composes and configures.** `programs/<board>/main` creates the
 board devices, wraps them in PocketJS display and input drivers and starts the
-application. `pocket.host.json` is the board's host contract;
-`pocket.host.config.ts` names it and holds the application in its `app`
-section.
+application. `programs/<board>/pocket.host.json` is the board's host
+contract. `apps/<board>-factory/pocket.host.config.ts` names that contract by
+relative path and holds the application in its `app` section; it lives beside
+the sources because the Pocket CLI rejects `..` in the app entry path and the
+AOT model check covers only files under the config's directory.
 
 **The application is one TSX/TS project per board.** Its sources stay inside
 the MicroTS admission subset so the same files build in JS mode and in AOT
