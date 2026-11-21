@@ -1,12 +1,12 @@
 //! AOT glue of the StopWatch app: mount, board values into device.ts, the
-//! request queue out, and the badge picture the board decodes. Everything
-//! else comes from m5_pocket_aot. Derived from tests/aot-smoke/aot.
+//! request queue out. The badge picture the board decodes arrives through
+//! m5_pocket_app_set_texture (main/services.c). Everything else comes from
+//! m5_pocket_aot. Derived from tests/aot-smoke/aot.
 #![no_std]
 
 extern crate alloc;
 
 use alloc::{boxed::Box, string::String, vec::Vec};
-use core::ffi::c_void;
 use m5_pocket_aot::{bridge::Value, device_fields, DeviceApp, M5Host};
 use microts::{Input, Ui};
 use pocket_runtime::{GuestEnvironment, RuntimeError};
@@ -21,70 +21,8 @@ include!(concat!(env!("OUT_DIR"), "/stopwatch_images.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 
-/// `stopwatch_badge_image` in programs/stopwatch/main/badge.h.
-#[repr(C)]
-struct BadgeImage {
-    pixels: *mut u16,
-    canvas_w: u32,
-    canvas_h: u32,
-    image_w: u32,
-    image_h: u32,
-}
-
-extern "C" {
-    fn stopwatch_badge_take_image(out: *mut BadgeImage) -> bool;
-    fn heap_caps_free(ptr: *mut c_void);
-}
-
-/// The badge view binds this image name; the bundle holds a 1 x 1 stand-in.
-const BADGE_IMAGE: &str = "images/badge_slot.png";
-/// PocketJS PSM_5650: 16-bit pixels with red in the low bits.
-const PSM_5650: u32 = 0;
-
 pub struct Stopwatch {
     app: Box<App>,
-    badge_texture: i32,
-}
-
-impl Stopwatch {
-    /// Uploads a newly decoded badge picture (the JS-mode program does the
-    /// same through pocket/textures.h) and tells the model its handle.
-    fn take_badge(&mut self) {
-        let mut image = BadgeImage {
-            pixels: core::ptr::null_mut(),
-            canvas_w: 0,
-            canvas_h: 0,
-            image_w: 0,
-            image_h: 0,
-        };
-        // SAFETY: the C function fills `image`; a non-null buffer of
-        // canvas_w * canvas_h u16 pixels is ours to free with heap_caps_free.
-        if !unsafe { stopwatch_badge_take_image(&mut image) } {
-            return;
-        }
-        let ui = self.app.ui_mut();
-        if self.badge_texture >= 0 {
-            ui.core_mut().free_texture(self.badge_texture);
-            self.badge_texture = -1;
-        }
-        if !image.pixels.is_null() {
-            let length = (image.canvas_w * image.canvas_h * 2) as usize;
-            // SAFETY: see above; the bytes stay valid until heap_caps_free.
-            let bytes = unsafe { core::slice::from_raw_parts(image.pixels as *const u8, length) };
-            let handle = ui
-                .core_mut()
-                .upload_texture(bytes, image.canvas_w, image.canvas_h, PSM_5650);
-            // SAFETY: the buffer came from heap_caps_malloc and is not used again.
-            unsafe { heap_caps_free(image.pixels as *mut c_void) };
-            if handle >= 0 {
-                ui.register_image(BADGE_IMAGE, handle);
-                self.badge_texture = handle;
-                *self.app.model.device_badgeCanvas_mut() = image.canvas_w as i32;
-            }
-        }
-        *self.app.model.device_badgeTexture_mut() = self.badge_texture;
-        self.app.invalidate();
-    }
 }
 
 impl DeviceApp for Stopwatch {
@@ -107,14 +45,10 @@ impl DeviceApp for Stopwatch {
         ));
         let first = app.ui().initial_focus();
         app.ui_mut().set_focus(first);
-        Ok(Self {
-            app,
-            badge_texture: -1,
-        })
+        Ok(Self { app })
     }
 
     fn frame(&mut self, input: &Input) {
-        self.take_badge();
         self.app.frame(input);
     }
 
@@ -171,6 +105,7 @@ impl DeviceApp for Stopwatch {
             "apSsid" => device_apSsid_mut,
             "apMessage" => device_apMessage_mut,
             "badgeCanvas" => device_badgeCanvas_mut,
+            "badgeTexture" => device_badgeTexture_mut,
         })
     }
 

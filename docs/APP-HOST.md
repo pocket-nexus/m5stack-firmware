@@ -174,10 +174,31 @@ runtime tick, the request handler for each request, and `after_frame`.
 adapter and the host's input source; panel, IO and touch handles stay the
 program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
 the longest frame and the smallest unused stack seen.
-In JS mode `m5_pocket_app_runtime(app)` returns the running `pocket_runtime`
-for runtime operations from the app task's hooks, for example uploading a
-texture with `pocket/textures.h` and publishing its handle through the bridge;
-it returns NULL in AOT mode, where the application crate owns the `Ui`.
+
+### Program textures
+
+`m5_pocket_app_set_texture(app, name, rgb565, width, height, stride_bytes, &handle)`
+uploads a picture the program produced (a decoded photo, a camera frame) and
+binds it to an image name the views draw (`<Image src={name}>`), in both
+modes. Pixels are PSM_5650 (red in the low five bits, as the JS pak stores
+RGB565), `width` and `height` powers of two, rows `stride_bytes` apart; the
+host repacks a padded stride. Calling it again for the name frees the
+previous texture; NULL pixels free it and unbind the name. Call it from the
+app task hooks (`before_frame`, `on_request`, `after_frame`); at most
+`M5_POCKET_APP_TEXTURES_MAX` (8) names are bound at once.
+
+| Mode | Upload | Name binding |
+| --- | --- | --- |
+| JS | `pocket/textures.h` (`uploadTexture` op) into the guest's core | `m5.textures(registerTexture)` at the start of the next frame (`connectDevice`) |
+| AOT | `m5_pocket_aot_upload_texture` into the compiled app's `Ui` | `Ui::register_image`, immediately |
+
+An image node resolves its name when it is created or re-bound, so publish a
+`device.ts` value with the change (the returned handle, for example) that
+remounts the view; the StopWatch badge publishes `badgeTexture`.
+
+In JS mode `m5_pocket_app_runtime(app)` still returns the running
+`pocket_runtime` for other runtime operations from the hooks; it returns NULL
+in AOT mode, where the application crate owns the `Ui`.
 
 ### Displays
 
@@ -365,10 +386,11 @@ installs `globalThis.m5` after boot:
 | --- | --- |
 | `m5.sync(number, text, array, event)` | Calls the callback of each changed value's kind with `(name, value)`, then `event(name, value)` per queued event; returns the call count |
 | `m5.request(text)` | Passes one request to the program's handler; `true` when a handler took it |
+| `m5.textures(bind)` | Calls `bind(name, handle)` for each image name `m5_pocket_app_set_texture` bound or unbound (-1) since the previous call; returns the call count |
 | `m5.mode` | `"js"` |
 
-`connectDevice` registers an `onFrame` callback that calls `m5.sync` with the
-root exports and passes every string from `takeRequests()` to `m5.request`.
+`connectDevice` registers an `onFrame` callback that calls
+`m5.textures(registerTexture)`, then `m5.sync` with the root exports and passes every string from `takeRequests()` to `m5.request`.
 Field writes made through model functions are settled in the same frame, so
 views that read them update in that frame. A request made by a handler during
 dispatch is delivered at the next frame's callback.
@@ -565,8 +587,7 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
   included). Generated styles, fonts and code are flash.
 - **Fonts stay in flash** with `load_fonts_in_place` (`load_font_atlas_shared`).
   The generated `load_fonts` would copy each atlas into the heap (the smoke
-  app's three atlases are 76 KB). `load_images` still uploads image pixels
-  to the heap.
+  app's three atlases are 76 KB). Images: see [Images](#images).
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
   The smoke app used at most 19,400 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
@@ -578,6 +599,70 @@ buffers were allocated, 273,956 B while running, minimum 270,744 B. The host,
 the runtime, the app and the 64 KiB task stack together took at most
 107,128 B of internal RAM. QEMU validates boot, the frame loop, input,
 bridge and requests; it does not validate timing or a real panel.
+
+### Images
+
+**MicroTS's generated `load_images` embeds each image's 1x picture as
+RGBA8888 and copies it into the heap at mount.** It ignores the
+`@<density>x` variants and `images.json`, so on a host with raster density 2
+the AOT artwork is half the resolution the JS bundle draws, and every picture
+costs four bytes per pixel twice: in flash and in the heap.
+
+The opt-in replacement registers the same names with the pictures the JS
+build packs, in flash or in the heap:
+
+```rust
+// build.rs
+m5_pocket_aot_build::emit();
+m5_pocket_aot_build::emit_images(
+    concat!(env!("CARGO_MANIFEST_DIR"), "/../../../apps/<board>-factory"), // app directory
+    2,                                                                      // raster density
+);
+```
+
+```rust
+// src/lib.rs
+include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
+// in DeviceApp::mount, instead of load_images(&mut ui):
+load_images_at_density(&mut ui, m5_pocket_aot::ImageStorage::Heap); // or ::Flash
+```
+
+`emit_images(app_dir, density)` reads the images the generated `include.rs`
+registers and writes `OUT_DIR/m5_images.rs` with `load_images_at_density`
+and `M5_IMAGE_BYTES`, the pixel bytes of all pictures. For each image:
+
+- **Pixels**: `<stem>@<density>x.png` beside the image in `app_dir` when the
+  density is above 1 and that file exists (decoded with the `png` 0.17.16
+  crate, a build dependency only; its sides must be powers of two or the
+  build fails); otherwise the RGBA8888 stream MicroTS generated from the 1x
+  file, already on a power-of-two canvas.
+- **Format**: as `images.json` in `app_dir` declares, the encoding the JS
+  pak uses: `"psm": 0` RGB565, `2` RGBA4444, `3` or absent RGBA8888;
+  `"linear": true` selects bilinear sampling. Other `psm` values are stored
+  as RGBA8888 with a Cargo warning.
+- **Upload**: `m5_pocket_aot::upload_image(ui, name, pixels, width, height, psm, flags, storage)`.
+
+| `ImageStorage` | Flash | Heap |
+| --- | --- | --- |
+| `Heap` | `M5_IMAGE_BYTES` | `M5_IMAGE_BYTES`, allocated at mount (`upload_texture_flags`) |
+| `Flash` | `M5_IMAGE_BYTES` | a texture's bytes from the first frame that draws it (`upload_texture_from`) |
+
+With `Flash`, `ui.core_mut().set_texture_budget(bytes)` in `mount` bounds the
+decoded copies: when a frame is drawn, textures beyond the budget that the
+previous frame did not draw are released, least recently drawn first, and
+decoded again by the next frame that draws them. Zero, the default, keeps
+every texture once drawn. Use `Flash` without PSRAM or when the pictures do
+not fit the heap together (AtomS3, StopWatch); `Heap` keeps the first-draw
+copy out of the frame and suits a board with PSRAM to spare.
+
+| Program | Generated `load_images` | `load_images_at_density` |
+| --- | --- | --- |
+| Tab5 (density 2, `Heap`) | 1x, RGBA8888 | 22 pictures @2x, RGB565/RGBA8888 per `images.json`: 3,469,312 B heap and flash (same pixels as the program's former loader) |
+| StickS3 (density 1, `Heap`) | 21 pictures RGBA8888: 2,981,888 B heap and flash | 21 pictures RGB565: 1,490,944 B heap and flash; application image 4,580,480 → 3,088,800 B |
+
+AtomS3 and StopWatch have their own `Flash` loaders that predate the helper;
+`emit_images(.., 1)` with `ImageStorage::Flash` covers both (StopWatch's
+RGBA4444 tiles and `linear` flags included).
 
 ## Validation
 

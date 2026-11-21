@@ -73,6 +73,7 @@ launcher, 1000 ms in Cloud and USB).
 | `device.ts` | Device bridge state module ([APP-HOST](../../docs/APP-HOST.md)), below |
 | `images/` | Factory artwork as PNG |
 | `images.json` | Stores every image as RGB565 (`psm` 0) in the JS bundle |
+| `pocket.fonts.json`, `fonts/` | Montserrat Medium as the regular face ([Fonts](#fonts)) |
 
 ## Device bridge
 
@@ -106,13 +107,36 @@ through the generated `device_<name>_mut` accessors (`device_fields!`) and
 drains `requests`; its name list equals the `hostNumber`/`hostText` switches.
 Both modes run the same model: the keys arrive as `CIRCLE`/`DOWN` button
 bits, clicks are decided after 500 ms of virtual time, and the app has no
-animations. AOT stores the artwork as RGBA8888 textures uploaded at mount;
-JS mode keeps it as RGB565 in the bundle.
+animations. Both modes store the artwork as RGB565 (`images.json`): JS mode
+in the bundle, AOT mode as textures uploaded at mount.
 
 `pocket.host.config.ts` lives here, not in `programs/sticks3/`: PocketJS
 resolves `app.entry` relative to the config file and rejects `..`, and AOT
 model admission registers the config's directory as the application
 directory.
+
+## Fonts
+
+The UIFlow2 labels use `M5.Lcd.FONTS.Montserrat14/18/24`
+(`m5stack/components/M5Unified/mpy_m5gfx.cpp`: `lvFontMontserrat14/18/24`),
+LVGL's built-in Montserrat fonts, which LVGL generates from
+`Montserrat-Medium.ttf` (`lvgl/src/font/lv_font_montserrat_14.c` header:
+`--font Montserrat-Medium.ttf`). `pocket.fonts.json` declares that face as
+`regular` ([docs/FONTS.md](../../docs/FONTS.md)); no label is bold or
+monospace, so `bold` and `mono` keep the PocketJS defaults and are not baked.
+
+| Face | File | Version | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Montserrat Medium | `fonts/Montserrat-Medium.ttf`, unmodified | 9.000 | [JulietaUla/Montserrat](https://github.com/JulietaUla/Montserrat) `fonts/ttf/` at `555facfb2a18c72c3c0380f0d9c0f060453a9058` | SIL OFL 1.1, `fonts/Montserrat-OFL.txt` |
+
+| Factory label | Factory font | Utility | Slot | Size |
+| --- | --- | --- | --- | --- |
+| USB battery level | Montserrat14 | `text-sm` | 1 | exact |
+| Launcher battery, version | Montserrat18 | `text-lg` | 3 | exact |
+| Cloud access code, nickname; Setup AP name | Montserrat24 | `text-2xl` | 5 | exact |
+
+Slot 2 (16 px) is baked as the default style and not drawn. Atlases: 14 px
+28,432 B, 16 px 35,344 B, 18 px 43,024 B, 24 px 78,544 B.
 
 ## Artwork
 
@@ -139,10 +163,10 @@ Unused factory files: `1c.jpg` (APP.LIST), `1d.jpg` (LoRa.CHAT) and
 
 ## Known differences from the factory firmware
 
-- **Fonts.** UIFlow draws the labels in Montserrat 14/18/24. PocketJS bakes
-  Inter for application text and `pocket compile` has no font override, so
-  the labels use Inter at the same pixel sizes (`text-sm`, `text-lg`,
-  `text-2xl`). Glyph widths and baselines differ by a few pixels.
+- **Text rendering.** UIFlow draws LVGL's 4-bit Montserrat bitmaps through
+  M5GFX; PocketJS rasterises the same Montserrat Medium outlines into its own
+  atlases, so antialiasing and kerning can differ by a pixel. Label positions
+  follow UIFlow's top-left anchors with PocketJS line boxes.
 - **Nickname truncation.** UIFlow shortens a nickname wider than 129 px with
   `...` in the middle (`Label.LONG_DOT`); here it is clipped at 129 px.
 - **UIFlow cloud.** The firmware has no M5Things client (UIFlow's

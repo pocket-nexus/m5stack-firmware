@@ -35,7 +35,10 @@ mod sys;
 
 pub use fields::Field;
 pub use host::M5Host;
-pub use instance::{cadence_hz, create, destroy, tick, AotConfig, AppFacts, Hosted};
+pub use instance::{
+    cadence_hz, create, destroy, free_texture, register_image, tick, upload_texture, AotConfig,
+    AppFacts, Hosted,
+};
 pub use sys::log;
 
 use alloc::{rc::Rc, string::String, vec::Vec};
@@ -75,6 +78,48 @@ pub fn load_font_in_place(ui: &mut Ui, bytes: &'static [u8]) -> bool {
         .load_font_atlas_shared(storage, 0..bytes.len())
 }
 
+/// Where an image's pixels live after [`upload_image`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImageStorage {
+    /// Copied into the heap at mount (`upload_texture_flags`), as the
+    /// generated `load_images` does: the pixel bytes are paid twice, in flash
+    /// and in the heap.
+    Heap,
+    /// Read in place from flash (`upload_texture_from`): copied into the heap
+    /// when a frame first draws the texture and released again under the
+    /// core's texture budget (`ui.core_mut().set_texture_budget(bytes)`;
+    /// zero, the default, keeps every drawn texture).
+    Flash,
+}
+
+/// Upload one picture `m5_pocket_aot_build::emit_images` embedded and
+/// register it under `name`, the name the generated view draws. `psm` and
+/// `flags` follow the DrawList texture contract (`spec::psm`, `spec::img`).
+#[allow(clippy::too_many_arguments)]
+pub fn upload_image(
+    ui: &mut Ui,
+    name: &str,
+    pixels: &'static [u8],
+    width: u32,
+    height: u32,
+    psm: u32,
+    flags: u8,
+    storage: ImageStorage,
+) {
+    let id = match storage {
+        ImageStorage::Heap => ui
+            .core_mut()
+            .upload_texture_flags(pixels, width, height, psm, flags),
+        ImageStorage::Flash => {
+            let bytes: Rc<dyn AsRef<[u8]>> = Rc::new(pixels);
+            ui.core_mut()
+                .upload_texture_from(bytes, 0..pixels.len(), width, height, psm, flags)
+        }
+    };
+    assert!(id >= 0, "image upload failed");
+    ui.register_image(name, id);
+}
+
 /// Define the `m5_pocket/aot.h` functions for one [`DeviceApp`].
 ///
 /// `$profile` names the module (in scope at the call) that includes `OUT_DIR/pocket_profile.rs`;
@@ -109,6 +154,33 @@ macro_rules! export_app {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn m5_pocket_aot_destroy(app: *mut ::core::ffi::c_void) {
             unsafe { $crate::destroy::<$app>(app) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_upload_texture(
+            app: *mut ::core::ffi::c_void,
+            pixels: *const u8,
+            length: usize,
+            width: u32,
+            height: u32,
+            psm: u32,
+        ) -> i32 {
+            unsafe { $crate::upload_texture::<$app>(app, pixels, length, width, height, psm) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_free_texture(
+            app: *mut ::core::ffi::c_void,
+            handle: i32,
+        ) {
+            unsafe { $crate::free_texture::<$app>(app, handle) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_register_image(
+            app: *mut ::core::ffi::c_void,
+            name: *const u8,
+            length: usize,
+            handle: i32,
+        ) -> i32 {
+            unsafe { $crate::register_image::<$app>(app, name, length, handle) }
         }
     };
 }

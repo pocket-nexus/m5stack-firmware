@@ -79,7 +79,7 @@ impl<D: DeviceApp> AotApp for Hosted<D> {
 
 struct Instance<D> {
     runtime: Runtime,
-    _app: AppState<Hosted<D>>,
+    app: AppState<Hosted<D>>,
     cadence_hz: u32,
     failed: bool,
 }
@@ -155,7 +155,7 @@ unsafe fn build<D: DeviceApp>(config: &AotConfig, facts: AppFacts) -> Option<Ins
     let cadence_hz = runtime.timing().map_or(0, |timing| timing.cadence_hz);
     Some(Instance {
         runtime,
-        _app: app,
+        app,
         cadence_hz,
         failed: false,
     })
@@ -227,4 +227,73 @@ pub unsafe fn destroy<D: DeviceApp>(app: *mut c_void) {
     let mut instance = unsafe { Box::from_raw(app.cast::<Instance<D>>()) };
     let _ = instance.runtime.shutdown();
     drop(instance);
+}
+
+/// Run `f` on the mounted app's `Ui`, between frames.
+///
+/// # Safety
+/// `app` came from [`create`] for the same `D`; no frame is running.
+unsafe fn with_ui<D: DeviceApp, T>(app: *mut c_void, f: impl FnOnce(&mut Ui) -> T) -> Option<T> {
+    if app.is_null() {
+        return None;
+    }
+    let instance = unsafe { &mut *app.cast::<Instance<D>>() };
+    let mut state = instance.app.try_borrow_mut().ok()?;
+    let hosted = state.as_mut()?;
+    Some(f(hosted.app.ui_mut()))
+}
+
+/// `m5_pocket_aot_upload_texture`: a handle, or -1.
+///
+/// # Safety
+/// As [`with_ui`]; `pixels` holds `length` readable bytes.
+pub unsafe fn upload_texture<D: DeviceApp>(
+    app: *mut c_void,
+    pixels: *const u8,
+    length: usize,
+    width: u32,
+    height: u32,
+    psm: u32,
+) -> i32 {
+    if pixels.is_null() {
+        return -1;
+    }
+    let bytes = unsafe { core::slice::from_raw_parts(pixels, length) };
+    unsafe {
+        with_ui::<D, _>(app, |ui| {
+            ui.core_mut().upload_texture(bytes, width, height, psm)
+        })
+    }
+    .unwrap_or(-1)
+}
+
+/// `m5_pocket_aot_free_texture`.
+///
+/// # Safety
+/// As [`with_ui`].
+pub unsafe fn free_texture<D: DeviceApp>(app: *mut c_void, handle: i32) {
+    unsafe { with_ui::<D, _>(app, |ui| ui.core_mut().free_texture(handle)) };
+}
+
+/// `m5_pocket_aot_register_image`: a POCKET_STATUS_* code.
+///
+/// # Safety
+/// As [`with_ui`]; `name` holds `length` bytes of UTF-8.
+pub unsafe fn register_image<D: DeviceApp>(
+    app: *mut c_void,
+    name: *const u8,
+    length: usize,
+    handle: i32,
+) -> i32 {
+    if name.is_null() {
+        return STATUS_INVALID;
+    }
+    let Ok(name) = core::str::from_utf8(unsafe { core::slice::from_raw_parts(name, length) })
+    else {
+        return STATUS_INVALID;
+    };
+    match unsafe { with_ui::<D, _>(app, |ui| ui.register_image(name, handle)) } {
+        Some(()) => STATUS_OK,
+        None => STATUS_FAILED,
+    }
 }
