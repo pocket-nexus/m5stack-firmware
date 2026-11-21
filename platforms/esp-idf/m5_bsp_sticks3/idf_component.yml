@@ -1,0 +1,5 @@
+description: M5Stack StickS3 (K150) board support without PocketJS dependencies
+targets:
+  - esp32s3
+dependencies:
+  idf: ">=6.0,<6.3"
