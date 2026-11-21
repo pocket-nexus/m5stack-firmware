@@ -17,7 +17,7 @@ mod profile {
 }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
 include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
-include!(concat!(env!("OUT_DIR"), "/stopwatch_images.rs"));
+include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 
@@ -36,8 +36,12 @@ impl DeviceApp for Stopwatch {
             return Err(RuntimeError::InvalidConfiguration);
         }
         load_fonts_in_place(&mut ui);
-        // Pictures stay in flash in their images.json formats (build.rs).
-        load_images_in_place(&mut ui);
+        // Pictures stay in flash in their images.json formats (about 8 MB
+        // with the big-number tiles and glyph images); a drawn texture is
+        // decoded into the heap and released beyond a 2 MiB budget when the
+        // previous frame did not draw it.
+        load_images_at_density(&mut ui, m5_pocket_aot::ImageStorage::Flash);
+        ui.core_mut().set_texture_budget(2 * 1024 * 1024);
         let mut app = Box::new(App::new(
             M5Host(ui),
             generated::AppProps {},
