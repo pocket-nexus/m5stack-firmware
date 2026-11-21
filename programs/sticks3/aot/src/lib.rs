@@ -1,5 +1,5 @@
-//! AOT glue of the StickS3 factory app: mount, board values into device.ts,
-//! the request queue out. Everything else comes from m5_pocket_aot.
+//! AOT glue of the StickS3 demos: mount, board values into device.ts, the
+//! request queue out. Everything else comes from m5_pocket_aot.
 #![no_std]
 
 extern crate alloc;
@@ -15,7 +15,6 @@ mod profile {
 }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
 include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 
@@ -32,9 +31,7 @@ impl DeviceApp for StickS3 {
             return Err(RuntimeError::InvalidConfiguration);
         }
         load_fonts_in_place(&mut ui);
-        // RGB565 as images.json declares, not the generated RGBA8888
-        // load_images: half the heap.
-        load_images_at_density(&mut ui, m5_pocket_aot::ImageStorage::Heap);
+        // The demos draw only Views and text: no images to load.
         let mut app = Box::new(App::new(
             M5Host(ui),
             generated::AppProps {},
@@ -57,27 +54,43 @@ impl DeviceApp for StickS3 {
         self.0.ui_mut()
     }
 
-    // The same names as the hostNumber/hostText switches in device.ts.
+    // The same names as the hostNumber/hostArray switches in device.ts.
     fn value(&mut self, value: &Value<'_>) -> bool {
         let model = &mut self.0.model;
         device_fields!(model, value, {
+            "bridged" => device_bridged_mut,
+            "uptimeMs" => device_uptimeMs_mut,
+            "presentedMs" => device_presentedMs_mut,
+            "keyFront" => device_keyFront_mut,
+            "keySide" => device_keySide_mut,
+            "frontPressMs" => device_frontPressMs_mut,
+            "sidePressMs" => device_sidePressMs_mut,
             "batteryLevel" => device_batteryLevel_mut,
             "charging" => device_charging_mut,
-            "wifiConfigured" => device_wifiConfigured_mut,
-            "wifiStatus" => device_wifiStatus_mut,
-            "cloudStatus" => device_cloudStatus_mut,
-            "apStations" => device_apStations_mut,
-            "portalClients" => device_portalClients_mut,
-            "accessCode" => device_accessCode_mut,
-            "nickName" => device_nickName_mut,
-            "apSsid" => device_apSsid_mut,
-            "firmwareVersion" => device_firmwareVersion_mut,
+            "imuOk" => device_imuOk_mut,
+            "accelX" => device_accelX_mut,
+            "accelY" => device_accelY_mut,
+            "accelZ" => device_accelZ_mut,
+            "gyroX" => device_gyroX_mut,
+            "gyroY" => device_gyroY_mut,
+            "gyroZ" => device_gyroZ_mut,
+            "micOn" => device_micOn_mut,
+            "micDb" => device_micDb_mut,
+            "micPeakDb" => device_micPeakDb_mut,
+            "seed" => device_seed_mut,
+            "best" => device_best_mut,
         })
     }
 
-    // The StickS3 startup posts no board events (device.ts hostEvent).
-    fn event(&mut self, _event: &Value<'_>) -> bool {
-        false
+    // device.ts hostEvent: a PMIC power-key click counts in powerClicks.
+    fn event(&mut self, event: &Value<'_>) -> bool {
+        match event.name {
+            "powerKey" => {
+                *self.0.model.device_powerClicks_mut() += 1;
+                true
+            }
+            _ => false,
+        }
     }
 
     fn requests(&mut self) -> Option<&mut Vec<String>> {
