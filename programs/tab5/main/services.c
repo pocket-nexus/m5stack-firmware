@@ -124,6 +124,8 @@ static void poll_rs485(void) {
 void tab5_services_publish(void *context) {
   (void)context;
   const int64_t now = esp_timer_get_time();
+  /* The application simulates the board until this arrives. */
+  m5_pocket_bridge_set_bool("hostAttached", true);
   publish_clock();
   if (now >= services.next_fast) {
     services.next_fast = now + 100000;

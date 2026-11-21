@@ -113,7 +113,13 @@ static void display_config(m5_pocket_display_config *display, uint32_t width,
       .copy = copy,
       .move_copy = copy,
   };
+  /* Two PPA renderers split every strip at a multiple of the row quantum:
+   * the app task (core 0) renders the upper rows, a helper on core 1 the
+   * lower ones. */
   display->ppa = true;
+  display->ppa_lanes = 2;
+  display->ppa_helper_core = 1;
+  display->ppa_row_alignment = quantum;
   display->ppa_mask_budget = TAB5_STRIP_BYTES / 2U;
   ESP_LOGI(TAG,
            "picture %" PRIu32 "x%" PRIu32 " turned, strips of %" PRIu32 " rows",

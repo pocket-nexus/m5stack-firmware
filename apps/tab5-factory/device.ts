@@ -22,7 +22,8 @@ import {
 
 // ---- board -> app -----------------------------------------------------------
 
-/** True once the board published a value. */
+/** True once the board published a value; the board also publishes it, the
+ *  AOT host writing fields directly. */
 export let hostAttached: boolean = false;
 
 /** RX8130CE wall-clock time; month 1..12. */
@@ -264,6 +265,9 @@ export function requestSdScan(): void {
 export function hostNumber(name: string, value: f64): void {
   hostAttached = true;
   switch (name) {
+    case "hostAttached":
+      hostAttached = value !== 0;
+      break;
     case "rtcYear":
       rtcYear = i32(value);
       break;
