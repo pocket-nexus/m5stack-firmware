@@ -97,11 +97,13 @@ resolve different managed components (AOT has no QuickJS), so AOT builds use
 
 ### Differences in AOT mode
 
-- **Artwork memory.** `load_images` uploads every image as RGBA8888 at mount:
-  about 2.9 MB of PSRAM heap for the 11 full-screen images, and the same
-  bytes again in flash. JS mode stores the artwork as RGB565 in the bundle
-  (1.66 MB) and decodes textures on first draw. The runtime heap limit is
-  4 MiB for this reason.
+- **Artwork memory.** `aot/build.rs` calls
+  `m5_pocket_aot_build::emit_images` (density 1), so the 21 images are
+  stored as RGB565, as `images.json` declares, instead of the generated
+  `load_images`' RGBA8888: 1,490,944 bytes, copied into the PSRAM heap at
+  mount and the same bytes in flash (the generated loader took 2,981,888).
+  JS mode stores the artwork as RGB565 in the bundle (1.66 MB) and decodes
+  textures on first draw. The runtime heap limit is 4 MiB.
 - **Keys.** Both modes see KEY1/KEY2 as `CIRCLE`/`DOWN` button bits; the
   app's `ActionHandler`s and its 500 ms click decision behave the same.
   There is no touch panel, so the AOT touch-to-press mapping does not apply.
@@ -114,9 +116,9 @@ ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `idf.py size`:
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image (`.bin`) | 3 994 576 | 4 580 480 |
-| `factory` partition (7 MiB) free | 3 345 456 (46 %) | 2 759 552 (38 %) |
-| Application content | bundle 1 891 096 (artwork RGB565 1.66 MB) | generated code, styles, fonts, RGBA8888 images 2.9 MB |
+| Application image (`.bin`) | 3 994 576 | 3 088 800 |
+| `factory` partition (7 MiB) free | 3 345 456 (46 %) | 4 251 232 (58 %) |
+| Application content | bundle 1 891 096 (artwork RGB565 1.66 MB) | generated code, styles, fonts, RGB565 images 1 490 944 |
 | DIRAM static use (of 341 760) | 132 137 (39 %) | 129 841 (38 %) |
 | `.data` / `.bss` | 22 530 / 25 784 | 22 514 / 25 640 |
 | IRAM | 16 384 of 16 384 | 16 384 of 16 384 |

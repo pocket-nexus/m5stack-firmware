@@ -106,8 +106,8 @@ through the generated `device_<name>_mut` accessors (`device_fields!`) and
 drains `requests`; its name list equals the `hostNumber`/`hostText` switches.
 Both modes run the same model: the keys arrive as `CIRCLE`/`DOWN` button
 bits, clicks are decided after 500 ms of virtual time, and the app has no
-animations. AOT stores the artwork as RGBA8888 textures uploaded at mount;
-JS mode keeps it as RGB565 in the bundle.
+animations. Both modes store the artwork as RGB565 (`images.json`): JS mode
+in the bundle, AOT mode as textures uploaded at mount.
 
 `pocket.host.config.ts` lives here, not in `programs/sticks3/`: PocketJS
 resolves `app.entry` relative to the config file and rejects `..`, and AOT
