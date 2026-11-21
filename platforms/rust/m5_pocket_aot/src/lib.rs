@@ -35,7 +35,10 @@ mod sys;
 
 pub use fields::Field;
 pub use host::M5Host;
-pub use instance::{cadence_hz, create, destroy, tick, AotConfig, AppFacts, Hosted};
+pub use instance::{
+    cadence_hz, create, destroy, free_texture, register_image, tick, upload_texture, AotConfig,
+    AppFacts, Hosted,
+};
 pub use sys::log;
 
 use alloc::{rc::Rc, string::String, vec::Vec};
@@ -151,6 +154,33 @@ macro_rules! export_app {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn m5_pocket_aot_destroy(app: *mut ::core::ffi::c_void) {
             unsafe { $crate::destroy::<$app>(app) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_upload_texture(
+            app: *mut ::core::ffi::c_void,
+            pixels: *const u8,
+            length: usize,
+            width: u32,
+            height: u32,
+            psm: u32,
+        ) -> i32 {
+            unsafe { $crate::upload_texture::<$app>(app, pixels, length, width, height, psm) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_free_texture(
+            app: *mut ::core::ffi::c_void,
+            handle: i32,
+        ) {
+            unsafe { $crate::free_texture::<$app>(app, handle) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_register_image(
+            app: *mut ::core::ffi::c_void,
+            name: *const u8,
+            length: usize,
+            handle: i32,
+        ) -> i32 {
+            unsafe { $crate::register_image::<$app>(app, name, length, handle) }
         }
     };
 }

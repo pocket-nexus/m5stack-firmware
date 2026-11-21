@@ -236,6 +236,8 @@ static void release(m5_pocket_app *app) {
   if (app->stopped)
     vSemaphoreDelete(app->stopped);
   m5_pocket_bridge_set_request_handler(NULL, NULL);
+  for (int i = 0; i < M5_POCKET_APP_TEXTURES_MAX; i++)
+    free(app->textures[i].name);
   free(app);
   atomic_store(&running, false);
 }
@@ -333,4 +335,75 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app,
 
 pocket_runtime *m5_pocket_app_runtime(m5_pocket_app *app) {
   return app ? m5_pocket_backend_runtime(app) : NULL;
+}
+
+static bool power_of_two(uint32_t value) {
+  return value && !(value & (value - 1));
+}
+
+esp_err_t m5_pocket_app_set_texture(m5_pocket_app *app, const char *name,
+                                    const uint16_t *rgb565, uint32_t width,
+                                    uint32_t height, size_t stride_bytes,
+                                    int32_t *handle) {
+  if (handle)
+    *handle = -1;
+  if (!app || !app->backend)
+    return ESP_ERR_INVALID_STATE;
+  if (!name || !name[0] ||
+      (rgb565 && (!power_of_two(width) || !power_of_two(height) ||
+                  stride_bytes < (size_t)width * 2)))
+    return ESP_ERR_INVALID_ARG;
+  int slot = -1, unused = -1;
+  for (int i = 0; i < M5_POCKET_APP_TEXTURES_MAX; i++) {
+    if (app->textures[i].name && strcmp(app->textures[i].name, name) == 0)
+      slot = i;
+    else if (!app->textures[i].name && unused < 0)
+      unused = i;
+  }
+  if (slot < 0 && !rgb565)
+    return ESP_OK; /* nothing bound */
+  if (slot < 0) {
+    if (unused < 0)
+      return ESP_ERR_NO_MEM;
+    app->textures[unused].name = strdup(name);
+    if (!app->textures[unused].name)
+      return ESP_ERR_NO_MEM;
+    app->textures[unused].handle = -1;
+    slot = unused;
+  }
+  int32_t uploaded = -1;
+  if (rgb565) {
+    const size_t row = (size_t)width * 2;
+    uint16_t *packed = NULL;
+    const uint16_t *pixels = rgb565;
+    if (stride_bytes != row) {
+      packed = heap_caps_malloc(row * height, MALLOC_CAP_8BIT);
+      if (!packed)
+        return ESP_ERR_NO_MEM;
+      for (uint32_t y = 0; y < height; y++)
+        memcpy((uint8_t *)packed + y * row,
+               (const uint8_t *)rgb565 + y * stride_bytes, row);
+      pixels = packed;
+    }
+    uploaded = m5_pocket_backend_upload_texture(app, pixels, width, height);
+    heap_caps_free(packed);
+    if (uploaded < 0)
+      return ESP_ERR_NO_MEM;
+  }
+  esp_err_t err = m5_pocket_backend_bind_texture(app, name, uploaded);
+  if (err != ESP_OK) {
+    if (uploaded >= 0)
+      m5_pocket_backend_free_texture(app, uploaded);
+    return err;
+  }
+  if (app->textures[slot].handle >= 0)
+    m5_pocket_backend_free_texture(app, app->textures[slot].handle);
+  app->textures[slot].handle = uploaded;
+  if (uploaded < 0) {
+    free(app->textures[slot].name);
+    app->textures[slot].name = NULL;
+  }
+  if (handle)
+    *handle = uploaded;
+  return ESP_OK;
 }

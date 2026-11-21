@@ -4,6 +4,7 @@
 #include "app_internal.h"
 #include "esp_log.h"
 #include "m5_pocket/aot.h"
+#include <string.h>
 
 static const char *TAG = "m5_pocket_app";
 
@@ -43,4 +44,24 @@ void m5_pocket_backend_destroy(m5_pocket_app *app) {
   if (app->backend)
     m5_pocket_aot_destroy(app->backend);
   app->backend = NULL;
+}
+
+int32_t m5_pocket_backend_upload_texture(m5_pocket_app *app,
+                                         const uint16_t *pixels, uint32_t width,
+                                         uint32_t height) {
+  return m5_pocket_aot_upload_texture(app->backend, pixels,
+                                      (size_t)width * height * sizeof(uint16_t),
+                                      width, height, 0 /* PSM_5650 */);
+}
+
+void m5_pocket_backend_free_texture(m5_pocket_app *app, int32_t handle) {
+  m5_pocket_aot_free_texture(app->backend, handle);
+}
+
+esp_err_t m5_pocket_backend_bind_texture(m5_pocket_app *app, const char *name,
+                                         int32_t handle) {
+  return m5_pocket_aot_register_image(app->backend, name, strlen(name),
+                                      handle) == POCKET_STATUS_OK
+             ? ESP_OK
+             : ESP_ERR_INVALID_STATE;
 }

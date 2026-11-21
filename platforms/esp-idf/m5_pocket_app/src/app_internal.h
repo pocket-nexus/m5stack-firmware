@@ -31,6 +31,11 @@ struct m5_pocket_app {
   esp_err_t start_result;
   atomic_bool stop;
   m5_pocket_app_stats stats;
+  /* Image names m5_pocket_app_set_texture bound, with their handles. */
+  struct {
+    char *name;
+    int32_t handle;
+  } textures[M5_POCKET_APP_TEXTURES_MAX];
 };
 
 const pocket_input_source_v1 *m5_pocket_input_vtable(void);
@@ -40,4 +45,13 @@ const pocket_input_source_v1 *m5_pocket_input_vtable(void);
 esp_err_t m5_pocket_backend_boot(m5_pocket_app *app);
 int32_t m5_pocket_backend_tick(m5_pocket_app *app);
 void m5_pocket_backend_destroy(m5_pocket_app *app);
+/* Texture operations of m5_pocket_app_set_texture, on the app task between
+ * frames. upload returns a handle or -1; bind maps a name to a handle (-1:
+ * unbind) for the application. */
+int32_t m5_pocket_backend_upload_texture(m5_pocket_app *app,
+                                         const uint16_t *pixels, uint32_t width,
+                                         uint32_t height);
+void m5_pocket_backend_free_texture(m5_pocket_app *app, int32_t handle);
+esp_err_t m5_pocket_backend_bind_texture(m5_pocket_app *app, const char *name,
+                                         int32_t handle);
 pocket_runtime *m5_pocket_backend_runtime(m5_pocket_app *app);

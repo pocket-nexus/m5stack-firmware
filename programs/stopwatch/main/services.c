@@ -13,6 +13,7 @@
  */
 #include "services.h"
 #include "badge.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_timer.h"
@@ -23,10 +24,6 @@
 #include "m5_stopwatch/bsp.h"
 #include "nvs.h"
 #include "sdkconfig.h"
-#if CONFIG_M5_POCKET_APP_MODE_JS
-#include "pocket/textures.h"
-#endif
-#include "esp_heap_caps.h"
 #include "spectrum.h"
 #include <math.h>
 #include <stdbool.h>
@@ -330,40 +327,28 @@ uint32_t stopwatch_services_buttons(void) {
 }
 
 static m5_pocket_app *running_app;
-#if CONFIG_M5_POCKET_APP_MODE_JS
-static int32_t badge_texture = -1;
-#endif
 
 void stopwatch_services_set_app(m5_pocket_app *app) { running_app = app; }
 
-/* The one place that hands the badge picture to PocketJS. JS mode: upload a
- * newly decoded picture into the guest's core and publish its handle;
- * main.tsx binds it to images/badge_slot.png. AOT mode: the program's crate
- * takes the picture itself (programs/stopwatch/aot/src/lib.rs). */
+/* The one place that hands the badge picture to PocketJS, in both modes:
+ * m5_pocket_app_set_texture uploads a newly decoded picture and binds it to
+ * the image name the badge view draws; the published handle makes the view
+ * remount it. */
 static void badge_texture_update(void) {
-#if CONFIG_M5_POCKET_APP_MODE_JS
-  pocket_runtime *runtime = m5_pocket_app_runtime(running_app);
-  if (!runtime) {
-    return;
-  }
   stopwatch_badge_image image;
-  if (!stopwatch_badge_take_image(&image)) {
+  if (!running_app || !stopwatch_badge_take_image(&image)) {
     return;
   }
-  if (badge_texture >= 0) {
-    pocket_texture_free(runtime, badge_texture);
-    badge_texture = -1;
-  }
-  if (image.pixels) {
-    badge_texture = pocket_texture_upload(
-        runtime, image.pixels,
-        (size_t)image.canvas_w * image.canvas_h * sizeof(uint16_t),
-        image.canvas_w, image.canvas_h, 0 /* PSM_5650 */);
-    heap_caps_free(image.pixels);
+  int32_t handle = -1;
+  if (m5_pocket_app_set_texture(running_app, "images/badge_slot.png",
+                                image.pixels, image.canvas_w, image.canvas_h,
+                                (size_t)image.canvas_w * sizeof(uint16_t),
+                                &handle) == ESP_OK &&
+      image.pixels) {
     m5_pocket_bridge_set_number("badgeCanvas", image.canvas_w);
   }
-  m5_pocket_bridge_set_number("badgeTexture", badge_texture);
-#endif
+  heap_caps_free(image.pixels);
+  m5_pocket_bridge_set_number("badgeTexture", handle);
 }
 
 void stopwatch_services_before_frame(void) {

@@ -201,6 +201,30 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app, m5_pocket_app_stats *out);
  * before the backend booted. */
 pocket_runtime *m5_pocket_app_runtime(m5_pocket_app *app);
 
+/* Most image names m5_pocket_app_set_texture binds at once. */
+#define M5_POCKET_APP_TEXTURES_MAX 8
+
+/* Upload a picture the program produced (a decoded photo, a camera frame)
+ * and bind it to an image name the views draw (`<Image src={name}>`), in
+ * either mode. `rgb565` holds height rows of width PSM_5650 pixels (red in
+ * the low five bits, as pocket_spec.h and the JS pak), stride_bytes apart
+ * (>= width * 2); width and height are powers of two. The previous texture
+ * this function bound to `name` is freed. NULL pixels free it and unbind the
+ * name. Image nodes created or re-bound afterwards draw the new texture:
+ * publish a device.ts value (for example the handle) so the view remounts.
+ * `handle` (optional) receives the texture handle, -1 when unbound.
+ *
+ * Call only from the app task hooks (before_frame, on_request, after_frame).
+ * JS mode uploads through pocket/textures.h and binds the name in the guest
+ * at the start of the next frame (js/m5-bridge.ts, registerTexture); AOT
+ * mode uploads into the compiled app's Ui and calls Ui::register_image.
+ * ESP_ERR_INVALID_ARG: bad name, size or stride; ESP_ERR_NO_MEM: no free
+ * name slot or upload failure; ESP_ERR_INVALID_STATE: not running. */
+esp_err_t m5_pocket_app_set_texture(m5_pocket_app *app, const char *name,
+                                    const uint16_t *rgb565, uint32_t width,
+                                    uint32_t height, size_t stride_bytes,
+                                    int32_t *handle);
+
 #ifdef __cplusplus
 }
 #endif
