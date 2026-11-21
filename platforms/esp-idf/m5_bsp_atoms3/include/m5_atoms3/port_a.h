@@ -39,8 +39,9 @@ esp_err_t m5_atoms3_port_a_adc_open(void);
 esp_err_t m5_atoms3_port_a_adc_read(int samples, int *raw_g1, int *raw_g2);
 void m5_atoms3_port_a_adc_close(void);
 
-// USB Serial/JTAG (the factory's USBSerial). Installs the driver once; the
-// console shares the port.
+// USB Serial/JTAG (the factory's USBSerial). Installs the driver once and
+// routes the console through it; console output and bridged bytes share the
+// port.
 esp_err_t m5_atoms3_usb_serial_init(void);
 int m5_atoms3_usb_serial_read(uint8_t *data, size_t capacity);
 int m5_atoms3_usb_serial_write(const uint8_t *data, size_t length);

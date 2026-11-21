@@ -10,6 +10,7 @@
 #include "driver/ledc.h"
 #include "driver/uart.h"
 #include "driver/usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_check.h"
 #include "m5_atoms3/board.h"
@@ -189,7 +190,11 @@ esp_err_t m5_atoms3_usb_serial_init(void) {
   }
   usb_serial_jtag_driver_config_t config =
       USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
-  return usb_serial_jtag_driver_install(&config);
+  ESP_RETURN_ON_ERROR(usb_serial_jtag_driver_install(&config), TAG,
+                      "usb serial jtag driver");
+  // The console shares the port: route it through the driver too.
+  usb_serial_jtag_vfs_use_driver();
+  return ESP_OK;
 }
 
 int m5_atoms3_usb_serial_read(uint8_t *data, size_t capacity) {
