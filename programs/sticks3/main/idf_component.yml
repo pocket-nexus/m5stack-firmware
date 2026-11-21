@@ -1,0 +1,17 @@
+dependencies:
+  idf: ">=6.0,<6.3"
+  pocket-nexus/pocket_runtime:
+    version: "0.1.0"
+    override_path: ../../../third_party/pocketjs/platforms/esp-idf/pocket_runtime
+  pocket-nexus/pocket_guest_quickjs:
+    version: "0.1.0"
+    override_path: ../../../third_party/pocketjs/platforms/esp-idf/pocket_guest_quickjs
+  pocket-nexus/pocket_display_esp_lcd:
+    version: "0.1.0"
+    override_path: ../../../third_party/pocketjs/platforms/esp-idf/pocket_display_esp_lcd
+  pocket-nexus/pocket_input_gpio:
+    version: "0.1.0"
+    override_path: ../../../third_party/pocketjs/platforms/esp-idf/pocket_input_gpio
+  pocket-nexus/pocket_runner:
+    version: "0.1.0"
+    override_path: ../../../third_party/pocketjs/platforms/esp-idf/pocket_runner
