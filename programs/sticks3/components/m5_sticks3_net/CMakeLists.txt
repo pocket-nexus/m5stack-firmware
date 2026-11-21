@@ -6,4 +6,4 @@ idf_component_register(
                   nvs_flash lwip freertos log
     REQUIRED_IDF_TARGETS esp32s3
 )
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+m5_strict_warnings(${COMPONENT_LIB})
