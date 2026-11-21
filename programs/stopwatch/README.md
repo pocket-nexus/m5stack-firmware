@@ -53,31 +53,140 @@ native presentation, cadence 30, `input.buttons`, `input.touch`,
 `text.glyphs.baked`). The application's host config is
 `apps/stopwatch-factory/pocket.host.config.ts`.
 
+## Badge service
+
+`main/badge.c` (`main/badge.h`) is the board side of the Badge app. It is a
+C port of the factory badge code; the factory behaviour is kept unless
+listed under "Differences".
+
+- Storage: the `storage` partition is mounted with wear levelling
+  (`esp_vfs_fat_spiflash_mount_rw_wl`, 4 KiB sectors, at most 4 open files,
+  formatted when the mount fails) at `/spiflash`. Six slots, 0 to 5:
+  `/spiflash/badge/slot_N.jpg` (image), `/spiflash/badge/slot_N.meta`
+  (extension text, `jpg`) and `/spiflash/badge/active_slot.txt` (active
+  slot number as text). An upload is written to `slot_N.jpg.tmp` and
+  renamed.
+- Active slot: the stored slot (0 when the file is missing or out of range)
+  if its image is readable, else the first occupied slot, which is then
+  stored; none when every slot is empty. This runs at boot and after the
+  editor closes. Deleting the active slot stores the first remaining
+  occupied slot, or removes `active_slot.txt`.
+- Bridge values: `badgeSlots` (6 numbers, 1 = occupied), `badgeActive`
+  (slot, -1 for none), `apSsid`, `apMessage` (the factory status text:
+  `Connect to Wi-Fi: <ssid>\nAnd open page:\nhttp://192.168.4.1`, the
+  captive-probe notice, error texts, empty when idle) and the event
+  `badgeClosed` when the phone presses Close.
+- Access point: open network `M5StopWatch-XXXX` (XXXX = last two SoftAP MAC
+  bytes, upper-case hex), channel 1, at most 4 stations, 192.168.4.1/24,
+  power save off. The DHCP server offers 192.168.4.1 as DNS server. A UDP
+  DNS server on port 53 answers every query with the A record 192.168.4.1
+  (TTL 28 s).
+- HTTP (`esp_http_server`, wildcard URI matching, 15 s socket timeouts):
+
+  | Route | Result |
+  | --- | --- |
+  | `GET /` | editor page (`text/html; charset=utf-8`) |
+  | `GET /badge/state` | `{"apSsid","apUrl","slotCount":6,"activeSlot","slots":[{"slot","hasImage","isActive","imageUrl"}]}` |
+  | `GET /badge/image?slot=N` | stored image (`image/jpeg`); 404 `badge image not found` / `invalid badge slot` |
+  | `POST /badge/active?slot=N` | `{"status":"ok","message":"active slot updated"}`; 400 on an empty or invalid slot |
+  | `DELETE /badge/image?slot=N` | `{"status":"ok","message":"badge image deleted"}`; 400 `badge image not found` |
+  | `POST /upload?slot=N` | body = image, at most 2 MiB (400 `invalid upload size`); only JPEG, decided by the `X-File-Name` extension, else the `Content-Type` (400 `only jpg images are supported`); stores the image and makes the slot active |
+  | `POST /close` | `closing`; then stops the HTTP and DNS servers, Wi-Fi and the AP interface |
+  | `GET` `/hotspot-detect.html`, `/generate_204*`, `/mobile/status.php`, `/check_network_status.txt`, `/ncsi.txt`, `/fwlink/`, `/connectivity-check.html`, `/success.txt`, `/portal.html`, `/library/test/success.html` | 302 to `http://192.168.4.1/?_=<µs since boot>` |
+
+  A missing `slot` query parameter gives 400 `missing slot`.
+- Decode: `stopwatch_badge_take_image` decodes the active slot on the app
+  task with `espressif/esp_jpeg` 1.3.2 (TJpgDec, baseline JPEG only). An
+  image wider or taller than 466 px is decoded at 1/2, 1/4 or 1/8. The
+  pixels are centred on the smallest square canvas of 64, 128, 256 or 512
+  px, black elsewhere, as little-endian `(b5 << 11) | (g6 << 5) | r5` in
+  PSRAM.
+
+Differences from the factory firmware:
+
+- The factory blocks the Badge app while the editor runs; here the
+  service runs beside the app and `stopwatch_badge_edit(false)` also stops
+  it.
+- The factory keeps Wi-Fi initialised after the editor closes and resumes
+  its station mode; this firmware has no station mode and calls
+  `esp_wifi_deinit` to return the Wi-Fi memory.
+- The factory leaves the AP channel at 0 in `wifi_config_t`; this port sets
+  channel 1.
+- The factory DNS server appends its answer after the whole query, after
+  any additional (EDNS) record; this port answers after the question and
+  clears the authority and additional counts.
+- The factory serves the page with the terminating NUL byte that
+  `EMBED_TXTFILES` adds; this port omits it.
+- PNG slots (never written by the factory upload, but recognised by its
+  file rules) are listed as occupied but not decoded.
+
+Sources taken from
+[M5StopWatch-UserDemo](https://github.com/m5stack/M5StopWatch-UserDemo)
+at commit `81099c784991dc77f522de1a5bf62ec5de9ae0b5` (MIT, M5Stack):
+`main/hal/hal_badge.cpp`, `main/hal/utils/config_ap/config_ap.cpp` and
+`config_ap.h`, `main/hal/utils/wear_levelling/wear_levelling.c` (ported to
+`main/badge.c`), and `main/hal/utils/config_ap/assets/badge_config_ap.html`
+(copied unchanged to `main/assets/badge_config_ap.html`). The DNS answer
+format follows `dns_server.cc` of `78/esp-wifi-connect` 3.1.3, the
+component the factory uses.
+
 ## Build
 
 Requirements: ESP-IDF `>=6.0,<6.3`, Bun, the Espressif Rust toolchain
 (`rustup` toolchain `esp` with `xtensa-esp32s3-none-elf`) and, for AOT
-checks, the PocketJS layout oracle (`bun tools/wasm.ts` inside
+mode and AOT checks, the PocketJS layout oracle (`bun tools/wasm.ts` inside
 `third_party/pocketjs`; the output is ignored).
 
 ```sh
 . $IDF_PATH/export.sh
 cd programs/stopwatch
-idf.py build                       # JS mode (CONFIG_M5_POCKET_APP_MODE_JS)
+
+# JS mode (default): bundle in the QuickJS guest
+idf.py build
 idf.py -p <port> flash monitor
+
+# AOT mode: MicroTS-compiled Rust library (programs/stopwatch/aot)
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot" set-target esp32s3 build
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig -p <port> flash monitor
 ```
 
-`components.cmake` builds the runtime archive from the submodule with
-`~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
-`tools/pocket`.
+The two modes need different managed components (AOT links no QuickJS), so
+JS mode keeps `dependencies.lock` and AOT mode `dependencies.aot.lock`
+(selected in `CMakeLists.txt`). Both share `managed_components/`: run the
+two builds one after the other, not at the same time.
+
+`components.cmake` builds the JS-mode runtime archive from the submodule
+with `~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
+`tools/pocket`. In AOT mode `m5_pocket_app()` compiles the application with
+`pocket compile --aot` and Cargo builds `aot/` with the `esp` toolchain.
+
+`aot/` is the program's AOT crate (from `tests/aot-smoke/aot`):
+`src/lib.rs` writes every board value into the `device.ts` fields
+(`device_fields!`, the counterpart of the `hostNumber`/`hostText`/
+`hostArray` switches; `uptimeMs` also sets `bridged`, the `badgeClosed`
+event counts), and uploads the badge picture through `Ui::register_image`.
+`build.rs` replaces the generated `load_images`, which would embed every
+picture as RGBA8888 and copy it into the heap at mount (about 10 MB of flash
+and 10 MB of heap with the 116 big-number tiles), with
+`load_images_in_place`: each picture is stored in the format `images.json`
+selects (RGB565, RGBA4444 or RGBA8888, as in the JS bundle) and registered
+with `upload_texture_from`, which reads flash when the texture is drawn.
+
+The badge picture is handed to PocketJS in one function,
+`badge_texture_update` in `main/services.c`: JS mode uploads it with
+`m5_pocket_app_runtime` and `pocket/textures.h`; AOT mode leaves it to the
+crate.
+
+`main` and `m5_bsp_stopwatch` call `m5_strict_warnings()` after their
+`-Wall -Wextra -Werror` (IDF relaxes `-Wextra`); both build without
+warnings.
 
 Check the application against the MicroTS subset without building firmware:
 
 ```sh
 bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --aot --out /tmp/stopwatch-aot
 ```
-
-AOT-mode firmware follows when the shared host's AOT mode lands.
 
 ## Partitions
 
@@ -86,11 +195,18 @@ AOT-mode firmware follows when the shared host's AOT mode lands.
 | nvs | 24 KiB |
 | phy_init | 4 KiB |
 | factory | 12 MiB |
-| storage (FAT, reserved for badge images) | 3,968 KiB |
+| storage (FAT with wear levelling, badge images, `/spiflash`) | 3,968 KiB |
 
 ## Validation
 
-Firmware builds only; no device run. JS mode (`idf.py build`, ESP-IDF 6.x):
-`m5stack_stopwatch.bin` 8,481,024 bytes, 33 % of the 12 MiB app partition
-free (the application bundle is about 6.4 MB, 3.7 MB of it the big-number
-artwork); static DIRAM use 104,945 of 341,760 bytes.
+Firmware builds only; no device run (ESP-IDF 6.x, esp32s3).
+
+| Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM |
+| --- | --- | --- | --- |
+| JS | 9,193,552 bytes (bundle about 6.4 MB, 3.7 MB of it big-number artwork) | 27 % | 154,889 of 341,760 bytes |
+| AOT | 8,242,672 bytes (Rust library 12.9 MB before linking) | 34 % | 152,721 of 341,760 bytes |
+
+AOT pictures stay in flash and are decoded under the runtime's texture
+budget when drawn, so the 8 MiB PSRAM holds only the textures on screen (estimate:
+(at most about 1 MB for the launcher's three icon textures, the guide or
+four big-number tiles) plus the runtime heap).
