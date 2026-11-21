@@ -29,3 +29,7 @@ idf_component_register(
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+# A program on m5_pocket_app restores the warnings IDF relaxes.
+if(COMMAND m5_strict_warnings)
+    m5_strict_warnings(${COMPONENT_LIB})
+endif()
