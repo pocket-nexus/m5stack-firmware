@@ -203,8 +203,8 @@ Firmware builds only; no device run (ESP-IDF 6.x, esp32s3).
 
 | Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM |
 | --- | --- | --- | --- |
-| JS | 9,193,552 bytes (bundle about 6.4 MB, 3.7 MB of it big-number artwork) | 27 % | 154,889 of 341,760 bytes |
-| AOT | 8,242,672 bytes (Rust library 12.9 MB before linking) | 34 % | 152,721 of 341,760 bytes |
+| JS | 11,330,016 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 10 % | 154,889 of 341,760 bytes |
+| AOT | 10,657,136 bytes | 15 % | 152,721 of 341,760 bytes |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
 budget when drawn, so the 8 MiB PSRAM holds only the textures on screen (estimate:
