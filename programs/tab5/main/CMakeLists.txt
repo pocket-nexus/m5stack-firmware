@@ -25,4 +25,5 @@ m5_strict_warnings(${COMPONENT_LIB})
 m5_pocket_app(
     TARGET ${COMPONENT_LIB}
     NAME tab5
-    HOST_CONFIG "../../../apps/tab5-factory/pocket.host.config.ts")
+    HOST_CONFIG "../../../apps/tab5-factory/pocket.host.config.ts"
+    AOT_CRATE "../aot")

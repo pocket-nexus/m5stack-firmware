@@ -1,0 +1,41 @@
+# The AOT crate of programs/tab5: the MicroTS output of apps/tab5-factory as
+# the static library m5_pocket_app links in AOT mode. Built by
+# m5_pocket_app() with POCKETJS_AOT_DIR and POCKETJS_PROFILE_RS set.
+[package]
+name = "m5-tab5-factory-app"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+# m5_pocket_app links lib<name>.a under this fixed name.
+name = "m5_pocket_app_aot"
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+test = false
+bench = false
+
+[dependencies]
+m5-pocket-aot = { path = "../../../platforms/rust/m5_pocket_aot" }
+# The generated sources name these crates.
+microts = { path = "../../../third_party/pocketjs/engine/microts-runtime", features = ["runtime"] }
+pocket-runtime = { path = "../../../third_party/pocketjs/engine/runtime" }
+
+[build-dependencies]
+m5-pocket-aot-build = { path = "../../../platforms/rust/m5_pocket_aot_build" }
+
+[profile.release]
+opt-level = "s"
+panic = "abort"
+codegen-units = 16
+debug = false
+lto = false
+overflow-checks = false
+
+# The rasterizer and the retained core run every frame.
+[profile.release.package.pocket-raster]
+opt-level = 3
+
+[profile.release.package.pocketjs-core]
+opt-level = 3
