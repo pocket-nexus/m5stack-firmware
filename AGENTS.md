@@ -15,6 +15,9 @@ Architecture and implementation notes belong in `docs/`, not here.
   **AOT mode** compiles the same TSX/TS sources with MicroTS into a Rust
   static library. Application sources therefore stay inside the MicroTS
   admission subset (`site/content/docs/microts-solid.md` in the submodule).
+- A board whose internal RAM cannot hold the QuickJS guest is AOT-only: its
+  `sdkconfig.defaults` sets `CONFIG_M5_POCKET_APP_MODE_AOT=y` and its program
+  README gives the measurement. The AtomS3 (no PSRAM) is the only such board.
 
 ## Commits and pull requests
 
