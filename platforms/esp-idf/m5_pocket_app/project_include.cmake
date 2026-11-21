@@ -128,6 +128,21 @@ function(_m5_pocket_app_aot target name config project_root crate profile_dir ge
         "rustup toolchain that builds the AOT library (esp32s3: Espressif's Xtensa toolchain)")
     find_program(M5_POCKET_RUSTUP rustup HINTS "$ENV{HOME}/.cargo/bin" REQUIRED)
 
+    # `pocket compile --aot` reads the core's layout oracle, a wasm build of
+    # the submodule (ignored by its .gitignore). Build it once when missing.
+    set(oracle "${M5_POCKET_POCKETJS_DIR}/platforms/web/pocketjs.wasm")
+    if(NOT EXISTS "${oracle}" AND NOT TARGET m5_pocket_aot_oracle)
+        find_program(M5_POCKET_BUN bun HINTS "$ENV{HOME}/.bun/bin" REQUIRED)
+        add_custom_command(
+            OUTPUT "${oracle}"
+            COMMAND "${M5_POCKET_BUN}" tools/wasm.ts
+            WORKING_DIRECTORY "${M5_POCKET_POCKETJS_DIR}"
+            COMMENT "PocketJS: building the MicroTS layout oracle (bun tools/wasm.ts in third_party/pocketjs)"
+            USES_TERMINAL
+            VERBATIM)
+        add_custom_target(m5_pocket_aot_oracle DEPENDS "${oracle}")
+    endif()
+
     set(aot_dir "${generated}/aot")
     add_custom_command(
         OUTPUT "${aot_dir}/include.rs"
@@ -135,7 +150,7 @@ function(_m5_pocket_app_aot target name config project_root crate profile_dir ge
         COMMAND "${POCKETJS_CLI}" compile --config "${config}" --project-root "${project_root}"
             --plan-dir "${generated}/plans" --aot --out "${aot_dir}" --depfile "${aot_dir}.d"
         DEPFILE "${aot_dir}.d"
-        DEPENDS "${config}" "${POCKETJS_CLI}" ${depends}
+        DEPENDS "${config}" "${POCKETJS_CLI}" "${oracle}" ${depends}
         COMMENT "MicroTS: compiling ${name} to Rust"
         VERBATIM)
 

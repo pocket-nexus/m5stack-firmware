@@ -10,8 +10,6 @@ board bring-up; it passes handles and callbacks to `m5_pocket_app_start`.
 | JS (default) | `CONFIG_M5_POCKET_APP_MODE_JS` | bundle (`.pkb`) in the QuickJS guest | `pocket_runtime` archive + `pocket_guest_quickjs` |
 | AOT | `CONFIG_M5_POCKET_APP_MODE_AOT` | MicroTS-compiled Rust static library | the application library drives `pocket_runtime::Runtime` |
 
-AOT mode status: see [AOT mode](#aot-mode).
-
 ## Files
 
 | Path | Content |
@@ -20,7 +18,11 @@ AOT mode status: see [AOT mode](#aot-mode).
 | `platforms/esp-idf/m5_pocket_app/project_include.cmake` | `m5_pocket_app()` CMake helper |
 | `platforms/esp-idf/m5_pocket_app/include/m5_pocket/app.h` | Host C API |
 | `platforms/esp-idf/m5_pocket_app/include/m5_pocket/bridge.h` | Device bridge C API |
+| `platforms/esp-idf/m5_pocket_app/include/m5_pocket/aot.h` | C ABI of the AOT library |
 | `platforms/esp-idf/m5_pocket_app/js/m5-bridge.ts` | JS-mode bridge for `main.tsx` |
+| `platforms/rust/m5_pocket_aot/` | Shared AOT crate: runtime, adapters, bridge, allocator, panic handler |
+| `platforms/rust/m5_pocket_aot_build/` | `build.rs` support of per-app crates |
+| `tests/aot-smoke/aot/` | Per-app AOT crate template |
 | `tools/pocket` | Pocket CLI of the submodule (`bun third_party/pocketjs/tools/pocket.ts`) |
 | `tests/aot-smoke/` | Smoke program: the reference adoption |
 
@@ -327,8 +329,203 @@ dispatch is delivered at the next frame's callback.
 
 ## AOT mode
 
-AOT mode (Rust library, CMake build, both targets) is in progress on
-`feat/app-host`; this section will describe it when it lands.
+**In AOT mode MicroTS compiles the application's views and models into Rust,
+and the per-app crate links them with `platforms/rust/m5_pocket_aot` into the
+static library `libm5_pocket_app_aot.a`.** `pocket_runtime` links that library
+in place of its default runtime archive (`components.cmake` sets
+`POCKET_RUNTIME_ARCHIVE` to it), so the firmware contains one Rust archive,
+no QuickJS and no bundle. `pocket_runtime/src/hooks.c` keeps serving the
+library: its allocator is `pocket_host_alloc`/`realloc`/`free`, its panic
+handler `pocket_host_panic`, its log `pocket_host_log`.
+
+The C side is the same in both modes: `m5_pocket_app_start` creates the same
+display, renderer and input objects and passes their vtables to
+`m5_pocket_aot_create` (`m5_pocket/aot.h`). The library adapts them with
+`pocket_drivers::abi::{CDisplay, CRenderer, CInputSource}`, registers the
+software rasterizer and an `AotGuest`, calls
+`Runtime::boot_aot_deferred(profile hash, profile viewport, false, TICK_HZ)`
+and presents the first frame. On ESP32-P4 the library also exports the
+`pocket_render_esp_ppa_*` factory the C PPA renderer component calls.
+
+### Build steps
+
+`m5_pocket_app()` in AOT mode:
+
+1. `pocketjs_profile_header` exports `pocket_profile.h`, `pocket.host.json`
+   and `pocket_profile.rs` to `<build>/esp-idf/main/pocketjs/<name>/profile`.
+2. `pocket compile --config <host config> --aot --out <build>/.../m5_pocket_app/<name>/aot`
+   generates `include.rs`, `app.rs`, `app_model.rs`, `styles.bin` and the
+   font atlases; its depfile reruns it when a source changes. The step needs
+   the MicroTS layout oracle `third_party/pocketjs/platforms/web/pocketjs.wasm`
+   (ignored by the submodule); when it is missing the build runs
+   `bun tools/wasm.ts` in the submodule first (wasm32 target of 1.98.1).
+3. Cargo builds the per-app crate on every build (Cargo decides what is
+   stale) with `POCKETJS_AOT_DIR`, `POCKETJS_PROFILE_RS` and
+   `CARGO_TARGET_DIR=<build>/m5_pocket_aot/cargo`:
+   `rustup run <M5_POCKET_AOT_TOOLCHAIN> cargo build --release --locked --target <triple>`.
+
+   | IDF target | Rust target | Toolchain (default of `M5_POCKET_AOT_TOOLCHAIN`) |
+   | --- | --- | --- |
+   | esp32s3 | `xtensa-esp32s3-none-elf` | `esp` (Espressif, rustc 1.97 nightly), `-Zbuild-std=core,alloc` |
+   | esp32p4 | `riscv32imafc-unknown-none-elf` | channel of `third_party/pocketjs/rust-toolchain.toml` (1.98.1) |
+
+4. `aot_archive.cmake` copies a new archive to
+   `<build>/m5_pocket_aot/libm5_pocket_app_aot.a` and, for ESP32-P4, removes
+   the soft-float compiler-rt members (`pocket_runtime/prepare_archive.cmake`;
+   36 objects). An unchanged archive is not copied, so a no-op build does not
+   relink.
+
+The submodule's compiler pins (`tools/build/toolchains/esp-idf/compiler-pins.json`:
+P4 1.93.0) apply to its release packaging, not to these Cargo calls; no
+override is needed. Both modes are configured per build directory:
+
+```sh
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot" set-target esp32s3 build
+```
+
+### Per-app crate
+
+Each program has a thin crate, by default `programs/<board>/aot/`
+(`AOT_CRATE`). Copy `tests/aot-smoke/aot/` and adjust the paths and the field
+list:
+
+```toml
+[lib]
+name = "m5_pocket_app_aot"          # fixed: m5_pocket_app links lib<name>.a
+crate-type = ["staticlib"]
+
+[dependencies]
+m5-pocket-aot = { path = "../../../platforms/rust/m5_pocket_aot" }
+microts = { path = "../../../third_party/pocketjs/engine/microts-runtime", features = ["runtime"] }
+pocket-runtime = { path = "../../../third_party/pocketjs/engine/runtime" }
+
+[build-dependencies]
+m5-pocket-aot-build = { path = "../../../platforms/rust/m5_pocket_aot_build" }
+
+[profile.release]
+opt-level = "s"
+panic = "abort"
+overflow-checks = false
+```
+
+`build.rs` calls `m5_pocket_aot_build::emit()`, which copies the exported
+profile to `OUT_DIR/pocket_profile.rs` and writes `OUT_DIR/m5_fonts.rs`
+(`load_fonts_in_place`, see below). `src/lib.rs`:
+
+```rust
+#![no_std]
+extern crate alloc;
+use alloc::{boxed::Box, string::String, vec::Vec};
+use m5_pocket_aot::{bridge::Value, device_fields, DeviceApp, M5Host};
+use microts::{Input, Ui};
+use pocket_runtime::{GuestEnvironment, RuntimeError};
+
+#[allow(dead_code)]
+mod profile { include!(concat!(env!("OUT_DIR"), "/pocket_profile.rs")); }
+include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
+include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
+
+type App = generated::AppApp<generated::AppModel, M5Host>;
+pub struct Board(Box<App>);
+
+impl DeviceApp for Board {
+    fn mount(mut ui: Ui, environment: &GuestEnvironment<'_>) -> Result<Self, RuntimeError> {
+        if environment.tick_hz != TICK_HZ
+            || !ui.load_styles(include_bytes!(concat!(env!("POCKETJS_AOT_DIR"), "/styles.bin")))
+        {
+            return Err(RuntimeError::InvalidConfiguration);
+        }
+        load_fonts_in_place(&mut ui);
+        load_images(&mut ui);
+        let mut app = Box::new(App::new(M5Host(ui), generated::AppProps {}, generated::AppModel::default()));
+        let first = app.ui().initial_focus();
+        app.ui_mut().set_focus(first);
+        Ok(Self(app))
+    }
+    fn frame(&mut self, input: &Input) { self.0.frame(input); }
+    fn invalidate(&mut self) { self.0.invalidate(); }
+    fn ui_mut(&mut self) -> &mut Ui { self.0.ui_mut() }
+    fn value(&mut self, value: &Value<'_>) -> bool {
+        let model = &mut self.0.model;
+        device_fields!(model, value, {
+            "battery" => device_battery_mut,
+            "charging" => device_charging_mut,
+            "clock" => device_clock_mut,
+        })
+    }
+    fn event(&mut self, event: &Value<'_>) -> bool {
+        match event.name {
+            "alarm" => { *self.0.model.device_alarms_mut() += event.number() as i32; true }
+            _ => false,
+        }
+    }
+    fn requests(&mut self) -> Option<&mut Vec<String>> {
+        Some(self.0.model.device_requests_mut())
+    }
+}
+
+m5_pocket_aot::export_app!(Board, profile, TICK_HZ);
+```
+
+The generated model exposes each exported `device.ts` field as
+`device_<field>()` and `device_<field>_mut()`, with the field name as written
+(`pointerX` → `device_pointerX_mut`). `device_fields!` assigns through the
+`Field` trait: integers and floats (saturating `as`), `bool` (non-zero),
+`String`, and `Vec` of numbers. The match is the AOT counterpart of the
+`hostNumber`/`hostText`/`hostArray` switches in `device.ts`; keep both lists
+equal. A model function exported by `app.ts` is not callable from Rust unless
+a view uses it, which is why the AOT host writes fields directly.
+
+Every frame `Hosted<D>` (in `m5_pocket_aot`) takes the changed bridge values
+and events, calls `value`/`event`, calls `invalidate` when any field changed,
+translates the guest frame into `microts::Input`, runs `frame`, then drains
+`requests()` into the program's request handler.
+
+### Input in AOT mode
+
+`microts::Input` carries buttons, button edges, one press target, two relative
+axes and a motion estimate. The host maps:
+
+- buttons, axes 0/1 and motion directly (motion records become
+  `microts::motion::MotionState`);
+- a touch contact into a press, as the guest framework treats a tap: at
+  touch-down the contact's hit node is walked up to its nearest focusable
+  ancestor, which is armed and shows `active:`; lifting the contact over the
+  same target sends a CIRCLE press with that target, lifting elsewhere
+  cancels. The synthetic CIRCLE edge also reaches an
+  `ActionHandler button={BTN.CIRCLE}`.
+
+There are no gesture, drag or scroll events in AOT mode. Apps implement
+swipes and drags in model code from the `pointerX`, `pointerY` and
+`pointerDown` fields, which the host publishes from the touch callback in
+both modes. The runtime's touch wire clamps coordinates to 0–1023, so a
+logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
+
+### Memory
+
+- **No PSRAM is required.** `pocket_host_alloc` takes PSRAM first and
+  internal RAM otherwise; display strip buffers are the program's (their
+  bytes are the runtime's `frame_buffer_budget`); `heap_limit` bounds the
+  runtime. The AOT build never links QuickJS.
+- **Static RAM of the library is small**: the whole AOT smoke firmware for
+  esp32s3 without PSRAM uses 12,036 B `.data` and 6,824 B `.bss` (IDF
+  included). Generated styles, fonts and code are flash.
+- **Fonts stay in flash** with `load_fonts_in_place` (`load_font_atlas_shared`).
+  The generated `load_fonts` would copy each atlas into the heap (the smoke
+  app's three atlases are 76 KB). `load_images` still uploads image pixels
+  to the heap.
+- **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
+  The smoke app used at most 19,256 B of it under QEMU (see below); a larger
+  view tree needs more for layout. `m5_pocket_app_get_stats` reports
+  `stack_free_min`.
+
+Measured under QEMU (esp32s3, no PSRAM, AOT smoke, 240×135, two 16-row
+strips of 7,680 B each): internal heap free 377,872 B after the display
+buffers were allocated, 273,956 B while running, minimum 270,744 B. The host,
+the runtime, the app and the 64 KiB task stack together took at most
+107,128 B of internal RAM. QEMU validates boot, the frame loop, input,
+bridge and requests; it does not validate timing or a real panel.
 
 ## Validation
 
