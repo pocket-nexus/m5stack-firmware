@@ -12,6 +12,7 @@ import {
   atan2,
   clear,
   copy,
+  filter,
   f32,
   fixed,
   frames,
@@ -22,7 +23,6 @@ import {
   len,
   min,
   push,
-  removeAt,
   sqrt,
   trunc,
   f64,
@@ -287,11 +287,11 @@ function printLine(text: string, big: boolean): void {
   push(lines, { id: lineId, text: text, big: big });
   lineHeights = lineHeights + (big ? 14 : 12);
   // Lines scrolled fully past the top of the 98-pixel canvas are dropped.
-  while (len(lines) > 9) {
-    const first = removeAt(lines, 0);
-    lineHeights = lineHeights - (first.big ? 14 : 12);
+  const drop = len(lines) - 9;
+  for (let i = 0; i < drop; i++) {
+    lineHeights = lineHeights - (lines[i].big ? 14 : 12);
   }
-  setWifiLines(lines);
+  setWifiLines(drop > 0 ? filter(lines, (line, index) => index >= drop && line.id > 0) : lines);
   setWifiOverflow(lineHeights > 98);
 }
 
