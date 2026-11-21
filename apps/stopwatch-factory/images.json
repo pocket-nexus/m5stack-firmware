@@ -1,0 +1,401 @@
+{
+  "images/icon_clock.png": {
+    "psm": 0
+  },
+  "images/icon_watch_face.png": {
+    "psm": 0
+  },
+  "images/icon_stopwatch.png": {
+    "psm": 0
+  },
+  "images/icon_badge.png": {
+    "psm": 0
+  },
+  "images/icon_imu.png": {
+    "psm": 0
+  },
+  "images/icon_fft.png": {
+    "psm": 0
+  },
+  "images/icon_lucky_wheel.png": {
+    "psm": 0
+  },
+  "images/icon_setup.png": {
+    "psm": 0
+  },
+  "images/fluidbox_icon.png": {
+    "psm": 0
+  },
+  "images/lucky_wheel_pointer.png": {
+    "linear": true
+  },
+  "images/classic_hour_hand.png": {
+    "linear": true
+  },
+  "images/classic_minute_hand.png": {
+    "linear": true
+  },
+  "images/classic_second_hand.png": {
+    "linear": true
+  },
+  "images/go_home_guide_0.png": {
+    "psm": 0
+  },
+  "images/go_home_guide_1.png": {
+    "psm": 0
+  },
+  "images/go_home_guide_2.png": {
+    "psm": 0
+  },
+  "images/go_home_guide_3.png": {
+    "psm": 0
+  },
+  "images/bn_00_0.png": {
+    "psm": 2
+  },
+  "images/bn_01_0.png": {
+    "psm": 2
+  },
+  "images/bn_02_0.png": {
+    "psm": 2
+  },
+  "images/bn_03_0.png": {
+    "psm": 2
+  },
+  "images/bn_10_0.png": {
+    "psm": 2
+  },
+  "images/bn_11_0.png": {
+    "psm": 2
+  },
+  "images/bn_12_0.png": {
+    "psm": 2
+  },
+  "images/bn_13_0.png": {
+    "psm": 2
+  },
+  "images/bn_20_0.png": {
+    "psm": 2
+  },
+  "images/bn_21_0.png": {
+    "psm": 2
+  },
+  "images/bn_22_0.png": {
+    "psm": 2
+  },
+  "images/bn_23_0.png": {
+    "psm": 2
+  },
+  "images/bn_30_0.png": {
+    "psm": 2
+  },
+  "images/bn_31_0.png": {
+    "psm": 2
+  },
+  "images/bn_32_0.png": {
+    "psm": 2
+  },
+  "images/bn_33_0.png": {
+    "psm": 2
+  },
+  "images/bn_00_1.png": {
+    "psm": 2
+  },
+  "images/bn_01_1.png": {
+    "psm": 2
+  },
+  "images/bn_02_1.png": {
+    "psm": 2
+  },
+  "images/bn_03_1.png": {
+    "psm": 2
+  },
+  "images/bn_10_1.png": {
+    "psm": 2
+  },
+  "images/bn_11_1.png": {
+    "psm": 2
+  },
+  "images/bn_12_1.png": {
+    "psm": 2
+  },
+  "images/bn_13_1.png": {
+    "psm": 2
+  },
+  "images/bn_20_1.png": {
+    "psm": 2
+  },
+  "images/bn_21_1.png": {
+    "psm": 2
+  },
+  "images/bn_22_1.png": {
+    "psm": 2
+  },
+  "images/bn_23_1.png": {
+    "psm": 2
+  },
+  "images/bn_30_1.png": {
+    "psm": 2
+  },
+  "images/bn_31_1.png": {
+    "psm": 2
+  },
+  "images/bn_32_1.png": {
+    "psm": 2
+  },
+  "images/bn_33_1.png": {
+    "psm": 2
+  },
+  "images/bn_00_2.png": {
+    "psm": 2
+  },
+  "images/bn_01_2.png": {
+    "psm": 2
+  },
+  "images/bn_02_2.png": {
+    "psm": 2
+  },
+  "images/bn_03_2.png": {
+    "psm": 2
+  },
+  "images/bn_10_2.png": {
+    "psm": 2
+  },
+  "images/bn_11_2.png": {
+    "psm": 2
+  },
+  "images/bn_12_2.png": {
+    "psm": 2
+  },
+  "images/bn_13_2.png": {
+    "psm": 2
+  },
+  "images/bn_20_2.png": {
+    "psm": 2
+  },
+  "images/bn_21_2.png": {
+    "psm": 2
+  },
+  "images/bn_22_2.png": {
+    "psm": 2
+  },
+  "images/bn_23_2.png": {
+    "psm": 2
+  },
+  "images/bn_30_2.png": {
+    "psm": 2
+  },
+  "images/bn_31_2.png": {
+    "psm": 2
+  },
+  "images/bn_32_2.png": {
+    "psm": 2
+  },
+  "images/bn_33_2.png": {
+    "psm": 2
+  },
+  "images/bn_01_3.png": {
+    "psm": 2
+  },
+  "images/bn_02_3.png": {
+    "psm": 2
+  },
+  "images/bn_03_3.png": {
+    "psm": 2
+  },
+  "images/bn_11_3.png": {
+    "psm": 2
+  },
+  "images/bn_12_3.png": {
+    "psm": 2
+  },
+  "images/bn_13_3.png": {
+    "psm": 2
+  },
+  "images/bn_21_3.png": {
+    "psm": 2
+  },
+  "images/bn_22_3.png": {
+    "psm": 2
+  },
+  "images/bn_23_3.png": {
+    "psm": 2
+  },
+  "images/bn_31_3.png": {
+    "psm": 2
+  },
+  "images/bn_32_3.png": {
+    "psm": 2
+  },
+  "images/bn_33_3.png": {
+    "psm": 2
+  },
+  "images/bn_01_4.png": {
+    "psm": 2
+  },
+  "images/bn_02_4.png": {
+    "psm": 2
+  },
+  "images/bn_03_4.png": {
+    "psm": 2
+  },
+  "images/bn_11_4.png": {
+    "psm": 2
+  },
+  "images/bn_12_4.png": {
+    "psm": 2
+  },
+  "images/bn_13_4.png": {
+    "psm": 2
+  },
+  "images/bn_21_4.png": {
+    "psm": 2
+  },
+  "images/bn_22_4.png": {
+    "psm": 2
+  },
+  "images/bn_23_4.png": {
+    "psm": 2
+  },
+  "images/bn_31_4.png": {
+    "psm": 2
+  },
+  "images/bn_32_4.png": {
+    "psm": 2
+  },
+  "images/bn_33_4.png": {
+    "psm": 2
+  },
+  "images/bn_01_5.png": {
+    "psm": 2
+  },
+  "images/bn_02_5.png": {
+    "psm": 2
+  },
+  "images/bn_03_5.png": {
+    "psm": 2
+  },
+  "images/bn_11_5.png": {
+    "psm": 2
+  },
+  "images/bn_12_5.png": {
+    "psm": 2
+  },
+  "images/bn_13_5.png": {
+    "psm": 2
+  },
+  "images/bn_21_5.png": {
+    "psm": 2
+  },
+  "images/bn_22_5.png": {
+    "psm": 2
+  },
+  "images/bn_23_5.png": {
+    "psm": 2
+  },
+  "images/bn_31_5.png": {
+    "psm": 2
+  },
+  "images/bn_32_5.png": {
+    "psm": 2
+  },
+  "images/bn_33_5.png": {
+    "psm": 2
+  },
+  "images/bn_01_6.png": {
+    "psm": 2
+  },
+  "images/bn_03_6.png": {
+    "psm": 2
+  },
+  "images/bn_11_6.png": {
+    "psm": 2
+  },
+  "images/bn_13_6.png": {
+    "psm": 2
+  },
+  "images/bn_21_6.png": {
+    "psm": 2
+  },
+  "images/bn_23_6.png": {
+    "psm": 2
+  },
+  "images/bn_31_6.png": {
+    "psm": 2
+  },
+  "images/bn_33_6.png": {
+    "psm": 2
+  },
+  "images/bn_01_7.png": {
+    "psm": 2
+  },
+  "images/bn_03_7.png": {
+    "psm": 2
+  },
+  "images/bn_11_7.png": {
+    "psm": 2
+  },
+  "images/bn_13_7.png": {
+    "psm": 2
+  },
+  "images/bn_21_7.png": {
+    "psm": 2
+  },
+  "images/bn_23_7.png": {
+    "psm": 2
+  },
+  "images/bn_31_7.png": {
+    "psm": 2
+  },
+  "images/bn_33_7.png": {
+    "psm": 2
+  },
+  "images/bn_01_8.png": {
+    "psm": 2
+  },
+  "images/bn_03_8.png": {
+    "psm": 2
+  },
+  "images/bn_11_8.png": {
+    "psm": 2
+  },
+  "images/bn_13_8.png": {
+    "psm": 2
+  },
+  "images/bn_21_8.png": {
+    "psm": 2
+  },
+  "images/bn_23_8.png": {
+    "psm": 2
+  },
+  "images/bn_31_8.png": {
+    "psm": 2
+  },
+  "images/bn_33_8.png": {
+    "psm": 2
+  },
+  "images/bn_01_9.png": {
+    "psm": 2
+  },
+  "images/bn_03_9.png": {
+    "psm": 2
+  },
+  "images/bn_11_9.png": {
+    "psm": 2
+  },
+  "images/bn_13_9.png": {
+    "psm": 2
+  },
+  "images/bn_21_9.png": {
+    "psm": 2
+  },
+  "images/bn_23_9.png": {
+    "psm": 2
+  },
+  "images/bn_31_9.png": {
+    "psm": 2
+  },
+  "images/bn_33_9.png": {
+    "psm": 2
+  }
+}
