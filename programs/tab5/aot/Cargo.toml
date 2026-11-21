@@ -24,6 +24,8 @@ pocket-runtime = { path = "../../../third_party/pocketjs/engine/runtime" }
 
 [build-dependencies]
 m5-pocket-aot-build = { path = "../../../platforms/rust/m5_pocket_aot_build" }
+# Decodes the @2x pictures (build.rs).
+png = "0.17.16"
 
 [profile.release]
 opt-level = "s"

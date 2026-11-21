@@ -15,6 +15,7 @@ mod profile {
 }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
 include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
+include!(concat!(env!("OUT_DIR"), "/tab5_images.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 
@@ -31,7 +32,9 @@ impl DeviceApp for Tab5 {
             return Err(RuntimeError::InvalidConfiguration);
         }
         load_fonts_in_place(&mut ui);
-        load_images(&mut ui);
+        // The @2x pictures in their images.json formats, not the generated
+        // 1x RGBA8888 load_images.
+        load_images_at_density(&mut ui);
         let mut app = Box::new(App::new(
             M5Host(ui),
             generated::AppProps {},
