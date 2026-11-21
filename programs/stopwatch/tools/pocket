@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the Pocket CLI of the pinned submodule with Bun.
+root="$(cd "$(dirname "$0")/../../.." && pwd)"
+exec bun "$root/third_party/pocketjs/tools/pocket.ts" "$@"
