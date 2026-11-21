@@ -17,3 +17,8 @@ idf_component_register(
   REQUIRED_IDF_TARGETS esp32s3
 )
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+# IDF relaxes -Wextra; m5_pocket_app's helper restores the strict set when
+# the program uses the shared application host.
+if(COMMAND m5_strict_warnings)
+  m5_strict_warnings(${COMPONENT_LIB})
+endif()
