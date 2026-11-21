@@ -1,0 +1,21 @@
+{
+  "format": "pocket-host/2",
+  "id": "m5stack-tab5-factory",
+  "platform": "esp-idf",
+  "form": "takeover",
+  "cadences": [30],
+  "display": {
+    "logicalViewports": [[640, 360]],
+    "presentations": ["native"],
+    "rasterDensity": 2,
+    "animation": "repaint"
+  },
+  "panel": {
+    "primary": [720, 1280]
+  },
+  "capabilities": ["input.touch", "text.glyphs.baked"],
+  "input": {
+    "touchContacts": 1,
+    "coordinateBits": 10
+  }
+}
