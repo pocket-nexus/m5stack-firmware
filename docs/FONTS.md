@@ -58,7 +58,7 @@ apps/stopwatch-factory/
 | StopWatch | Montserrat Medium and SemiBold, Maple Mono Medium 28/48 px, Commissioner Medium 64/108 px | `regular` Montserrat Medium, `bold` Montserrat SemiBold; Maple Mono and Commissioner sizes are outside the table ([sizes](#sizes-outside-the-table)) |
 | Tab5 | Montserrat (LVGL) 16 to 36 physical px | `regular`/`bold` Montserrat; raster density 2, so a factory size of N physical px is the `N/2` logical px slot |
 | StickS3 | Montserrat | `regular`/`bold` Montserrat |
-| AtomS3 | M5GFX bitmap fonts: efont 12/14/16/24 px and 16 px bold (`efontCN_*`, `efontCN_16_b`), GLCD `Font0` 6×8 | No TrueType source exists. Keep the defaults, or declare a TrueType conversion of the efont BDF faces; 12, 14, 16 and 24 px are table sizes |
+| AtomS3 | M5GFX bitmap fonts: efont 12/14/16/24 px and 16 px bold (`efontCN_*`, `efontCN_16_b`), GLCD `Font0` 6×8 | Pixel-outline TrueType converted from M5GFX's efont data: `regular` efont 16, `bold` efont 16 bold, `mono` efont 12; the 14 and 24 px strings are images (`apps/atoms3-factory/README.md`) |
 
 ## Licensing
 
