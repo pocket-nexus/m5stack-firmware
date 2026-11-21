@@ -15,6 +15,8 @@ M5Stack-sample/
 │  └─ aot/                    the program's AOT library crate
 ├─ apps/<board>-factory/      factory demo application (TSX views, TS models),
 │                             its host config, pocket.fonts.json and fonts/
+├─ apps/sticks3-demos/        StickS3 application: demos of the board in place
+│                             of a factory recreation, same layout
 ├─ tests/                     aot-smoke (both modes, both targets) and tool tests
 ├─ tools/                     Pocket CLI wrapper (per-app fonts), formatter
 └─ docs/                      reference documentation (APP-HOST.md: the host)
@@ -29,7 +31,7 @@ buttons, sensors, audio) and returns ESP-IDF handles.
 **The program composes and configures.** `programs/<board>/main` creates the
 board devices, wraps them in PocketJS display and input drivers and starts the
 application. `programs/<board>/pocket.host.json` is the board's host
-contract. `apps/<board>-factory/pocket.host.config.ts` names that contract by
+contract. The application's `pocket.host.config.ts` names that contract by
 relative path and holds the application in its `app` section; it lives beside
 the sources because the Pocket CLI rejects `..` in the app entry path and the
 AOT model check covers only files under the config's directory.

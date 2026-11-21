@@ -12,8 +12,10 @@
 #include "m5_sticks3/power.h"
 
 #include "esp_check.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <stdint.h>
 
 static const char *TAG = "m5_sticks3";
 
@@ -86,21 +88,68 @@ esp_err_t m5_sticks3_power_init(void) {
   return ESP_OK;
 }
 
+// Edge times per key, written by key_isr. 64-bit values are read with the
+// interrupt masked through a critical section.
+typedef struct {
+  int64_t press_us;
+  int64_t rise_us;
+} key_edges_t;
+
+static key_edges_t s_key_edges[2];
+static portMUX_TYPE s_key_lock = portMUX_INITIALIZER_UNLOCKED;
+
+static gpio_num_t key_pin(m5_sticks3_key_t key) {
+  return key == M5_STICKS3_KEY_1 ? M5_STICKS3_KEY1 : M5_STICKS3_KEY2;
+}
+
+static void key_isr(void *arg) {
+  const m5_sticks3_key_t key = (m5_sticks3_key_t)(intptr_t)arg;
+  const int64_t now = esp_timer_get_time();
+  key_edges_t *edges = &s_key_edges[key];
+  portENTER_CRITICAL_ISR(&s_key_lock);
+  if (gpio_get_level(key_pin(key)) == 0) {
+    // Active low: a falling edge. Bounce after a release (or during a
+    // press) follows a rising edge by less than the debounce time.
+    if (now - edges->rise_us >= M5_STICKS3_KEY_DEBOUNCE_US &&
+        now - edges->press_us >= M5_STICKS3_KEY_DEBOUNCE_US) {
+      edges->press_us = now;
+    }
+  } else {
+    edges->rise_us = now;
+  }
+  portEXIT_CRITICAL_ISR(&s_key_lock);
+}
+
 esp_err_t m5_sticks3_keys_init(void) {
   const gpio_config_t config = {
       .pin_bit_mask = (1ULL << M5_STICKS3_KEY1) | (1ULL << M5_STICKS3_KEY2),
       .mode = GPIO_MODE_INPUT,
       .pull_up_en = GPIO_PULLUP_DISABLE,
       .pull_down_en = GPIO_PULLDOWN_DISABLE,
-      .intr_type = GPIO_INTR_DISABLE,
+      .intr_type = GPIO_INTR_ANYEDGE,
   };
-  return gpio_config(&config);
+  ESP_RETURN_ON_ERROR(gpio_config(&config), TAG, "key GPIO");
+  const esp_err_t err = gpio_install_isr_service(0);
+  ESP_RETURN_ON_FALSE(err == ESP_OK || err == ESP_ERR_INVALID_STATE, err, TAG,
+                      "GPIO ISR service");
+  ESP_RETURN_ON_ERROR(gpio_isr_handler_add(M5_STICKS3_KEY1, key_isr,
+                                           (void *)(intptr_t)M5_STICKS3_KEY_1),
+                      TAG, "KEY1 ISR");
+  ESP_RETURN_ON_ERROR(gpio_isr_handler_add(M5_STICKS3_KEY2, key_isr,
+                                           (void *)(intptr_t)M5_STICKS3_KEY_2),
+                      TAG, "KEY2 ISR");
+  return ESP_OK;
 }
 
 bool m5_sticks3_key_pressed(m5_sticks3_key_t key) {
-  const gpio_num_t pin =
-      key == M5_STICKS3_KEY_1 ? M5_STICKS3_KEY1 : M5_STICKS3_KEY2;
-  return gpio_get_level(pin) == 0;
+  return gpio_get_level(key_pin(key)) == 0;
+}
+
+int64_t m5_sticks3_key_press_time_us(m5_sticks3_key_t key) {
+  portENTER_CRITICAL(&s_key_lock);
+  const int64_t press_us = s_key_edges[key].press_us;
+  portEXIT_CRITICAL(&s_key_lock);
+  return press_us;
 }
 
 uint16_t m5_sticks3_battery_mv(void) {

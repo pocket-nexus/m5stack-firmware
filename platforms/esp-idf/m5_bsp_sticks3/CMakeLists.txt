@@ -1,8 +1,17 @@
 idf_component_register(
-    SRCS "src/board.c" "src/display.c" "src/pm1.c" "src/speaker.c"
+    SRCS
+        "src/bmi270.c"
+        "src/bmi270_config.c"
+        "src/board.c"
+        "src/display.c"
+        "src/imu.c"
+        "src/mic.c"
+        "src/pm1.c"
+        "src/speaker.c"
     INCLUDE_DIRS "include"
+    PRIV_INCLUDE_DIRS "src"
     REQUIRES esp_driver_gpio esp_driver_i2c esp_lcd
-    PRIV_REQUIRES esp_driver_i2s esp_driver_ledc esp_driver_spi heap freertos
+    PRIV_REQUIRES esp_driver_i2s esp_driver_ledc esp_driver_spi esp_timer heap freertos
     REQUIRED_IDF_TARGETS esp32s3
 )
 # The repository warning rule. m5_strict_warnings comes from m5_pocket_app when

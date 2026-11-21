@@ -1,5 +1,5 @@
 # Per-app AOT crate of the StickS3 program: the MicroTS output of
-# apps/sticks3-factory as the static library m5_pocket_app links in AOT mode.
+# apps/sticks3-demos as the static library m5_pocket_app links in AOT mode.
 # Built by m5_pocket_app() with POCKETJS_AOT_DIR and POCKETJS_PROFILE_RS set.
 [package]
 name = "m5-sticks3-app"
