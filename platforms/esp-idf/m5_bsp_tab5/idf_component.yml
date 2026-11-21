@@ -1,0 +1,16 @@
+version: "0.1.0"
+description: "M5Stack Tab5 board support taken from M5Tab5-UserDemo"
+license: "Apache-2.0 AND MIT AND BSD-3-Clause"
+targets:
+  - esp32p4
+dependencies:
+  idf: ">=6.0,<6.3"
+  espressif/esp_codec_dev:
+    version: "1.5.11"
+    public: true
+  espressif/esp_lcd_touch:
+    version: "1.2.1"
+    public: true
+  espressif/esp_lcd_ili9881c: "1.1.0"
+  espressif/esp_lcd_touch_gt911: "1.2.1"
+  espressif/esp_lcd_touch_st7123: "1.0.2"
