@@ -1,0 +1,18 @@
+{
+  "$schema": "https://pocketjs.dev/schema/pocket-host-2.json",
+  "format": "pocket-host/2",
+  "id": "m5-sticks3",
+  "platform": "esp-idf",
+  "form": "takeover",
+  "cadences": [30],
+  "display": {
+    "logicalViewports": [[135, 240]],
+    "presentations": ["native"],
+    "rasterDensity": 1,
+    "animation": "repaint"
+  },
+  "panel": {
+    "primary": [135, 240]
+  },
+  "capabilities": ["input.buttons", "text.glyphs.baked"]
+}
