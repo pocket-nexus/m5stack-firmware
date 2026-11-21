@@ -79,7 +79,18 @@ typedef struct {
 #if CONFIG_IDF_TARGET_ESP32P4
   /* Register the P4 PPA renderer for this display (software otherwise). */
   bool ppa;
-  size_t ppa_mask_budget; /* 0: half the display buffer bytes */
+  /* Glyph mask budget of each PPA renderer (0: half the display buffer
+   * bytes). */
+  size_t ppa_mask_budget;
+  /* 1 (or 0): one PPA renderer. 2: two renderers on two PPA devices behind
+   * pocketjs_esp32p4_ppa_lanes, which split every strip: the app task
+   * renders the upper rows, a helper task pinned to ppa_helper_core the
+   * lower rows, at the same time. */
+  uint32_t ppa_lanes;
+  int ppa_helper_core; /* 0 or 1; m5_pocket_app_config_defaults sets 1 */
+  /* Raster-row quantum of the split (0: dpi.row_alignment for
+   * M5_POCKET_DISPLAY_ESP_DPI, else 1). */
+  uint32_t ppa_row_alignment;
 #endif
 } m5_pocket_display_config;
 
@@ -165,6 +176,9 @@ static inline void m5_pocket_app_config_defaults(m5_pocket_app_config *config) {
       .task_priority = CONFIG_M5_POCKET_APP_TASK_PRIORITY,
       .task_core = -1,
   };
+#if CONFIG_IDF_TARGET_ESP32P4
+  config->display.ppa_helper_core = 1;
+#endif
 }
 
 /* Create the display, renderer and inputs, boot the application and start
