@@ -18,7 +18,7 @@ idf_component_register(
         "../audio/canon_in_d.mp3"
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror)
+m5_strict_warnings(${COMPONENT_LIB})
 
 # The application and its host config live in apps/tab5-factory; the host
 # contract is this program's pocket.host.json.
