@@ -195,6 +195,12 @@ esp_err_t m5_pocket_app_stop(m5_pocket_app *app);
 
 esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app, m5_pocket_app_stats *out);
 
+/* JS mode: the running pocket_runtime, for runtime operations such as
+ * pocket/textures.h. Call only from the app task (before_frame, on_request,
+ * after_frame). NULL in AOT mode (the application library owns its Ui) and
+ * before the backend booted. */
+pocket_runtime *m5_pocket_app_runtime(m5_pocket_app *app);
+
 #ifdef __cplusplus
 }
 #endif

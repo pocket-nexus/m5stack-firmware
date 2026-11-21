@@ -330,3 +330,7 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app,
   *out = app->stats;
   return ESP_OK;
 }
+
+pocket_runtime *m5_pocket_app_runtime(m5_pocket_app *app) {
+  return app ? m5_pocket_backend_runtime(app) : NULL;
+}
