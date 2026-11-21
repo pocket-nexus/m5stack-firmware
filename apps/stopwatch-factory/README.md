@@ -22,7 +22,7 @@ contract, `../../programs/stopwatch/pocket.host.json` (466 × 466, 30 Hz,
 | `motion.ts` | Springs (smooth_ui_toolkit visual duration / bounce) and the LVGL ease-out curve |
 | `launcher.ts`, `statusbar.ts`, `watch.ts`, `stopwatch.ts`, `alarms.ts`, `setup.ts`, `wheel.ts`, `imu.ts`, `fft.ts`, `badge.ts`, `fluid.ts` | Per-app logic in state modules |
 | `roller.ts` | lv_roller behaviour (drag, glide, snap, tap, wrap) for up to three pickers |
-| `*.tsx` (others) | Presentational child views; they receive values and callbacks as props |
+| `*View.tsx`, other `*.tsx` | Presentational child views; they receive values and callbacks as props. A view that shares its name with a logic module carries a `View` suffix: on a case-insensitive file system `Stopwatch.tsx` would otherwise take `stopwatch.ts` as its basename model |
 | `images/`, `images.json` | Factory artwork converted to power-of-two PNG textures |
 | `scripts/import-factory-assets.ts` | Regenerates `images/` and `images.json` from a factory checkout |
 | `scripts/gen-big-number.ts` | Regenerates `BigNumber.tsx` |
@@ -69,7 +69,7 @@ advances its own clock from the frame count and takes key clicks from
 - Fonts: PocketJS bakes Inter at fixed slot sizes (10–54 px). Montserrat,
   Maple Mono and Commissioner are drawn with the nearest Inter slot
   (Maple Mono 28 → 24 px, Maple Mono 48 → 36 px, Commissioner 64 → 54 px,
-  Commissioner 108 → 54 px scaled 2×). The factory's 0 → O substitution for
+  Commissioner 108 → 54 px; PocketJS scales the positions of a scaled text run but not its baked glyphs, so no scaling is applied). The factory's 0 → O substitution for
   Maple Mono digits is kept.
 - Number flow digits change without the smooth_ui_toolkit rolling
   animation.
@@ -77,6 +77,10 @@ advances its own clock from the frame count and takes key clicks from
   artwork sits on padded canvases (icons and the guide are stored as
   RGB565, the big-number digits as one RGBA4444 tile per palette colour and
   digit, 3.7 MB of the bundle).
+- The watch-face panel is not turned as a whole: a turned subtree loses
+  its rounded corners in the PocketJS rasterizer, so ticks, hands, texts and
+  digit images turn one by one about their anchors while the dial, the date
+  pill and the number-flow tiles only move.
 - Lucky wheel sectors are drawn as rotated half-planes clipped to the two
   screen halves; the factory draws LVGL arcs. Bar spectrum wedges are
   rectangles 12 px wide instead of triangles.

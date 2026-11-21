@@ -49,7 +49,7 @@ export default function Launcher(props: {
       <View class="absolute left-[407] top-[153] w-[52] h-[160] items-center justify-center" focusable onPress={() => props.onNext()}>
         <Image class="w-[32] h-[128]" src="images/icon_indicator_right.png" />
       </View>
-      <View class="absolute left-0 top-[372] w-[466] h-[34] items-center" style={{ opacity: props.titleOpacity }}>
+      <View class="absolute left-0 top-[372] w-[466] h-[34] items-center justify-center" style={{ opacity: props.titleOpacity }}>
         <Text class="text-2xl font-bold text-white">{props.title}</Text>
       </View>
       <PageDot x={162} selected={props.index === 0} />

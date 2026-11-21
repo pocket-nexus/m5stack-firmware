@@ -3,7 +3,7 @@ import { For, Image, Text, View } from "@pocketjs/framework/solid/components";
 import type { Deg, i32 } from "@pocketjs/framework/solid/std";
 import type { Sector } from "./wheel";
 import OkButton from "./OkButton.tsx";
-import Roller from "./Roller.tsx";
+import Roller from "./RollerView.tsx";
 
 // Factory app_lucky_wheel: option count (selection.cpp) and the wheel
 // (wheel.cpp). Each sector is painted as a half-plane rotated to its start
@@ -23,7 +23,7 @@ export default function Wheel(props: {
   return (
     <View class="absolute left-0 top-0 w-[466] h-[466] bg-[#3B3B3B]">
       <Show when={props.screen === 0}>
-        <View class="absolute left-0 top-[75] w-[466] h-[32] items-center">
+        <View class="absolute left-0 top-[75] w-[466] h-[32] items-center justify-center">
           <Text class="text-2xl font-bold text-white">Number of Options</Text>
         </View>
         <Roller left={46} top={138} width={374} rows={props.rollerRows} base={0} shift={props.rollerShift[0] ?? 0} wheel={true} />

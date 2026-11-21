@@ -38,7 +38,6 @@ export let shownSecond: i32 = 0;
 
 export function open(): void {
   face = FACE_CLASSIC;
-  rotation = 0.0;
   filterX = 0.0;
   filterY = -1.0;
   createFace();
@@ -186,11 +185,11 @@ export function hourAngle(): f64 {
 
 /** Simple-face second dot centre offset from the screen centre. */
 export function dotX(): i32 {
-  const angle: f64 = (springPos[SPRING_SECOND_DOT] - 90.0) * 0.017453292;
+  const angle: f64 = (springPos[SPRING_SECOND_DOT] + rotation - 90.0) * 0.017453292;
   return round(214.0 * cos(angle));
 }
 
 export function dotY(): i32 {
-  const angle: f64 = (springPos[SPRING_SECOND_DOT] - 90.0) * 0.017453292;
+  const angle: f64 = (springPos[SPRING_SECOND_DOT] + rotation - 90.0) * 0.017453292;
   return round(214.0 * sin(angle));
 }

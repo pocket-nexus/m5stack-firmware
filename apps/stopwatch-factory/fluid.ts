@@ -55,10 +55,10 @@ export function open(): void {
 }
 
 function step(dt: f64): void {
-  // Gravity follows the accelerometer (screen x right, y down); the change
-  // between frames adds shake.
-  const ax = device.accelX;
-  const ay = device.accelY;
+  // Gravity points to the ground: with the factory axes an upright watch
+  // reads accelY = -1 g. The change between frames adds shake.
+  const ax = -device.accelX;
+  const ay = -device.accelY;
   const gx = ax * 900.0 + (ax - lastAx) * 4000.0;
   const gy = ay * 900.0 + (ay - lastAy) * 4000.0;
   for (let i = 0; i < COUNT; i++) {
@@ -151,8 +151,8 @@ export function update(dt: f64): boolean {
   const h = clamp(dt, 0.0, 0.05) / 2.0;
   step(h);
   step(h);
-  lastAx = device.accelX;
-  lastAy = device.accelY;
+  lastAx = -device.accelX;
+  lastAy = -device.accelY;
   return false;
 }
 

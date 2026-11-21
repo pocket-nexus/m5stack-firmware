@@ -3,19 +3,21 @@ import { ActionHandler, Image, Text, View } from "@pocketjs/framework/solid/comp
 import { onMount } from "@pocketjs/framework/solid/lifecycle";
 import { BTN } from "@pocketjs/framework/input";
 import AlarmClock from "./AlarmClock.tsx";
-import Badge from "./Badge.tsx";
-import Fft from "./Fft.tsx";
-import Fluid from "./Fluid.tsx";
-import Imu from "./Imu.tsx";
-import Launcher from "./Launcher.tsx";
-import Setup from "./Setup.tsx";
-import Wheel from "./Wheel.tsx";
-import StatusBar from "./StatusBar.tsx";
-import Stopwatch from "./Stopwatch.tsx";
+import Badge from "./BadgeView.tsx";
+import Fft from "./FftView.tsx";
+import Fluid from "./FluidView.tsx";
+import Imu from "./ImuView.tsx";
+import Launcher from "./LauncherView.tsx";
+import Setup from "./SetupView.tsx";
+import Wheel from "./WheelView.tsx";
+import StatusBar from "./StatusBarView.tsx";
+import Stopwatch from "./StopwatchView.tsx";
 import TopClock from "./TopClock.tsx";
 import WatchFace from "./WatchFace.tsx";
 import {
   aboutProgress,
+  anchorDX,
+  anchorDY,
   alarmAdd,
   alarmAddY,
   alarmCancel,
@@ -139,13 +141,13 @@ export default function App() {
       <ActionHandler button={BTN.RTRIGGER} active={!bridged()} onPress={keyBClick} />
       <Switch>
         <Match when={page() === "boot"}>
-          <View class="absolute left-0 top-[201] w-[466] h-[36] items-center">
+          <View class="absolute left-0 top-[201] w-[466] h-[36] items-center justify-center">
             <Text class="text-2xl text-white">StopWatch</Text>
           </View>
-          <View class="absolute left-0 top-[237] w-[466] h-[22] items-center">
+          <View class="absolute left-0 top-[237] w-[466] h-[22] items-center justify-center">
             <Text class="text-base text-[#BFBFBF]">Starting up ...</Text>
           </View>
-          <View class="absolute left-0 top-[434] w-[466] h-[20] items-center">
+          <View class="absolute left-0 top-[434] w-[466] h-[20] items-center justify-center">
             <Text class="text-sm text-[#8B8B8B]">V0.5</Text>
           </View>
         </Match>
@@ -197,6 +199,8 @@ export default function App() {
             dotY={dotY()}
             ticks={ticks()}
             digits={bigDigits()}
+            dx={anchorDX()}
+            dy={anchorDY()}
             onTap={watchTap}
           />
         </Match>
@@ -292,7 +296,7 @@ export default function App() {
         <View class="absolute left-0 top-0 w-[466] h-[466] bg-black">
           <Image class="absolute left-[169] top-[90] w-[128] h-[32]" src="images/alarm_icon.png" />
           <View class="absolute left-0 top-[130] w-[466] h-[110] items-center justify-center">
-            <Text class="text-5xl scale-200 text-white">{ringTime()}</Text>
+            <Text class="text-5xl text-white">{ringTime()}</Text>
           </View>
           <View class="absolute left-[67] top-[283] w-[333] h-[103] rounded-[52] bg-[#4AD78C] items-center justify-center" focusable onPress={alarmDismiss}>
             <Text class="text-2xl text-[#0F5831]">OK</Text>

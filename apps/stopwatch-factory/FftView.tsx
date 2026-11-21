@@ -13,10 +13,10 @@ export default function Fft(props: { bars: Bar[]; scale: f32; labels: boolean; h
       </For>
       <View class="absolute left-[164] top-[164] w-[137] h-[137] rounded-full bg-[#F8C6E7]" style={{ scale: props.scale }}>
         <Show when={props.labels}>
-          <View class="absolute left-0 top-[46] w-[137] h-[34] items-center">
+          <View class="absolute left-0 top-[46] w-[137] h-[34] items-center justify-center">
             <Text class="text-2xl text-[#AE5D92]">{props.hz}</Text>
           </View>
-          <View class="absolute left-0 top-[82] w-[137] h-[24] items-center">
+          <View class="absolute left-0 top-[82] w-[137] h-[24] items-center justify-center">
             <Text class="text-lg text-[#D586BA]">Hz</Text>
           </View>
         </Show>

@@ -30,10 +30,12 @@ export default function WatchFace(props: {
   dotY: i32;
   ticks: Tick[];
   digits: i32[];
+  dx: i32[];
+  dy: i32[];
   onTap: () => void;
 }) {
   return (
-    <View class="absolute left-0 top-0 w-[466] h-[466] bg-black" style={{ rotate: props.rotation }} focusable onPress={() => props.onTap()}>
+    <View class="absolute left-0 top-0 w-[466] h-[466] bg-black" focusable onPress={() => props.onTap()}>
       <Switch>
         <Match when={props.face === 0}>
           <Show when={props.mode < 2}>
@@ -48,14 +50,16 @@ export default function WatchFace(props: {
           </Show>
           <Show when={props.mode === 0}>
             <View class="absolute left-[54] top-[54] w-[358] h-[358] rounded-full bg-[#1B1B1B]" />
-            <View class="absolute left-0 top-[320] w-[466] h-[34] items-center">
+            <View class="absolute left-0 top-[320] w-[466] h-[34] items-center justify-center" style={{ translateX: props.dx[0] ?? 0, translateY: props.dy[0] ?? 0, rotate: props.rotation }}>
               <Text class="text-2xl text-[#D9D9D9]">{props.time}</Text>
             </View>
-            <View class="absolute left-0 top-[357] w-[466] h-[30] items-center">
+            <View class="absolute left-0 top-[357] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[1] ?? 0, translateY: props.dy[1] ?? 0, rotate: props.rotation }}>
               <Text class="text-xl text-[#717171]">{props.weekday}</Text>
             </View>
-            <View class="absolute left-[334] top-[216] w-[48] h-[34] rounded-full bg-[#101010] items-center justify-center">
-              <Text class="text-xl text-[#8B8B8B]">{props.day}</Text>
+            <View class="absolute left-[334] top-[216] w-[48] h-[34] rounded-full bg-[#101010] items-center justify-center" style={{ translateX: props.dx[2] ?? 0, translateY: props.dy[2] ?? 0 }}>
+              <View class="w-[48] h-[34] items-center justify-center" style={{ rotate: props.rotation }}>
+                <Text class="text-xl text-[#8B8B8B]">{props.day}</Text>
+              </View>
             </View>
           </Show>
           <View class="absolute left-[221] top-[226] w-[128] h-[16]" style={{ rotate: props.hourAngle, originX: -0.40625, originY: -0.0625 }}>
@@ -70,16 +74,22 @@ export default function WatchFace(props: {
         </Match>
         <Match when={props.face === 1}>
           <View class="absolute left-0 top-0 w-[466] h-[466]" style={{ bgColor: props.background }}>
-            <View class="absolute left-[66] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel }}>
-              <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.hh}</Text>
+            <View class="absolute left-[66] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[3] ?? 0, translateY: props.dy[3] ?? 0 }}>
+              <View class="w-[100] h-[132] items-center justify-center" style={{ rotate: props.rotation }}>
+                <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.hh}</Text>
+              </View>
             </View>
-            <View class="absolute left-[183] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel }}>
-              <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.mm}</Text>
+            <View class="absolute left-[183] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[4] ?? 0, translateY: props.dy[4] ?? 0 }}>
+              <View class="w-[100] h-[132] items-center justify-center" style={{ rotate: props.rotation }}>
+                <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.mm}</Text>
+              </View>
             </View>
-            <View class="absolute left-[300] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel }}>
-              <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.ss}</Text>
+            <View class="absolute left-[300] top-[145] w-[100] h-[132] rounded-[42] items-center justify-center" style={{ bgColor: props.panel , translateX: props.dx[5] ?? 0, translateY: props.dy[5] ?? 0 }}>
+              <View class="w-[100] h-[132] items-center justify-center" style={{ rotate: props.rotation }}>
+                <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.ss}</Text>
+              </View>
             </View>
-            <View class="absolute left-0 top-[294] w-[466] h-[30] items-center">
+            <View class="absolute left-0 top-[294] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[6] ?? 0, translateY: props.dy[6] ?? 0, rotate: props.rotation }}>
               <Text class={props.theme === 0 ? "text-2xl text-[#A0A0A0]" : props.theme === 1 ? "text-2xl text-[#525252]" : props.theme === 2 ? "text-2xl text-[#6A938F]" : props.theme === 3 ? "text-2xl text-[#948063]" : props.theme === 4 ? "text-2xl text-[#668323]" : props.theme === 5 ? "text-2xl text-[#CBCBFF]" : props.theme === 6 ? "text-2xl text-[#FFD3BC]" : props.theme === 7 ? "text-2xl text-[#A4789D]" : props.theme === 8 ? "text-2xl text-[#70CFC9]" : "text-2xl text-[#DCF3FF]"}>{props.date}</Text>
             </View>
           </View>
@@ -91,18 +101,21 @@ export default function WatchFace(props: {
             d1={props.digits[1] ?? 0}
             d2={props.digits[2] ?? 0}
             d3={props.digits[3] ?? 0}
+            dx={props.dx}
+            dy={props.dy}
+            rotation={props.rotation}
           />
         </Match>
         <Match when={props.face === 3}>
           <View class="absolute left-0 top-0 w-[466] h-[466]" style={{ bgColor: props.background }}>
-            <View class="absolute left-0 top-[150] w-[466] h-[118] items-center justify-center">
-              <Text class={props.theme === 0 ? "text-5xl scale-200 text-[#FFFFFF]" : props.theme === 1 ? "text-5xl scale-200 text-[#484848]" : props.theme === 2 ? "text-5xl scale-200 text-[#566E6C]" : props.theme === 3 ? "text-5xl scale-200 text-[#6A5E4D]" : props.theme === 4 ? "text-5xl scale-200 text-[#4B5E20]" : props.theme === 5 ? "text-5xl scale-200 text-[#DFDEFF]" : props.theme === 6 ? "text-5xl scale-200 text-[#FFEFE6]" : props.theme === 7 ? "text-5xl scale-200 text-[#83627E]" : props.theme === 8 ? "text-5xl scale-200 text-[#B1FFFA]" : "text-5xl scale-200 text-[#ECF8FF]"}>{props.plainTime}</Text>
+            <View class="absolute left-0 top-[150] w-[466] h-[118] items-center justify-center" style={{ translateX: props.dx[11] ?? 0, translateY: props.dy[11] ?? 0, rotate: props.rotation }}>
+              <Text class={props.theme === 0 ? "text-5xl text-[#FFFFFF]" : props.theme === 1 ? "text-5xl text-[#484848]" : props.theme === 2 ? "text-5xl text-[#566E6C]" : props.theme === 3 ? "text-5xl text-[#6A5E4D]" : props.theme === 4 ? "text-5xl text-[#4B5E20]" : props.theme === 5 ? "text-5xl text-[#DFDEFF]" : props.theme === 6 ? "text-5xl text-[#FFEFE6]" : props.theme === 7 ? "text-5xl text-[#83627E]" : props.theme === 8 ? "text-5xl text-[#B1FFFA]" : "text-5xl text-[#ECF8FF]"}>{props.plainTime}</Text>
             </View>
-            <View class="absolute left-0 top-[275] w-[466] h-[30] items-center">
+            <View class="absolute left-0 top-[275] w-[466] h-[30] items-center justify-center" style={{ translateX: props.dx[12] ?? 0, translateY: props.dy[12] ?? 0, rotate: props.rotation }}>
               <Text class={props.theme === 0 ? "text-2xl text-[#A0A0A0]" : props.theme === 1 ? "text-2xl text-[#525252]" : props.theme === 2 ? "text-2xl text-[#6A938F]" : props.theme === 3 ? "text-2xl text-[#948063]" : props.theme === 4 ? "text-2xl text-[#668323]" : props.theme === 5 ? "text-2xl text-[#CBCBFF]" : props.theme === 6 ? "text-2xl text-[#FFD3BC]" : props.theme === 7 ? "text-2xl text-[#A4789D]" : props.theme === 8 ? "text-2xl text-[#70CFC9]" : "text-2xl text-[#DCF3FF]"}>{props.date}</Text>
             </View>
             <Show when={props.tips}>
-              <View class="absolute left-0 top-[338] w-[466] h-[52] items-center">
+              <View class="absolute left-0 top-[338] w-[466] h-[52] items-center justify-center" style={{ translateX: props.dx[13] ?? 0, translateY: props.dy[13] ?? 0, rotate: props.rotation }}>
                 <Text class="text-xl text-center text-[#EAE48D]">{"Long press\nto toggle second dot"}</Text>
               </View>
             </Show>

@@ -2,7 +2,7 @@
 // views render; the state modules beside it hold the per-app logic in plain
 // fields, and `frame` publishes their results once per frame.
 import { createSignal } from "solid-js";
-import { cos, f32, frames, idiv, len, push, round, sin, type Color, type Deg, type f64, type i32 } from "@pocketjs/framework/solid/std";
+import { cos, f32, f64, frames, idiv, len, push, round, sin, type Color, type Deg, type i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 import * as input from "./input";
 import * as launcher from "./launcher";
@@ -121,6 +121,8 @@ export const [titleOpacity, setTitleOpacity] = createSignal<f32>(1.0);
 // Watch faces.
 export const [face, setFace] = createSignal<i32>(0);
 export const [faceRotation, setFaceRotation] = createSignal<Deg>(0.0);
+export const [anchorDX, setAnchorDX] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+export const [anchorDY, setAnchorDY] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 export const [classicMode, setClassicMode] = createSignal<i32>(0);
 export const [hourAngle, setHourAngle] = createSignal<Deg>(0.0);
 export const [minuteAngle, setMinuteAngle] = createSignal<Deg>(0.0);
@@ -363,31 +365,61 @@ export function watchTap(): void {
   publishWatch();
 }
 
-function buildTicks(): void {
+// The factory turns the whole watch-face panel with the accelerometer. A
+// turned subtree loses its rounded corners in the PocketJS rasterizer, so
+// each element is turned on its own: anchors move around the screen centre
+// and text, hands, ticks and images take the rotation; round shapes only move.
+const ANCHOR_X: f32[] = [0.0, 0.0, 125.0, -117.0, 0.0, 117.0, 0.0, -42.0, 42.0, -42.0, 42.0, 0.0, 0.0, 0.0];
+const ANCHOR_Y: f32[] = [104.0, 138.0, 0.0, -22.0, -22.0, -22.0, 76.0, -51.0, -51.0, 51.0, 51.0, -24.0, 57.0, 130.0];
+let ticksRotation: f64 = 1000.0;
+
+function buildTicks(rotation: f64): void {
+  ticksRotation = rotation;
   const list: Tick[] = [];
   for (let i = 0; i < 60; i++) {
     const hourTick = i % 5 === 0;
-    const length: f32 = hourTick ? 28.0 : 14.0;
-    const middle: f32 = 224.0 - length / 2.0;
-    const radians: f32 = (f32(i * 6) - 90.0) * 0.017453292;
+    const length: f64 = hourTick ? 28.0 : 14.0;
+    const middle: f64 = 224.0 - length / 2.0;
+    const degrees: f64 = f64(i * 6 - 90) + rotation;
+    const radians: f64 = degrees * 0.017453292519943295;
     push(list, {
       id: i,
       x: round(middle * cos(radians)),
       y: round(middle * sin(radians)),
-      angle: f32(i * 6 - 90) as Deg,
+      angle: f32(degrees) as Deg,
       hour: hourTick,
     });
   }
   setTicks(list);
 }
 
+function publishAnchors(rotation: f64): void {
+  const radians = rotation * 0.017453292519943295;
+  const c = cos(radians);
+  const s = sin(radians);
+  const dx: i32[] = [];
+  const dy: i32[] = [];
+  for (let k = 0; k < len(ANCHOR_X); k++) {
+    const x = f64(ANCHOR_X[k]);
+    const y = f64(ANCHOR_Y[k]);
+    push(dx, round(c * x - s * y - x));
+    push(dy, round(s * x + c * y - y));
+  }
+  setAnchorDX(dx);
+  setAnchorDY(dy);
+}
+
 function publishWatch(): void {
   setFace(watch.face);
   setFaceRotation(f32(watch.rotation) as Deg);
+  if (watch.rotation !== ticksRotation) {
+    buildTicks(watch.rotation);
+    publishAnchors(watch.rotation);
+  }
   setClassicMode(watch.classicMode);
-  setHourAngle(f32(watch.hourAngle()) as Deg);
-  setMinuteAngle(f32(watch.minuteAngle()) as Deg);
-  setSecondAngle(f32(watch.secondAngle()) as Deg);
+  setHourAngle(f32(watch.hourAngle() + watch.rotation) as Deg);
+  setMinuteAngle(f32(watch.minuteAngle() + watch.rotation) as Deg);
+  setSecondAngle(f32(watch.secondAngle() + watch.rotation) as Deg);
   setWatchTime(stopwatch.letterO(`${two(watch.shownHour)}:${two(watch.shownMinute)}`));
   setPlainTime(`${two(watch.shownHour)}:${two(watch.shownMinute)}`);
   setWatchWeekday(WEEKDAYS[device.weekday]);
@@ -828,7 +860,7 @@ function frame(): void {
 }
 
 export async function run(): Promise<void> {
-  buildTicks();
+  buildTicks(0.0);
   updateClock(true);
   for (let step: i32 = 0; step < 2147483647; step++) {
     await frames(1);
