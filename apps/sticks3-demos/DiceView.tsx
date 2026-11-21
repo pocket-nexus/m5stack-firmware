@@ -1,5 +1,6 @@
 import { Show } from "solid-js";
 import { For, Text, View } from "@pocketjs/framework/solid/components";
+import FooterView from "./FooterView.tsx";
 import HeaderView from "./HeaderView.tsx";
 import type { Die } from "./types";
 
@@ -11,7 +12,7 @@ import type { Die } from "./types";
 // its pips sit 2 px out along it: the 3D pipeline painter-sorts triangles,
 // and pips coplanar with their face would sort behind it in part. The 3D
 // pipeline draws no corner radius, so faces and pips are square.
-export default function DiceView(props: { dice: Die[]; total: string; detail: string; count: string; rolling: boolean }) {
+export default function DiceView(props: { dice: Die[]; total: string; detail: string; count: string; rolling: boolean; hint: boolean }) {
   return (
     <View debugName="Dice" class="absolute left-0 top-0 w-[135] h-[240] bg-[#0B0E13] overflow-hidden">
       <HeaderView title="DICE" info={props.count} accent={1} />
@@ -70,9 +71,7 @@ export default function DiceView(props: { dice: Die[]; total: string; detail: st
           <Text class="text-xs text-[#94A3B8]">{props.detail}</Text>
         </View>
       </Show>
-      <View class="absolute left-0 top-[224] w-[135] h-[14] flex-col items-center">
-        <Text class="text-2xs text-[#6B7585]">FRONT throw · SIDE 1 or 2</Text>
-      </View>
+      <FooterView text="FRONT throw · SIDE 1 or 2" hidden={props.hint} />
     </View>
   );
 }

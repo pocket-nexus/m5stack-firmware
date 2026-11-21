@@ -1,6 +1,6 @@
-import { Show } from "solid-js";
 import { Text, View } from "@pocketjs/framework/solid/components";
 import type { Deg, f32, i32 } from "@pocketjs/framework/solid/std";
+import FooterView from "./FooterView.tsx";
 import HeaderView from "./HeaderView.tsx";
 
 // Metronome: tempo, Italian tempo name, a pendulum (rod pivoting at its
@@ -14,6 +14,7 @@ export default function MetronomeView(props: {
   flash: f32;
   swing: Deg;
   weight: i32;
+  hint: boolean;
 }) {
   return (
     <View debugName="Metronome" class="absolute left-0 top-0 w-[135] h-[240] bg-[#0B0E13] overflow-hidden">
@@ -37,11 +38,7 @@ export default function MetronomeView(props: {
         <View class={props.beat === 2 ? "w-[9] h-[9] rounded-full bg-[#A78BFA]" : "w-[9] h-[9] rounded-full bg-[#2A2350]"} />
         <View class={props.beat === 3 ? "w-[9] h-[9] rounded-full bg-[#A78BFA]" : "w-[9] h-[9] rounded-full bg-[#2A2350]"} />
       </View>
-      <Show when={!props.running}>
-        <View class="absolute left-0 top-[224] w-[135] h-[14] flex-col items-center">
-          <Text class="text-2xs text-[#6B7585]">FRONT play · SIDE BPM</Text>
-        </View>
-      </Show>
+      <FooterView text="FRONT play · SIDE BPM" hidden={props.hint || props.running} />
     </View>
   );
 }

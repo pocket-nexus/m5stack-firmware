@@ -1,6 +1,7 @@
 import { Show } from "solid-js";
 import { Text, View } from "@pocketjs/framework/solid/components";
 import type { Deg, i32 } from "@pocketjs/framework/solid/std";
+import FooterView from "./FooterView.tsx";
 import HeaderView from "./HeaderView.tsx";
 
 // Spirit level. Flat: a bull's-eye with the bubble, the X and Y angles and a
@@ -17,6 +18,7 @@ export default function LevelView(props: {
   roll: Deg;
   level: boolean;
   zeroed: boolean;
+  hint: boolean;
 }) {
   return (
     <View debugName="Level" class="absolute left-0 top-0 w-[135] h-[240] bg-[#0B0E13] overflow-hidden">
@@ -76,9 +78,7 @@ export default function LevelView(props: {
           style={{ translateX: props.vialX }}
         />
       </Show>
-      <View class="absolute left-0 top-[222] w-[135] h-[14] flex-col items-center">
-        <Text class="text-2xs text-[#6B7585]">FRONT zero · SIDE off</Text>
-      </View>
+      <FooterView text="FRONT zero · SIDE off" hidden={props.hint} />
     </View>
   );
 }

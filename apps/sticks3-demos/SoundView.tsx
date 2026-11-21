@@ -1,5 +1,6 @@
 import { Show } from "solid-js";
 import { For, Text, View } from "@pocketjs/framework/solid/components";
+import FooterView from "./FooterView.tsx";
 import HeaderView from "./HeaderView.tsx";
 import type { Box } from "./types";
 
@@ -13,6 +14,7 @@ export default function SoundView(props: {
   max: string;
   slow: boolean;
   micOn: boolean;
+  hint: boolean;
 }) {
   return (
     <View debugName="Sound" class="absolute left-0 top-0 w-[135] h-[240] bg-[#0B0E13] overflow-hidden">
@@ -69,9 +71,7 @@ export default function SoundView(props: {
           <Text class="text-xs text-[#C7CDD6]">Microphone off</Text>
         </View>
       </Show>
-      <View class="absolute left-0 top-[222] w-[135] h-[14] flex-col items-center">
-        <Text class="text-2xs text-[#6B7585]">FRONT max · SIDE F/S</Text>
-      </View>
+      <FooterView text="FRONT max · SIDE F/S" hidden={props.hint} />
     </View>
   );
 }

@@ -52,8 +52,8 @@ export default function MazeView(props: {
         <View class="absolute left-[2] top-[2] w-[3] h-[3] rounded-full bg-[#FFF3D6]" />
       </View>
       <Show when={props.cleared}>
-        <View class="absolute left-[12] top-[78] w-[111] h-[100] rounded-[14] bg-[#151A21] border border-[#FFB020] flex-col items-center">
-          <Text class="mt-[8] text-sm font-bold text-[#FFB020]">Cleared!</Text>
+        <View class="absolute left-[12] top-[72] w-[111] h-[112] rounded-[14] bg-[#151A21] border border-[#FFB020] flex-col items-center justify-center">
+          <Text class="text-sm font-bold text-[#FFB020]">Cleared!</Text>
           <Text class="mt-[2] text-2xl font-bold text-[#F8FAFC]">{props.time} s</Text>
           <Show when={props.newBest} fallback={<Text class="mt-[2] text-xs text-[#94A3B8]">Best {props.best}</Text>}>
             <Text class="mt-[2] text-xs font-bold text-[#FDE047]">New best!</Text>

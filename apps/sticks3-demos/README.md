@@ -23,7 +23,9 @@ was removed (git history keeps it).
   while charging) and a lightning mark while charging.
 - In a demo, holding the front key for more than 180 ms draws a white bar
   across the top that is full at 700 ms, when the home screen opens. For
-  2.2 s after a demo opens, a "Hold FRONT for menu" pill shows at the bottom.
+  2.2 s after a demo opens, a "Hold FRONT for menu" pill shows in the bottom
+  row (y 220..238); the demo's key legend (`FooterView.tsx`), which uses the
+  same row, is hidden meanwhile, so the two never overlap.
 - A click is a release within 450 ms of the press. A key still held after a
   page change acts only after it is released.
 - After 30 s without a key on the home screen the backlight dims from 200 to
@@ -170,7 +172,7 @@ rate.
 | `rng.ts` | Park–Miller generator |
 | `home.ts`, `maze.ts`, `dice.ts`, `reaction.ts`, `snake.ts`, `level.ts`, `sound.ts`, `metronome.ts` | State modules of the home carousel and the demos |
 | `types.ts` | Records passed to the views |
-| `HomeView.tsx`, `MazeView.tsx`, `DiceView.tsx`, `ReactionView.tsx`, `SnakeView.tsx`, `LevelView.tsx`, `SoundView.tsx`, `MetronomeView.tsx`, `HeaderView.tsx`, `BatteryView.tsx` | Views; props only |
+| `HomeView.tsx`, `MazeView.tsx`, `DiceView.tsx`, `ReactionView.tsx`, `SnakeView.tsx`, `LevelView.tsx`, `SoundView.tsx`, `MetronomeView.tsx`, `HeaderView.tsx`, `FooterView.tsx`, `BatteryView.tsx` | Views; props only |
 | `pocket.fonts.json`, `fonts/` | Montserrat Medium and SemiBold ([Fonts](#fonts)) |
 
 Views are named `*View.tsx` so that no view shares a case-insensitive
@@ -246,9 +248,10 @@ default and is not baked.
 | Reaction time, "GO!", BPM | `text-5xl font-bold` | 15 | 403,416 |
 
 The atlases hold 100 glyphs each (ASCII, the non-ASCII characters of the
-sources such as `·`, `°` and `…`, and the tofu glyph): 943,312 bytes in the
-JS bundle's pak; AOT mode embeds the same atlases with `include_bytes!` and
-reads them in place from flash.
+sources such as `·`, `°` and `…`, and the tofu glyph), 933,476 bytes
+together in the JS bundle's pak (943,344 bytes with the style table); AOT
+mode embeds the same atlases with `include_bytes!` and reads them in place
+from flash.
 
 ## Limits
 
@@ -270,7 +273,7 @@ reads them in place from flash.
 - `tools/pocket compile --config apps/sticks3-demos/pocket.host.config.ts --aot --out <dir>`:
   AOT admission and source generation pass. `programs/sticks3` builds in JS
   and in AOT mode.
-- JS bundle 1,405,304 bytes (pak 943,312, script 460,463).
+- JS bundle 1,405,720 bytes (pak 943,344, script 460,835).
 - Headless runs of the JS bundle in the PocketJS wasm core at 135 × 240 with
   a stand-in `globalThis.m5` (keys with press timestamps, IMU, microphone
   levels, battery, power key): screenshots of the home carousel (all cards,
@@ -281,5 +284,6 @@ reads them in place from flash.
   after the green frame's `presentedMs` reads 230 ms; eight single-die
   throws come to rest on the face of the number shown; the requests arrive
   as `tone` (with and without start time), `brightness`, `volume`,
-  `mic 1`/`mic 0` and `best`.
+  `mic 1`/`mic 0` and `best`. For each demo, the first 90 frames after it
+  opens draw only background beside the pill in the bottom row.
 - No device run.

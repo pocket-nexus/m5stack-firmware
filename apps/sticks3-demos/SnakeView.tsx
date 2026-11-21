@@ -37,16 +37,16 @@ export default function SnakeView(props: {
         </For>
       </Show>
       <Show when={props.state === 0}>
-        <View class="absolute left-[12] top-[66] w-[111] h-[96] rounded-[14] bg-[#151A21] border border-[#2DD4BF] flex-col items-center">
-          <Text class="mt-[10] text-lg font-bold text-[#2DD4BF]">Snake</Text>
+        <View class="absolute left-[12] top-[64] w-[111] h-[108] rounded-[14] bg-[#151A21] border border-[#2DD4BF] flex-col items-center justify-center">
+          <Text class="text-lg font-bold text-[#2DD4BF]">Snake</Text>
           <Text class="mt-[6] text-xs text-[#C7CDD6]">FRONT turns left</Text>
           <Text class="text-xs text-[#C7CDD6]">SIDE turns right</Text>
           <Text class="mt-[10] text-2xs text-[#6B7585]">Press a key to start</Text>
         </View>
       </Show>
       <Show when={props.state === 3}>
-        <View class="absolute left-[12] top-[66] w-[111] h-[96] rounded-[14] bg-[#151A21] border border-[#2DD4BF] flex-col items-center">
-          <Text class="mt-[10] text-lg font-bold text-[#F8FAFC]">Game over</Text>
+        <View class="absolute left-[12] top-[60] w-[111] h-[116] rounded-[14] bg-[#151A21] border border-[#2DD4BF] flex-col items-center justify-center">
+          <Text class="text-lg font-bold text-[#F8FAFC]">Game over</Text>
           <Text class="mt-[4] text-2xl font-bold text-[#2DD4BF]">{props.score}</Text>
           <Show when={props.newBest} fallback={<Text class="text-xs text-[#94A3B8]">Best {props.best}</Text>}>
             <Text class="text-xs font-bold text-[#FDE047]">New best!</Text>

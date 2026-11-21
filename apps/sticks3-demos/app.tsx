@@ -83,7 +83,9 @@ import {
 
 // The keys reach the model through device.ts (keyFront/keySide and their
 // interrupt timestamps), so the views bind no ActionHandler. The bar at the
-// top fills while the front key is held towards the home screen.
+// top fills while the front key is held towards the home screen. The "Hold
+// FRONT for menu" pill uses the bottom row (y 220..238) that the demos'
+// FooterView legends hide from while `hint()` is true.
 export default function App() {
   onMount(start);
   return (
@@ -110,7 +112,7 @@ export default function App() {
           />
         </Match>
         <Match when={page() === "dice"}>
-          <DiceView dice={diceList()} total={diceTotal()} detail={diceDetail()} count={diceCount()} rolling={diceRolling()} />
+          <DiceView dice={diceList()} total={diceTotal()} detail={diceDetail()} count={diceCount()} rolling={diceRolling()} hint={hint()} />
         </Match>
         <Match when={page() === "reaction"}>
           <ReactionView
@@ -149,6 +151,7 @@ export default function App() {
             roll={levelRoll()}
             level={levelIsLevel()}
             zeroed={levelZeroed()}
+            hint={hint()}
           />
         </Match>
         <Match when={page() === "sound"}>
@@ -160,6 +163,7 @@ export default function App() {
             max={soundMax()}
             slow={soundSlow()}
             micOn={soundMicOn()}
+            hint={hint()}
           />
         </Match>
         <Match when={page() === "metronome"}>
@@ -171,12 +175,13 @@ export default function App() {
             flash={metroFlash()}
             swing={metroSwing()}
             weight={metroWeight()}
+            hint={hint()}
           />
         </Match>
       </Switch>
       <View class="absolute left-0 top-0 h-[3] bg-[#F8FAFC]" style={{ width: holdBar() }} />
       <Show when={hint()}>
-        <View class="absolute left-[12] top-[216] w-[111] h-[18] rounded-full bg-[#1E2530] items-center justify-center">
+        <View class="absolute left-[12] top-[220] w-[111] h-[18] rounded-full bg-[#1E2530] items-center justify-center">
           <Text class="text-2xs text-[#C7CDD6]">Hold FRONT for menu</Text>
         </View>
       </Show>
