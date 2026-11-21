@@ -67,12 +67,39 @@ launcher, 1000 ms in Cloud and USB).
 | File | Role |
 | --- | --- |
 | `pocket.host.config.ts` | Host config: `app` section (Solid, `aot: true`, `model: "compiled"`, 30 Hz) and the program's host contract `../../programs/sticks3/pocket.host.json` |
-| `main.tsx` | JS-mode `mount()` entry |
-| `app.tsx`, `app.ts` | Root view and model: pages, key decoding, setup state machine |
+| `main.tsx` | JS-mode `mount()` entry; `connectDevice` from `m5_pocket_app/js/m5-bridge.ts` |
+| `app.tsx`, `app.ts` | Root view and model: pages, key decoding, setup state machine; re-exports the device host entry points |
 | `Launcher.tsx`, `Cloud.tsx`, `Usb.tsx`, `Setup.tsx` | Screens; props only |
-| `device.ts` | State module for host values and host requests (battery, charging, Wi-Fi and cloud status, AP name, portal clients, version; tone, volume, brightness, setup AP on/off) |
+| `device.ts` | Device bridge state module ([APP-HOST](../../docs/APP-HOST.md)), below |
 | `images/` | Factory artwork as PNG |
 | `images.json` | Stores every image as RGB565 (`psm` 0) in the JS bundle |
+
+## Device bridge
+
+`device.ts` holds every value the board publishes and every request the app
+makes. The model reads the fields every 100 ms into signals.
+
+| Field (bridge name) | Type | Board source |
+| --- | --- | --- |
+| `batteryLevel` | number | PMIC battery voltage → percent, every 500 ms |
+| `charging` | bool | PMIC G0 charger status |
+| `wifiConfigured` | bool | an SSID is saved in NVS `uiflow/ssid0` |
+| `wifiStatus` | number | 0 idle, 1 connecting, 2 got IP, 3 failed |
+| `cloudStatus` | number | -1: no UIFlow cloud client |
+| `apSsid` | text | `S3_` + last four MAC hex digits |
+| `apStations`, `portalClients` | number | Setup access point stations, portal requests |
+| `accessCode`, `nickName` | text | never published (no cloud client) |
+| `firmwareVersion` | text | `v` + the firmware's `PROJECT_VER` |
+
+| Request | Board action |
+| --- | --- |
+| `tone <hz> <ms>` | ES8311 sine tone |
+| `volume <0..255>` | speaker master volume |
+| `brightness <0..255>` | backlight |
+| `setup <0\|1>` | stop / start the access point, captive DNS and portal |
+
+At startup the app requests `brightness 230`, `volume 100` and
+`tone 4000 50`, as the UIFlow startup does.
 
 `pocket.host.config.ts` lives here, not in `programs/sticks3/`: PocketJS
 resolves `app.entry` relative to the config file and rejects `..`, and AOT
@@ -117,10 +144,8 @@ Unused factory files: `1c.jpg` (APP.LIST), `1d.jpg` (LoRa.CHAT) and
   red (Wi-Fi not connected) or yellow (Wi-Fi connected, no server).
 - **Wi-Fi provisioning.** The screens and the state machine are reproduced;
   the access point, captive DNS, portal page and station connection belong
-  to the firmware host and reach the app through `device.ts`. Until the
-  device data bridge is connected, `device.ts` keeps its defaults: battery
-  100 %, not charging, no SSID, AP name `S3_0000`, so Setup stays on the
-  access-point screen and no tone is played by the app.
+  to the firmware host (`programs/sticks3/components/m5_sticks3_net`) and
+  reach the app through the device bridge.
 - **Firmware version.** The launcher shows `device.firmwareVersion`
   (`v0.1.0`) instead of the UIFlow version string.
 - **Key timing.** Clicks are counted on key presses; M5Unified counts
@@ -138,4 +163,10 @@ Unused factory files: `1c.jpg` (APP.LIST), `1d.jpg` (LoRa.CHAT) and
   Cloud screen, launcher CLOUD/USB/SETUP cycling, USB, double-click back and
   Setup access-point screen render the factory artwork with the live labels.
   Kept in `.pocket-build/validation/sticks3/`.
+- Bridge check in the sim with a stand-in `globalThis.m5`: published battery
+  42 %, charging and Wi-Fi state appear on the Cloud and launcher screens;
+  `apStations`, `portalClients` and `wifiStatus` step Setup through the QR,
+  select-Wi-Fi, connecting and server-error screens; the requests arrive as
+  `brightness 230`, `volume 100`, `tone 4000 50`, `tone 6000 50`,
+  `setup 1`, `setup 0`.
 - No device run.

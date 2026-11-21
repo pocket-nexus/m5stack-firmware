@@ -1,7 +1,8 @@
 // StickS3 startup menu model, after UIFlow2 m5stack/modules/startup/sticks3.py:
 // the Framework key loop, LauncherApp, CloudApp, UsbApp and SetupApp.
 import { createSignal } from "solid-js";
-import { after, type i32 } from "@pocketjs/framework/solid/std";
+import { after, type f32, type f64, type i32 } from "@pocketjs/framework/solid/std";
+import * as device from "./device";
 import {
   accessCode,
   apSsid,
@@ -13,8 +14,10 @@ import {
   firmwareVersion,
   nickName,
   portalClients,
+  requestBrightness,
   requestSetup,
   requestTone,
+  requestVolume,
   WIFI_CONNECTING,
   WIFI_GOT_IP,
   WIFI_IDLE,
@@ -136,7 +139,10 @@ export async function run(): Promise<void> {
 }
 
 export function start(): void {
-  // StickS3_Startup.startup: Speaker.tone(4000, 50) before the menu starts.
+  // StickS3_Startup.startup and _prepare_board: brightness 90 %, volume 100,
+  // Speaker.tone(4000, 50) before the menu starts.
+  requestBrightness(230);
+  requestVolume(100);
   requestTone(4000, 50);
   refresh();
   run();
@@ -228,4 +234,21 @@ export function pressA(): void {
 export function pressB(): void {
   clicksB = clicksB + 1;
   decideB();
+}
+
+// Root exports that main.tsx (JS mode) uses to reach device.ts.
+export function hostNumber(name: string, value: f64): void {
+  device.hostNumber(name, value);
+}
+export function hostText(name: string, value: string): void {
+  device.hostText(name, value);
+}
+export function hostArray(name: string, values: f32[]): void {
+  device.hostArray(name, values);
+}
+export function hostEvent(name: string, value: f64): void {
+  device.hostEvent(name, value);
+}
+export function takeRequests(): string[] {
+  return device.takeRequests();
 }
