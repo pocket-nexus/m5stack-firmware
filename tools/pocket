@@ -1,5 +1,7 @@
 #!/bin/sh
-# Runs the Pocket CLI of the pinned third_party/pocketjs checkout with Bun.
+# Runs the Pocket CLI of the pinned third_party/pocketjs checkout with Bun,
+# through tools/pocket.ts: `compile` honours the app's pocket.fonts.json
+# (docs/FONTS.md); every other command is the submodule CLI unchanged.
 # ESP-IDF builds use it as POCKETJS_CLI (m5_pocket_app/components.cmake sets
 # that default). Bun is taken from PATH, then from ~/.bun/bin.
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
@@ -11,4 +13,4 @@ if [ -z "$bun" ]; then
   echo "tools/pocket: bun not found on PATH or in ~/.bun/bin" >&2
   exit 127
 fi
-exec "$bun" "$root/third_party/pocketjs/tools/pocket.ts" "$@"
+exec "$bun" "$root/tools/pocket.ts" "$@"
