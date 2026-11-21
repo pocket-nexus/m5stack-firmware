@@ -12,14 +12,21 @@
  * and the microphone spectrum task.
  */
 #include "services.h"
+#include "badge.h"
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "m5_pocket/app.h"
 #include "m5_stopwatch/bsp.h"
 #include "nvs.h"
+#include "sdkconfig.h"
+#if CONFIG_M5_POCKET_APP_MODE_JS
+#include "pocket/textures.h"
+#endif
+#include "esp_heap_caps.h"
 #include "spectrum.h"
 #include <math.h>
 #include <stdbool.h>
@@ -304,14 +311,9 @@ esp_err_t stopwatch_services_start(void) {
   m5_pocket_bridge_set_bool("wifiEnabled", settings.wifi);
   m5_pocket_bridge_set_number("guideLaunchCount", settings.launch_count);
   alarms_publish();
-  const float slots[6] = {0};
-  m5_pocket_bridge_set_array("badgeSlots", slots, 6);
-  m5_pocket_bridge_set_number("badgeActive", -1);
-  uint8_t mac[6] = {0};
-  esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-  char ssid[32];
-  snprintf(ssid, sizeof(ssid), "M5StopWatch-%02X%02X", mac[4], mac[5]);
-  m5_pocket_bridge_set_text("apSsid", ssid);
+  if (stopwatch_badge_init() != ESP_OK) {
+    ESP_LOGW(TAG, "badge storage unavailable");
+  }
   stopwatch_services_before_frame();
   return ESP_OK;
 }
@@ -327,7 +329,45 @@ uint32_t stopwatch_services_buttons(void) {
   return bits;
 }
 
+static m5_pocket_app *running_app;
+#if CONFIG_M5_POCKET_APP_MODE_JS
+static int32_t badge_texture = -1;
+#endif
+
+void stopwatch_services_set_app(m5_pocket_app *app) { running_app = app; }
+
+/* The one place that hands the badge picture to PocketJS. JS mode: upload a
+ * newly decoded picture into the guest's core and publish its handle;
+ * main.tsx binds it to images/badge_slot.png. AOT mode: the program's crate
+ * takes the picture itself (programs/stopwatch/aot/src/lib.rs). */
+static void badge_texture_update(void) {
+#if CONFIG_M5_POCKET_APP_MODE_JS
+  pocket_runtime *runtime = m5_pocket_app_runtime(running_app);
+  if (!runtime) {
+    return;
+  }
+  stopwatch_badge_image image;
+  if (!stopwatch_badge_take_image(&image)) {
+    return;
+  }
+  if (badge_texture >= 0) {
+    pocket_texture_free(runtime, badge_texture);
+    badge_texture = -1;
+  }
+  if (image.pixels) {
+    badge_texture = pocket_texture_upload(
+        runtime, image.pixels,
+        (size_t)image.canvas_w * image.canvas_h * sizeof(uint16_t),
+        image.canvas_w, image.canvas_h, 0 /* PSM_5650 */);
+    heap_caps_free(image.pixels);
+    m5_pocket_bridge_set_number("badgeCanvas", image.canvas_w);
+  }
+  m5_pocket_bridge_set_number("badgeTexture", badge_texture);
+#endif
+}
+
 void stopwatch_services_before_frame(void) {
+  badge_texture_update();
   const int64_t now_us = esp_timer_get_time();
   m5_pocket_bridge_set_number("uptimeMs", (double)now_us / 1000.0);
 
@@ -458,13 +498,11 @@ void stopwatch_services_request(const m5_pocket_request *request) {
   } else if (is(request, "alarm_save")) {
     alarms_save();
   } else if (is(request, "badge_edit")) {
-    m5_pocket_bridge_set_text(
-        "apMessage", arg(request, 0) != 0.0
-                         ? "The badge editor access point\nis not available "
-                           "in this firmware"
-                         : "");
-  } else if (is(request, "alarm_ring") || is(request, "badge_slot")) {
-    /* The app drives the alarm beeps; badge slots stay empty. */
+    stopwatch_badge_edit(arg(request, 0) != 0.0);
+  } else if (is(request, "badge_slot")) {
+    stopwatch_badge_select((int)arg(request, 0));
+  } else if (is(request, "alarm_ring")) {
+    /* The app drives the alarm beeps itself. */
   } else {
     ESP_LOGW(TAG, "unknown request %.*s", (int)request->name_length,
              request->name);

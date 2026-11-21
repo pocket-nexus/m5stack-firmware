@@ -6,6 +6,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "m5_pocket/app.h"
 #include "m5_pocket/bridge.h"
 #include <stdint.h>
 
@@ -20,6 +21,9 @@ void stopwatch_services_before_frame(void);
 
 /* Handles one application request (see apps/stopwatch-factory/device.ts). */
 void stopwatch_services_request(const m5_pocket_request *request);
+
+/* The running app, for runtime operations from the hooks (JS mode). */
+void stopwatch_services_set_app(m5_pocket_app *app);
 
 /* KEYA / KEYB as BTN.LTRIGGER / BTN.RTRIGGER bits. */
 uint32_t stopwatch_services_buttons(void);

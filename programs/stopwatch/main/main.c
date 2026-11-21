@@ -99,6 +99,7 @@ void app_main(void) {
 
   m5_pocket_app *app = NULL;
   ESP_ERROR_CHECK(m5_pocket_app_start(&config, &app));
+  stopwatch_services_set_app(app);
   ESP_LOGI(TAG, "running, free internal=%u psram=%u",
            (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
            (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
