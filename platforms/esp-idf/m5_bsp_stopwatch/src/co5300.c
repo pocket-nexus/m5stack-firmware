@@ -26,12 +26,14 @@
 static const char *TAG = "m5sw_co5300";
 
 /*
- * Memory column of frame column 0. The factory firmware drives a 468-column
- * window at memory column 6 (Panel_CO5300 offset_x 6, panel_width 468); the
- * 466-column visible area sits two columns into that window, so the 466-wide
- * frame starts at column 8. This value still needs confirmation on a device.
+ * Memory column of frame column 0, as in the factory firmware
+ * (M5StopWatch-UserDemo main/hal/hal_display.cpp lines 105-107:
+ * panel_width 468, offset_x 6) and M5GFX (esp32s3_board_data.hpp,
+ * stopwatch panel_co5300 offset_x 6). Frame column x lands on the same
+ * memory column as the factory's LVGL column x; the factory's columns 466
+ * and 467 stay black.
  */
-#define CO5300_COLUMN_OFFSET 8
+#define CO5300_COLUMN_OFFSET 6
 #define CO5300_ROW_OFFSET 0
 
 #define CMD_NOP 0x00

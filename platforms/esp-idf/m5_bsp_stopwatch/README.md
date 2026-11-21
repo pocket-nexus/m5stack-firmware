@@ -100,10 +100,16 @@ waits 120 ms; `m5_stopwatch_init` does not call it, as the factory firmware
 does not reset the panel.
 
 Column offset: the factory firmware drives a 468 x 466 window at memory column
-6 (`Panel_CO5300` with `offset_x` 6). The visible area is 466 x 466 and sits
-two columns into that window, so the BSP places frame column 0 at memory
-column 8 (`CO5300_COLUMN_OFFSET` in `src/co5300.c`, row offset 0). This value
-has not been confirmed on a device.
+6 (M5StopWatch-UserDemo `main/hal/hal_display.cpp` lines 105-107:
+`cfg.panel_width = 468; cfg.panel_height = 466; cfg.offset_x = 6;` on a
+480-column `Panel_CO5300`), and M5GFX master declares the same offset
+(`src/board_detect/m5/generated/esp32s3_board_data.hpp`,
+`specs::stopwatch::panel_co5300::offset_x = 6`). The BSP uses that offset
+(`CO5300_COLUMN_OFFSET` 6 in `src/co5300.c`, row offset 0), so frame column x
+is the factory's LVGL column x. The 466-column frame leaves the factory's
+columns 466 and 467 (memory 472 and 473) black; init clears the whole
+480 x 480 memory. Content the factory centres in its 468-column frame (centre
+234) is centred here at 233, 1 px further left.
 
 Brightness: `m5_stopwatch_display_set_brightness` maps 0..100 % to
 0..255 for command 0x51. As in the factory `setBackLightBrightness`, the PM1
@@ -111,8 +117,7 @@ power LED (PWR_CFG LED_EN level) is turned off for any value above 0 and on
 at 0. Panel IO calls from several tasks are not serialized by the BSP.
 
 Touch coordinates are the raw 12-bit CST820 values, clamped to 0..465. The
-factory firmware passes the same raw values to LVGL; no offset is applied for
-the 2-column frame shift above.
+factory firmware passes the same raw values to LVGL; no offset is applied.
 
 ## Battery
 
