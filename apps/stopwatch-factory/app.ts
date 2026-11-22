@@ -128,8 +128,8 @@ export const [titleOpacity, setTitleOpacity] = createSignal<f32>(1.0);
 export const [face, setFace] = createSignal<i32>(0);
 export const [faceRotation, setFaceRotation] = createSignal<Deg>(0.0);
 export const [flowOffsets, setFlowOffsets] = createSignal<i32[]>([66, 66, 66, 66, 66, 66]);
-export const [anchorDX, setAnchorDX] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-export const [anchorDY, setAnchorDY] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+export const [anchorDX, setAnchorDX] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+export const [anchorDY, setAnchorDY] = createSignal<i32[]>([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 export const [classicMode, setClassicMode] = createSignal<i32>(0);
 export const [hourAngle, setHourAngle] = createSignal<Deg>(0.0);
 export const [minuteAngle, setMinuteAngle] = createSignal<Deg>(0.0);
@@ -374,22 +374,24 @@ export function watchTap(): void {
   publishWatch();
 }
 
-// The factory turns the whole watch-face panel with the accelerometer. A
-// turned subtree loses its rounded corners in the PocketJS rasterizer, so
-// each element is turned on its own: anchors move around the screen centre
-// and text, hands, ticks and images take the rotation; round shapes only move.
-const ANCHOR_X: f32[] = [0.0, 0.0, 125.0, -117.0, 0.0, 117.0, 0.0, -42.0, 42.0, -42.0, 42.0, 0.0, 0.0, 0.0, -135.0, -99.0, -18.0, 18.0, 99.0, 135.0];
-const ANCHOR_Y: f32[] = [104.0, 138.0, 0.0, -22.0, -22.0, -22.0, 76.0, -51.0, -51.0, 51.0, 51.0, -24.0, 57.0, 130.0, -22.0, -22.0, -22.0, -22.0, -22.0, -22.0];
-let ticksRotation: f64 = 1000.0;
+// The factory turns the whole watch-face panel with the accelerometer, and so
+// does WatchFace.tsx (faceRotation). Only the number-flow tiles and their
+// digit windows stay upright outside the panel (a turned overflow-hidden
+// window clips to its axis-aligned bounds); they move with the panel by the
+// anchor offsets below: centres of the three tiles, then of the six windows,
+// relative to the screen centre.
+const ANCHOR_X: f32[] = [-117.0, 0.0, 117.0, -135.0, -99.0, -18.0, 18.0, 99.0, 135.0];
+const ANCHOR_Y: f32[] = [-22.0, -22.0, -22.0, -22.0, -22.0, -22.0, -22.0, -22.0, -22.0];
+let anchorsRotation: f64 = 1000.0;
 
-function buildTicks(rotation: f64): void {
-  ticksRotation = rotation;
+/** Classic-face ticks in the upright panel, built once by run(). */
+function buildTicks(): void {
   const list: Tick[] = [];
   for (let i = 0; i < 60; i++) {
     const hourTick = i % 5 === 0;
     const length: f64 = hourTick ? 28.0 : 14.0;
     const middle: f64 = 224.0 - length / 2.0;
-    const degrees: f64 = f64(i * 6 - 90) + rotation;
+    const degrees: f64 = f64(i * 6 - 90);
     const radians: f64 = degrees * 0.017453292519943295;
     push(list, {
       id: i,
@@ -403,6 +405,7 @@ function buildTicks(rotation: f64): void {
 }
 
 function publishAnchors(rotation: f64): void {
+  anchorsRotation = rotation;
   const radians = rotation * 0.017453292519943295;
   const c = cos(radians);
   const s = sin(radians);
@@ -421,14 +424,13 @@ function publishAnchors(rotation: f64): void {
 function publishWatch(): void {
   setFace(watch.face);
   setFaceRotation(f32(watch.rotation) as Deg);
-  if (watch.rotation !== ticksRotation) {
-    buildTicks(watch.rotation);
+  if (watch.face === watch.FACE_NUMBER_FLOW && watch.rotation !== anchorsRotation) {
     publishAnchors(watch.rotation);
   }
   setClassicMode(watch.classicMode);
-  setHourAngle(f32(watch.hourAngle() + watch.rotation) as Deg);
-  setMinuteAngle(f32(watch.minuteAngle() + watch.rotation) as Deg);
-  setSecondAngle(f32(watch.secondAngle() + watch.rotation) as Deg);
+  setHourAngle(f32(watch.hourAngle()) as Deg);
+  setMinuteAngle(f32(watch.minuteAngle()) as Deg);
+  setSecondAngle(f32(watch.secondAngle()) as Deg);
   setWatchTime(stopwatch.letterO(`${two(watch.shownHour)}:${two(watch.shownMinute)}`));
   setPlainTime(`${two(watch.shownHour)}:${two(watch.shownMinute)}`);
   setWatchWeekday(WEEKDAYS[device.weekday]);
@@ -890,7 +892,7 @@ function frame(): void {
 }
 
 export async function run(): Promise<void> {
-  buildTicks(0.0);
+  buildTicks();
   updateClock(true);
   for (let step: i32 = 0; step < 2147483647; step++) {
     await frames(1);

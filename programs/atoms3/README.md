@@ -68,8 +68,8 @@ ESP-IDF v6.1-dev-8142-g188e3e55bb2, esp32s3, AOT mode:
 
 | Item | Bytes |
 | --- | --- |
-| `m5_atoms3.bin` | 2,087,872 (factory partition 7,340,032: 5,252,160 free) |
-| Flash data | 838,176 (includes 18 × 32 KiB RGB565 artwork, two text images and three efont atlases, 38,064 B) |
+| `m5_atoms3.bin` | 2,092,432 (factory partition 7,340,032: 5,247,600 free) |
+| Flash data | 838,224 (includes 18 × 32 KiB RGB565 artwork, two text images and three efont atlases, 38,064 B) |
 | Static internal RAM (DIRAM) | 105,797 used of 341,760 (`.data` 21,694, `.bss` 21,840, IRAM-in-DIRAM text 62,263) |
 
 ## Memory budget

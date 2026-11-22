@@ -54,8 +54,19 @@ Each program README gives its AOT build command and the board facts.
 
 ## PocketJS version
 
-`third_party/pocketjs` is pinned to the `v0.17.0` release
-(`83c6cac9`).
+`third_party/pocketjs` is pinned to `472b4a2a` on `pocket-nexus/pocketjs`
+main, four commits after the `v0.17.0` release (`83c6cac9`):
+
+| Commit | Change |
+| --- | --- |
+| `21ac1ca3` | A rounded box with a flat fill keeps its corners under a turned transform (#322) |
+| `8759ed00` | Arcs (`arcWidth`) are drawn under a turned transform (#731) |
+| `660a35bd` | The guest frame carries the hovering pointer, wheel scroll and exact touch positions; capability `input.scroll` (#730) |
+| `472b4a2a` | Zephyr display pixels in Zephyr's byte order (#703) |
+
+The programs here declare neither `input.pointer` nor `input.scroll`; the
+input records grew (`pocket_input_frame.scroll`, three `pocket_guest_frame`
+fields) and the host's C input source zero-fills the new field.
 
 ## License
 

@@ -76,16 +76,36 @@ advances its own clock from the frame count and takes key clicks from
 - Number flow digits roll like smooth_ui_toolkit 2.12.1 `DigitFlow`
   (strip 9,0..9,0, spring with visual duration 0.6 s and bounce 0.05, up
   when the value grew, down when it shrank, velocity kept across the wrap).
-  With a turned face the 66 px digit windows stay upright and only the
-  glyphs turn, so a digit rolls along the screen's vertical axis.
+  With a turned face the three tiles and their 66 px digit windows stay
+  upright and only move with the face (see the watch-face item below), so
+  the digits do not turn and roll along the screen's vertical axis.
 - Images: PocketJS textures are power-of-two and at most 512 px, so the
   artwork sits on padded canvases (icons and the guide are stored as
   RGB565, the big-number digits as one RGBA4444 tile per palette colour and
   digit, 3.7 MB of the bundle).
-- The watch-face panel is not turned as a whole: a turned subtree loses
-  its rounded corners in the PocketJS rasterizer, so ticks, hands, texts and
-  digit images turn one by one about their anchors while the dial, the date
-  pill and the number-flow tiles only move.
+- The watch face turns with the accelerometer as one 466 px panel about the
+  screen centre, as the factory turns its panel (`watch_face_manager.cpp`).
+  Ticks, hands, time digits, date pill, big-number digits, the simple-face
+  dot and the text baselines turn with it. Differences:
+  - The number-flow tiles and digit windows are not in the panel. A digit
+    window is `overflow-hidden`, and PocketJS clips a turned subtree to the
+    axis-aligned bounds of the turned window, which shows the neighbouring
+    rows of the rolling strip. The tiles stay upright with their windows and
+    the model moves them by the turned offsets of their centres; the date
+    below them turns with the panel and is drawn above them.
+  - Montserrat text (classic weekday and date pill, number-flow and simple
+    date, simple tips) keeps upright glyphs placed along the turned baseline:
+    PocketJS draws a glyph run under a turned transform with upright,
+    unscaled glyph cells (pocketjs issue #728). At 90° the letters stack
+    vertically, at 180° a word reads backwards ("NUS"), and at both the
+    date-pill digits sit partly outside the pill. The factory turns the
+    glyphs. The time digits are images and turn.
+  - The face backgrounds and the classic dial are drawn outside the panel;
+    they look the same at every angle. A turned rounded box is drawn as a
+    polygon with four segments per quarter circle (pocketjs #322); the
+    facets would show on the 358 px dial and on the number-flow tiles
+    (radius 42), not on the 34 px date pill or the 14 px second dot, which
+    turn.
 - Lucky wheel sectors are drawn as rotated half-planes clipped to the two
   screen halves; the factory draws LVGL arcs. Bar spectrum wedges are
   rectangles 12 px wide instead of triangles.

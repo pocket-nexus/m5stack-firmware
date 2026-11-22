@@ -107,9 +107,9 @@ ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `esp_idf_size` on the map file:
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image (`.bin`) | 2 887 040 | 1 856 464 |
-| `factory` partition (7 MiB) free | 4 452 992 (61 %) | 5 483 568 (75 %) |
-| Application content | bundle 1 405 720 (font atlases 933 476) | generated code, styles, font atlases |
+| Application image (`.bin`) | 2 893 952 | 1 860 944 |
+| `factory` partition (7 MiB) free | 4 446 080 (61 %) | 5 479 088 (75 %) |
+| Application content | bundle 1 407 736 (font atlases 933 476) | generated code, styles, font atlases |
 | DIRAM static use (of 341 760) | 81 585 (24 %) | 78 491 (23 %) |
 | `.data` / `.bss` | 14 686 / 10 208 | 14 416 / 9 936 |
 | IRAM | 16 384 of 16 384 | 16 384 of 16 384 |
