@@ -33,7 +33,7 @@ let lastDotAngle: f64 = 0.0;
 let suppressClick: boolean = false;
 let longPressArmed: boolean = false;
 
-/** Whole-face rotation from the accelerometer, degrees. */
+/** Whole-panel rotation from the accelerometer, degrees (WatchFace.tsx turns the panel). */
 export let rotation: f64 = 0.0;
 let filterX: f64 = 0.0;
 let filterY: f64 = -1.0;
@@ -247,13 +247,13 @@ export function hourAngle(): f64 {
   return (f64(shownHour % 12) + f64(shownMinute) / 60.0 + f64(shownSecond) / 3600.0) * 30.0 - 90.0;
 }
 
-/** Simple-face second dot centre offset from the screen centre. */
+/** Simple-face second dot centre offset from the centre of the upright panel. */
 export function dotX(): i32 {
-  const angle: f64 = (springPos[SPRING_SECOND_DOT] + rotation - 90.0) * 0.017453292;
+  const angle: f64 = (springPos[SPRING_SECOND_DOT] - 90.0) * 0.017453292;
   return round(214.0 * cos(angle));
 }
 
 export function dotY(): i32 {
-  const angle: f64 = (springPos[SPRING_SECOND_DOT] + rotation - 90.0) * 0.017453292;
+  const angle: f64 = (springPos[SPRING_SECOND_DOT] - 90.0) * 0.017453292;
   return round(214.0 * sin(angle));
 }
