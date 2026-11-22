@@ -34,8 +34,8 @@ with 168 KB free at its low point, so the AtomS3 program is AOT-only;
 ## Quick start
 
 ```sh
-git clone --recurse-submodules <repository-url> M5Stack-sample
-cd M5Stack-sample
+git clone --recurse-submodules https://github.com/pocket-nexus/m5stack-sample.git
+cd m5stack-sample
 bun install                 # JavaScript dependencies and git hooks
 . $IDF_PATH/export.sh
 cd programs/<board>
