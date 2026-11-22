@@ -62,22 +62,24 @@ was flashed.
 
 | Mode | Target | Build | App image | Flash code + data | DIRAM static (.data + .bss) |
 | --- | --- | --- | --- | --- | --- |
-| JS | esp32s3, PSRAM | links | 1,638,864 B | 1,102,436 + 470,868 B | 20,044 B |
-| JS | esp32p4, PSRAM | links | 1,797,696 B | 1,721,614 B | 22,336 B |
-| AOT | esp32s3, no PSRAM | links, QEMU PASS | 694,576 B | 473,624 + 161,904 B | 18,860 B |
-| AOT | esp32p4, PSRAM | links | 803,568 B | 729,484 B | 21,160 B |
+| JS | esp32s3, PSRAM | links | 1,646,320 B | 1,107,700 + 473,044 B | 20,044 B |
+| JS | esp32p4, PSRAM | links | 1,803,680 B | 1,729,556 B | 22,344 B |
+| AOT | esp32s3, no PSRAM | links, QEMU PASS | 699,056 B | 478,096 + 161,904 B | 18,860 B |
+| AOT | esp32p4, PSRAM | links | 806,384 B | 734,222 B | 21,160 B |
 
 The Rust library before the link: 5.6 MB (`xtensa-esp32s3-none-elf`) and
 12.3 MB (`riscv32imafc`, after removing 36 soft-float compiler-rt objects);
 the linker keeps what the firmware uses.
 
-QEMU run of the AOT esp32s3 image without PSRAM (`PASS mode=aot frames=121
+QEMU run of the AOT esp32s3 image without PSRAM (`PASS mode=aot frames=120
 errors=0 requests=3`): the two CROSS presses produced `tone 880 …`, the tap
-produced `vibrate 30`, the display hashed 51 strip flushes, the longest frame
-took 12.9 ms (emulated, not a timing measurement). Internal RAM: 377,872 B
-free after the display buffers (2 × 7,680 B) were allocated, 273,928 B free
-while running, 270,744 B minimum: host, runtime, app and the 64 KiB app task
-stack took at most 107,128 B. The app task used at most 19,400 B of its stack.
+produced `vibrate 30`, the display hashed 49 strip flushes, the longest frame
+took 8.7 ms (emulated, not a timing measurement). Internal RAM: 377,872 B
+free after the display buffers (2 × 7,680 B) were allocated, 273,864 B free
+while running, 270,524 B minimum: host, runtime, app and the 64 KiB app task
+stack took at most 107,348 B. The app task used at most 19,528 B of its stack.
+The frame and flush counts are sampled by `main.c`'s 50 ms polling loop and
+vary by a few between runs.
 
 The JS image does not reach `app_main` under QEMU (USB-Serial-JTAG
 connection monitor, linked through VFS, waits for a BBPLL calibration QEMU

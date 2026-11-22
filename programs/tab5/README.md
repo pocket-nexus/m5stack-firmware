@@ -45,8 +45,8 @@ before committing.
 
 | Item | JS mode | AOT mode |
 | --- | --- | --- |
-| Application image | 7,423,312 bytes (0x714550), 59 % of the 12 MiB `factory` partition | 6,408,416 bytes (0x61c8e0), 51 % |
-| Flash contents | (bundle 4,549,240 bytes, of which 4,053,008 are the pack; 574,360 bytes of font atlases) | font atlases 562,640 bytes |
+| Application image | 7,429,296 bytes (0x715cb0), 59 % of the 12 MiB `factory` partition | 6,411,168 bytes (0x61d3a0), 51 % |
+| Flash contents | (bundle 4,551,304 bytes, of which 4,053,008 are the pack; 574,360 bytes of font atlases) | font atlases 562,640 bytes |
 | Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
 | Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
 | Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; the 22 pictures are copied into the heap at mount: 3,469,312 bytes (also in flash) |

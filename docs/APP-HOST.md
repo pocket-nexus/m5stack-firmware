@@ -589,15 +589,15 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
   The generated `load_fonts` would copy each atlas into the heap (the smoke
   app's three atlases are 76 KB). Images: see [Images](#images).
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
-  The smoke app used at most 19,400 B of it under QEMU (see below); a larger
+  The smoke app used at most 19,528 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
   `stack_free_min`.
 
 Measured under QEMU (esp32s3, no PSRAM, AOT smoke, 240×135, two 16-row
 strips of 7,680 B each): internal heap free 377,872 B after the display
-buffers were allocated, 273,956 B while running, minimum 270,744 B. The host,
+buffers were allocated, 273,864 B while running, minimum 270,524 B. The host,
 the runtime, the app and the 64 KiB task stack together took at most
-107,128 B of internal RAM. QEMU validates boot, the frame loop, input,
+107,348 B of internal RAM. QEMU validates boot, the frame loop, input,
 bridge and requests; it does not validate timing or a real panel.
 
 ### Images
