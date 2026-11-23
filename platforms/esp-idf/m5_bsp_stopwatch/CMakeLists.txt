@@ -8,6 +8,7 @@ idf_component_register(
     "src/cst820.c"
     "src/ioe1.c"
     "src/pm1.c"
+    "src/refresh.c"
     "src/rx8130.c"
     "src/vibrate.c"
   INCLUDE_DIRS "include"

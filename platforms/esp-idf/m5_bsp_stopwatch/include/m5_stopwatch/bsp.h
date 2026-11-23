@@ -92,6 +92,14 @@ esp_err_t m5_stopwatch_init(const m5_stopwatch_config_t *config,
  * power LED is lit only at 0 %, as in the factory HAL. */
 esp_err_t m5_stopwatch_display_set_brightness(uint8_t percent);
 
+/* Blocks until the panel finishes a scan of its rows (rising edge of the
+ * CO5300 TE output), at most timeout_ms. start_us is the esp_timer time of
+ * that edge and period_us the time since the edge before it. Returns false
+ * without an edge or before two edges were seen. One task may wait at a
+ * time. */
+bool m5_stopwatch_display_wait_refresh(uint32_t timeout_ms, int64_t *start_us,
+                                       uint32_t *period_us);
+
 /* ------------------------------- Power ---------------------------------- */
 
 typedef struct {

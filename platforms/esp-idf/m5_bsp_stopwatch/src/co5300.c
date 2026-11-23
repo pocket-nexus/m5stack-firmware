@@ -19,6 +19,7 @@
 #include "esp_heap_caps.h"
 #include "esp_lcd_panel_interface.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -74,6 +75,10 @@ static const co5300_init_cmd_t s_init_cmds[] = {
 typedef struct {
   esp_lcd_panel_t base;
   esp_lcd_panel_io_handle_t io;
+  /* One task at a time uses the panel IO: the display driver draws from its
+   * own task while the program sets the brightness from another, and the
+   * IO's parameter transfer collects the results of queued pixel transfers. */
+  SemaphoreHandle_t lock;
   int x_gap;
   int y_gap;
 } co5300_panel_t;
@@ -117,7 +122,9 @@ static esp_err_t panel_init(esp_lcd_panel_t *panel) {
 }
 
 static esp_err_t panel_del(esp_lcd_panel_t *panel) {
-  free(__containerof(panel, co5300_panel_t, base));
+  co5300_panel_t *p = __containerof(panel, co5300_panel_t, base);
+  vSemaphoreDelete(p->lock);
+  free(p);
   return ESP_OK;
 }
 
@@ -140,12 +147,17 @@ static esp_err_t panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start,
                           ye < M5_STOPWATCH_CO5300_MEMORY_SIZE,
                       ESP_ERR_INVALID_ARG, TAG, "window outside memory");
 
-  ESP_RETURN_ON_ERROR(set_range(p->io, CMD_CASET, xs, xe), TAG, "CASET");
-  ESP_RETURN_ON_ERROR(set_range(p->io, CMD_RASET, ys, ye), TAG, "RASET");
   const size_t bytes =
       (size_t)(x_end - x_start) * (size_t)(y_end - y_start) * 2;
-  return esp_lcd_panel_io_tx_color(p->io, M5_STOPWATCH_CO5300_PIXELS,
-                                   color_data, bytes);
+  xSemaphoreTake(p->lock, portMAX_DELAY);
+  esp_err_t err = set_range(p->io, CMD_CASET, xs, xe);
+  if (err == ESP_OK)
+    err = set_range(p->io, CMD_RASET, ys, ye);
+  if (err == ESP_OK)
+    err = esp_lcd_panel_io_tx_color(p->io, M5_STOPWATCH_CO5300_PIXELS,
+                                    color_data, bytes);
+  xSemaphoreGive(p->lock);
+  return err;
 }
 
 static esp_err_t panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap) {
@@ -156,19 +168,28 @@ static esp_err_t panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap) {
   return ESP_OK;
 }
 
+/* A command sent while the panel may be drawn from another task. */
+static esp_err_t locked_cmd(co5300_panel_t *p, uint8_t cmd, const void *data,
+                            size_t len) {
+  xSemaphoreTake(p->lock, portMAX_DELAY);
+  const esp_err_t err = tx_cmd(p->io, cmd, data, len);
+  xSemaphoreGive(p->lock);
+  return err;
+}
+
 static esp_err_t panel_invert_color(esp_lcd_panel_t *panel, bool invert) {
   co5300_panel_t *p = __containerof(panel, co5300_panel_t, base);
-  return tx_cmd(p->io, invert ? CMD_INVON : CMD_INVOFF, NULL, 0);
+  return locked_cmd(p, invert ? CMD_INVON : CMD_INVOFF, NULL, 0);
 }
 
 static esp_err_t panel_disp_on_off(esp_lcd_panel_t *panel, bool on) {
   co5300_panel_t *p = __containerof(panel, co5300_panel_t, base);
-  return tx_cmd(p->io, on ? CMD_DISPON : CMD_DISPOFF, NULL, 0);
+  return locked_cmd(p, on ? CMD_DISPON : CMD_DISPOFF, NULL, 0);
 }
 
 static esp_err_t panel_disp_sleep(esp_lcd_panel_t *panel, bool sleep) {
   co5300_panel_t *p = __containerof(panel, co5300_panel_t, base);
-  ESP_RETURN_ON_ERROR(tx_cmd(p->io, sleep ? CMD_SLPIN : CMD_SLPOUT, NULL, 0),
+  ESP_RETURN_ON_ERROR(locked_cmd(p, sleep ? CMD_SLPIN : CMD_SLPOUT, NULL, 0),
                       TAG, "sleep");
   if (!sleep) {
     vTaskDelay(pdMS_TO_TICKS(150)); /* Panel_AMOLED::setSleep(false) */
@@ -179,7 +200,7 @@ static esp_err_t panel_disp_sleep(esp_lcd_panel_t *panel, bool sleep) {
 static esp_err_t panel_set_brightness(esp_lcd_panel_t *panel, int level) {
   co5300_panel_t *p = __containerof(panel, co5300_panel_t, base);
   const uint8_t value = (uint8_t)(level < 0 ? 0 : level > 255 ? 255 : level);
-  return tx_cmd(p->io, CMD_WRDISBV, &value, 1);
+  return locked_cmd(p, CMD_WRDISBV, &value, 1);
 }
 
 esp_err_t m5_stopwatch_co5300_new(esp_lcd_panel_io_handle_t io,
@@ -187,6 +208,11 @@ esp_err_t m5_stopwatch_co5300_new(esp_lcd_panel_io_handle_t io,
   ESP_RETURN_ON_FALSE(io && out, ESP_ERR_INVALID_ARG, TAG, "arg");
   co5300_panel_t *p = calloc(1, sizeof(*p));
   ESP_RETURN_ON_FALSE(p, ESP_ERR_NO_MEM, TAG, "no memory");
+  p->lock = xSemaphoreCreateMutex();
+  if (!p->lock) {
+    free(p);
+    ESP_RETURN_ON_FALSE(false, ESP_ERR_NO_MEM, TAG, "no memory");
+  }
   p->io = io;
   p->base.reset = panel_reset;
   p->base.init = panel_init;

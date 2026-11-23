@@ -11,5 +11,8 @@
 /* I2C bus created by m5_stopwatch_init, or NULL before it. */
 i2c_master_bus_handle_t m5_stopwatch_board_i2c(void);
 
+/* Starts the timing of panel refreshes from the TE pin. */
+esp_err_t m5_stopwatch_refresh_init(void);
+
 /* Creates the stop timer and sets the motor duty to 0. */
 esp_err_t m5_stopwatch_vibrate_init(void);

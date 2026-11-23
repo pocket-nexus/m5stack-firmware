@@ -302,6 +302,7 @@ static esp_err_t display_init(const m5_stopwatch_config_t *cfg) {
       .pull_up_en = GPIO_PULLUP_ENABLE,
   };
   ESP_RETURN_ON_ERROR(gpio_config(&te), TAG, "TE pin");
+  WARN_ON_ERROR(m5_stopwatch_refresh_init(), "TE timing");
 
   /* The AMOLED is the power indication while it is on. */
   if (m5_stopwatch_pm1_ready()) {
