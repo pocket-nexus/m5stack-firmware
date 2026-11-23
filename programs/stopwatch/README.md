@@ -223,14 +223,57 @@ bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --a
 
 ## Validation
 
-Firmware builds only; no device run (ESP-IDF 6.x, esp32s3).
-
-| Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM |
-| --- | --- | --- | --- |
-| JS | 11,342,848 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 10 % | 154,905 of 341,760 bytes |
-| AOT | 10,621,248 bytes | 16 % | 152,721 of 341,760 bytes |
+| Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM | Validated by |
+| --- | --- | --- | --- | --- |
+| JS | 11,392,592 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,745 of 341,760 bytes | firmware build |
+| AOT | 10,605,888 bytes | 16 % | 151,561 of 341,760 bytes | device run |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
-budget when drawn, so the 8 MiB PSRAM holds only the textures on screen (estimate:
+budget when drawn, so the 8 MiB PSRAM holds only the textures on screen
 (at most about 1 MB for the launcher's three icon textures, the guide or
-four big-number tiles) plus the runtime heap).
+four big-number tiles) plus the runtime heap: 6.5 MB of PSRAM stay free on
+the launcher.
+
+**Device run (AOT).** M5Stack StopWatch, ESP32-S3 revision v0.2, ESP-IDF
+v6.1-dev-8142. The firmware without the profiler boots to the launcher and
+runs. The numbers below are from the profiler build (`sdkconfig.profile`),
+with input scripted through its console (`tools/profile.py run`): a 100 s
+tour of the launcher, FluidBox, the four watch faces, the stopwatch and
+Audio.FFT, without a reset. The app task used 68,048 of 262,144 stack bytes
+and the helper task 1,712 of 12,288.
+
+"Before" is the first image that started: the pinned PocketJS commit with
+`CONFIG_SPIRAM_XIP_FROM_PSRAM` off and a PSRAM app stack. "After" is this
+tree with two branches of `HalfSweet/pocketjs` that are not in the pinned
+commit: `perf/raster-fast-paths` (rasterizer row spans) and
+`perf/esp-display` (disjoint flush rows, RGB565 byte exchange, unchanged
+damage snapshot).
+
+| Screen | Before: fps, tick | After: fps, tick |
+| --- | --- | --- |
+| Launcher, still | 30.0, 10.4 ms | 30.0, 6.9 ms |
+| Launcher, four swipes | 9.9, 79.9 ms | 18.2, 30.4 ms |
+| FluidBox | 7.4, 121.8 ms | 14.9, 45.0 ms |
+| Watch face, classic, watch lying flat | 24.7, 31.3 ms | 28.2, 20.0 ms |
+| Stopwatch, stopped | 14.9, 38.7 ms | 30.0, 17.9 ms |
+| Stopwatch, running | 7.3, 106.2 ms | 14.9, 52.2 ms |
+
+| Stage | Before | After |
+| --- | --- | --- |
+| Raster per flushed row, launcher swipe | 0.276 ms | 0.095 ms |
+| Flush per flushed row | 0.038 ms | 0.016 ms |
+| View update, stopwatch page | 20.2 ms | 3.7 ms |
+| Model, FluidBox | 21.9 ms | 3.4 ms |
+| Flushes the display refused | about 15 in 24 s | 0 in 100 s |
+
+With the pinned PocketJS commit the display still refuses a flush whose
+rows repeat (`Flush(DisplayId(0), InvalidTarget)`, one frame dropped and the
+next repaints the panel) and the raster and flush stages take the "Before"
+times; the application, stack and host changes of this repository apply.
+
+What remains per frame, measured: the draw list is built again in every
+frame (2.6 ms on the launcher, 10 ms on the stopwatch page and the classic
+face, whose rounded boxes become one rectangle per row and edge pixel), the
+touch controller is read over I2C (1.06 ms), the `before_frame` hook, which
+reads the IMU, takes 1.07 ms, and a watch face that turns repaints its
+whole panel.
