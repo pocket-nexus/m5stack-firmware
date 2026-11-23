@@ -19,8 +19,13 @@
 
 static const char *TAG = "tab5";
 
-/* Each of the two internal-RAM staging strips. */
-#define TAB5_STRIP_BYTES (128U * 1024U)
+/* Each of the two internal-RAM staging strips: 40 raster rows of 1280 px.
+ * Each strip is one DMA-capable block, and the two land in different heap
+ * regions. At start the largest free blocks are 196,608 B (the 256 KiB L2
+ * region) and 118,784 B (the retention region), measured on a Tab5 with the
+ * ST7121 panel, so a strip must stay below 118,784 B: 48 rows (122,880 B)
+ * leave the second strip unallocated. */
+#define TAB5_STRIP_BYTES (100U * 1024U)
 /* GDMA copies queued at once: strip presents plus retained moves. */
 #define TAB5_COPY_BACKLOG 12U
 #define TAB5_GUEST_HEAP (24U * 1024U * 1024U)
