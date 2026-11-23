@@ -47,5 +47,4 @@ Each application README lists the factory screens it reproduces and every
 known difference from the factory firmware.
 
 **Validation**: firmware builds in CI and host-side checks (format, fonts,
-simulator renders); the AOT AtomS3 and aot-smoke images ran under QEMU. No
-image has run on a device.
+simulator renders); the AOT AtomS3 and aot-smoke images ran under QEMU.
