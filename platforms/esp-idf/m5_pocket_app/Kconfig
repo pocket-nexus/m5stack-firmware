@@ -29,6 +29,16 @@ menu "M5 PocketJS application host"
         int "App task priority"
         default 5
 
+    config M5_POCKET_APP_INTERNAL_STACK
+        int "Internal-stack helper task stack bytes"
+        default 8192
+        help
+            Stack of the helper task the host starts when the app task's
+            stack is in PSRAM (m5_pocket_app_config.task_stack_caps). It
+            runs the program's request handler and the calls made through
+            m5_pocket_app_run_internal: flash operations such as NVS, FAT
+            and Wi-Fi start, which a task with a PSRAM stack cannot make.
+
     config M5_POCKET_BRIDGE_SLOTS
         int "Bridge value slots"
         default 48

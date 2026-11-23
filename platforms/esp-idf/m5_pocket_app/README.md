@@ -22,3 +22,4 @@ reference program.
 | `src/app_aot.c` | AOT mode: calls the library through `m5_pocket/aot.h` |
 | `src/bridge.c` | Value slots, event FIFO, request parsing |
 | `src/input.c` | The program's input callbacks as one `pocket_input_source_v1` |
+| `src/internal_call.c` | Helper task with an internal-RAM stack for an app task whose stack is in PSRAM |

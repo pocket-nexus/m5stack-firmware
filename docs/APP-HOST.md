@@ -134,10 +134,7 @@ m5_strict_warnings(${COMPONENT_LIB})
 | `CONFIG_M5_POCKET_APP_MODE_JS` / `_AOT` | JS | Application mode (choice) |
 | `CONFIG_M5_POCKET_APP_TASK_STACK` | 65536 | App task stack bytes |
 | `CONFIG_M5_POCKET_APP_TASK_PRIORITY` | 5 | App task priority |
-| `CONFIG_M5_POCKET_BRIDGE_SLOTS` | 48 | Distinct board → app value names |
-| `CONFIG_M5_POCKET_BRIDGE_EVENTS` | 16 | Event FIFO depth |
-| `CONFIG_M5_POCKET_BRIDGE_TEXT_MAX` | 96 | Longest text value, bytes |
-| `CONFIG_M5_POCKET_BRIDGE_ARRAY_MAX` | 256 | Longest array value, elements |
+| `CONFIG_M5_POCKET_APP_INTERNAL_STACK` | 8192 | Stack bytes of the internal-stack helper task ([Flash operations](#flash-operations-from-the-hooks)) |
 
 An AOT-only program (for example AtomS3, no PSRAM) puts
 `CONFIG_M5_POCKET_APP_MODE_AOT=y` in `sdkconfig.defaults`; its build never
@@ -173,32 +170,29 @@ runtime tick, the request handler for each request, and `after_frame`.
 `m5_pocket_app_stop` joins the task and destroys runtime, renderer, display
 adapter and the host's input source; panel, IO and touch handles stay the
 program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
-the longest frame and the smallest unused stack seen.
+the longest frame and the smallest unused stack seen, of the app task and of
+the internal-stack helper task.
 
-### Program textures
+### Flash operations from the hooks
 
-`m5_pocket_app_set_texture(app, name, rgb565, width, height, stride_bytes, &handle)`
-uploads a picture the program produced (a decoded photo, a camera frame) and
-binds it to an image name the views draw (`<Image src={name}>`), in both
-modes. Pixels are PSM_5650 (red in the low five bits, as the JS pak stores
-RGB565), `width` and `height` powers of two, rows `stride_bytes` apart; the
-host repacks a padded stride. Calling it again for the name frees the
-previous texture; NULL pixels free it and unbind the name. Call it from the
-app task hooks (`before_frame`, `on_request`, `after_frame`); at most
-`M5_POCKET_APP_TEXTURES_MAX` (8) names are bound at once.
+**A task whose stack is in PSRAM cannot make a flash operation**: NVS, FAT,
+`esp_partition` and Wi-Fi start switch the cache off, and IDF asserts
+`esp_task_stack_is_sane_cache_disabled()`. With
+`task_stack_caps = MALLOC_CAP_SPIRAM` the host starts one helper task with a
+stack of `CONFIG_M5_POCKET_APP_INTERNAL_STACK` bytes in internal RAM, at the
+app task's priority and core:
 
-| Mode | Upload | Name binding |
-| --- | --- | --- |
-| JS | `pocket/textures.h` (`uploadTexture` op) into the guest's core | `m5.textures(registerTexture)` at the start of the next frame (`connectDevice`) |
-| AOT | `m5_pocket_aot_upload_texture` into the compiled app's `Ui` | `Ui::register_image`, immediately |
+- `on_request` runs on the helper task while the app task waits. A request
+  handler may write NVS or start Wi-Fi as it does on an internal app stack.
+- `before_frame`, `after_frame` and the input callbacks run on the app task.
+  They pass flash work to
+  `m5_pocket_app_run_internal(fn, context)`, which runs `fn` on the helper
+  task and returns when it finished. On a task with an internal stack it
+  calls `fn` directly, so the same program code serves both stack kinds.
 
-An image node resolves its name when it is created or re-bound, so publish a
-`device.ts` value with the change (the returned handle, for example) that
-remounts the view; the StopWatch badge publishes `badgeTexture`.
-
-In JS mode `m5_pocket_app_runtime(app)` still returns the running
-`pocket_runtime` for other runtime operations from the hooks; it returns NULL
-in AOT mode, where the application crate owns the `Ui`.
+One round trip costs about 0.4 ms on an ESP32-S3 at 240 MHz (measured:
+`before_frame` took 1.07 ms without and 1.45 ms with one call per frame), so
+a hook asks first whether there is work.
 
 ### Displays
 
@@ -263,7 +257,7 @@ register further `pocket_input_source_v1` objects, such as
 | `js_stack_limit` | 64 KiB | QuickJS stack limit; keep below the task stack |
 | `js_prefer_psram` | false | QuickJS allocations from PSRAM first |
 | `task_stack_bytes` | `CONFIG_M5_POCKET_APP_TASK_STACK` | App task stack |
-| `task_stack_caps` | 0 (internal RAM) | `MALLOC_CAP_SPIRAM` puts the stack in PSRAM; then no flash writes from the hooks |
+| `task_stack_caps` | 0 (internal RAM) | `MALLOC_CAP_SPIRAM` puts the stack in PSRAM; see [Flash operations](#flash-operations-from-the-hooks) |
 | `task_priority`, `task_core` | Kconfig, -1 | `-1` = no affinity |
 
 Runtime allocations go through `pocket_host_alloc` (`pocket_runtime/src/hooks.c`):

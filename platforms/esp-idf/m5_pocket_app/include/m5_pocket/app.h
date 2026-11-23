@@ -125,6 +125,9 @@ typedef struct {
   uint32_t max_frame_us;
   uint32_t last_frame_us;
   uint32_t stack_free_min; /* bytes of the app task stack never used */
+  /* The same for the internal-stack helper task; 0 before its first call
+   * and without that task. */
+  uint32_t internal_stack_free_min;
 } m5_pocket_app_stats;
 
 typedef struct m5_pocket_app m5_pocket_app;
@@ -143,7 +146,11 @@ typedef struct {
   size_t js_stack_limit;
   bool js_prefer_psram;
   /* App task (0: Kconfig defaults). task_stack_caps 0 is internal RAM;
-   * MALLOC_CAP_SPIRAM puts the stack in PSRAM (no flash writes from it). */
+   * MALLOC_CAP_SPIRAM puts the stack in PSRAM. A task with a PSRAM stack
+   * cannot make a flash operation (NVS, FAT, Wi-Fi start): the host then
+   * runs on_request on a helper task with an internal stack
+   * (CONFIG_M5_POCKET_APP_INTERNAL_STACK bytes), and the other hooks use
+   * m5_pocket_app_run_internal for such work. */
   uint32_t task_stack_bytes;
   uint32_t task_stack_caps;
   int task_priority;
@@ -151,7 +158,9 @@ typedef struct {
   /* Called on the app task before every frame: poll sensors, publish
    * bridge values. */
   void (*before_frame)(void *context);
-  /* Called on the app task for each request the application made. */
+  /* Called for each request the application made, while the app task
+   * waits: on the app task, or on the internal-stack helper task when the
+   * app task's stack is in PSRAM. */
   m5_pocket_request_fn on_request;
   /* Called on the app task after every frame with its PocketJS status. */
   void (*after_frame)(void *context, int32_t status);
@@ -194,6 +203,13 @@ esp_err_t m5_pocket_app_start(const m5_pocket_app_config *config,
 esp_err_t m5_pocket_app_stop(m5_pocket_app *app);
 
 esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app, m5_pocket_app_stats *out);
+
+/* Run fn(context) on a stack in internal RAM and wait for it: directly when
+ * the calling task's stack is internal, else on the host's helper task. For
+ * flash operations from the hooks of an app task whose stack is in PSRAM.
+ * ESP_ERR_INVALID_STATE: the caller's stack is in PSRAM and no app with a
+ * PSRAM stack runs. */
+esp_err_t m5_pocket_app_run_internal(void (*fn)(void *context), void *context);
 
 /* JS mode: the running pocket_runtime, for runtime operations such as
  * pocket/textures.h. Call only from the app task (before_frame, on_request,

@@ -236,6 +236,7 @@ static void release(m5_pocket_app *app) {
   if (app->stopped)
     vSemaphoreDelete(app->stopped);
   m5_pocket_bridge_set_request_handler(NULL, NULL);
+  m5_pocket_internal_stop();
   for (int i = 0; i < M5_POCKET_APP_TEXTURES_MAX; i++)
     free(app->textures[i].name);
   free(app);
@@ -272,6 +273,8 @@ esp_err_t m5_pocket_app_start(const m5_pocket_app_config *config,
     err = create_renderer(app);
   if (err == ESP_OK)
     err = create_inputs(app);
+  if (err == ESP_OK && (own->task_stack_caps & MALLOC_CAP_SPIRAM))
+    err = m5_pocket_internal_start(own);
   if (err == ESP_OK) {
     app->started = xSemaphoreCreateBinary();
     app->stopped = xSemaphoreCreateBinary();
@@ -330,6 +333,7 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app,
   if (!app || !out)
     return ESP_ERR_INVALID_ARG;
   *out = app->stats;
+  out->internal_stack_free_min = m5_pocket_internal_stack_free_min();
   return ESP_OK;
 }
 

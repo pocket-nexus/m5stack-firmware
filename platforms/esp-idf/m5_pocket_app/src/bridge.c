@@ -1,6 +1,7 @@
 #include "m5_pocket/bridge.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "m5_pocket/app.h"
 #include "sdkconfig.h"
 #include <stdlib.h>
 #include <string.h>
@@ -261,6 +262,17 @@ void m5_pocket_bridge_set_request_handler(m5_pocket_request_fn handler,
   unlock();
 }
 
+typedef struct {
+  m5_pocket_request_fn handler;
+  void *context;
+  const m5_pocket_request *request;
+} request_call;
+
+static void call_handler(void *argument) {
+  const request_call *call = argument;
+  call->handler(call->context, call->request);
+}
+
 static bool is_space(char c) {
   return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
@@ -302,8 +314,10 @@ esp_err_t m5_pocket_bridge_dispatch_request(const char *text, size_t length) {
     if (end == word + size)
       request.args[request.argc++] = value;
   }
-  handler(context, &request);
-  return ESP_OK;
+  /* On the helper task when this task's stack is in PSRAM: a request
+   * handler may write flash. */
+  request_call call = {handler, context, &request};
+  return m5_pocket_app_run_internal(call_handler, &call);
 }
 
 esp_err_t m5_pocket_bridge_get_stats(m5_pocket_bridge_stats *out) {

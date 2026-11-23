@@ -6,7 +6,8 @@ if(NOT m5_pocket_app_mode)
     set(m5_pocket_app_mode JS)
 endif()
 
-set(m5_pocket_app_srcs "src/app.c" "src/bridge.c" "src/input.c")
+set(m5_pocket_app_srcs "src/app.c" "src/bridge.c" "src/input.c"
+    "src/internal_call.c")
 set(m5_pocket_app_requires pocket_runtime pocket_display_esp_lcd)
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND m5_pocket_app_requires pocket_display_esp_dpi pocket_render_esp_ppa)

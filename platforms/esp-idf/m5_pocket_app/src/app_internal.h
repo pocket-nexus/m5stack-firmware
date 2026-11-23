@@ -40,6 +40,12 @@ struct m5_pocket_app {
 
 const pocket_input_source_v1 *m5_pocket_input_vtable(void);
 
+/* internal_call.c: the helper task with an internal-RAM stack, started when
+ * the app task's stack is in PSRAM. */
+esp_err_t m5_pocket_internal_start(const m5_pocket_app_config *config);
+void m5_pocket_internal_stop(void);
+uint32_t m5_pocket_internal_stack_free_min(void);
+
 /* Mode backends (app_js.c or app_aot.c), called on the app task. boot
  * creates the runtime, boots and presents; it sets app->cadence_hz. */
 esp_err_t m5_pocket_backend_boot(m5_pocket_app *app);
