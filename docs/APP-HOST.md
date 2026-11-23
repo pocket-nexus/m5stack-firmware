@@ -509,7 +509,25 @@ m5-pocket-aot-build = { path = "../../../platforms/rust/m5_pocket_aot_build" }
 opt-level = "s"
 panic = "abort"
 overflow-checks = false
+
+# Code that runs every frame: rasterizer, retained core, damage tracker and
+# draw-list decoder, presenter, driver adapters.
+[profile.release.package.pocket-raster]
+opt-level = 3
+[profile.release.package.pocketjs-core]
+opt-level = 3
+[profile.release.package.pocket-render]
+opt-level = 3
+[profile.release.package.pocket-runtime]
+opt-level = 3
+[profile.release.package.pocket-drivers]
+opt-level = 3
 ```
+
+The generated application code stays at `opt-level = "s"`. The overrides
+matter: at `"s"` rustc does not inline the iterator chains of
+`pocket-render`, and the damage tracker's comparison of two unchanged draw
+lists took milliseconds per frame on the StopWatch.
 
 `build.rs` calls `m5_pocket_aot_build::emit()`, which copies the exported
 profile to `OUT_DIR/pocket_profile.rs` and writes `OUT_DIR/m5_fonts.rs`
