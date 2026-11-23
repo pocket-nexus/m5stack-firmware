@@ -168,8 +168,8 @@ and turns 20 ms capture chunks into the chart columns.
 
 `idf.py build` succeeds in JS mode and in AOT mode for esp32p4. The program's
 `main` and `m5_bsp_tab5` compile with `m5_strict_warnings` (the warnings IDF
-relaxes restored as errors); the six "value assigned is never read" Rust
-warnings of an AOT build come from MicroTS-generated code. No M5Stack hardware was connected: no device
+relaxes restored as errors); the AOT build, MicroTS-generated Rust included,
+has no warnings. No M5Stack hardware was connected: no device
 run, flash or measurement happened. The application was checked with
 `pocket compile` (JS bundle and `--aot` admission) and simulator screenshots
 (`apps/tab5-factory/tools/preview.ts`).
