@@ -142,7 +142,7 @@ AOT crate 如何构建。
 
 ```sh
 esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.1.bin       # Tab5
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-js-v0.1.1.bin  # StopWatch
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.1.bin # StopWatch
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.1.bin    # StickS3
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.1.bin    # AtomS3, AtomS3R
 ```
@@ -276,7 +276,9 @@ docs/                     参考文档
 - Tab5：没有摄像头预览（摄像头窗口保持黑屏）、Wi-Fi 热点（窗口只显示出厂文字）
   和 USB-A host。
 - StopWatch：没有 Wi-Fi station 模式和配网热点（徽章编辑器自带热点）；
-  FluidBox 模拟 48 个粒子，出厂固件为 450 个。
+  FluidBox 模拟 48 个粒子，出厂固件为 450 个。JS 镜像在开发板上无法启动
+  （见 [programs/stopwatch](programs/stopwatch/README.md#validation)），请烧录
+  AOT 镜像。
 - PocketJS 只在一组固定字号（10 到 54 px）上烘焙字体，因此出厂固件中其他字号的
   文字改用最接近的字号，或用出厂固件的字形位图绘制（[docs/FONTS.md](docs/FONTS.md)）。
 
