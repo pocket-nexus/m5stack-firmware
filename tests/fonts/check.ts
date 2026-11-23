@@ -2,36 +2,41 @@
 //
 //   bun tests/fonts/check.ts
 //
-// 1. Compiles tests/fonts/app (which has a pocket.fonts.json) with tools/pocket
-//    and with the submodule CLI, each as a JS bundle and as AOT sources.
+// 1. Compiles apps/sticks3-demos, whose host config declares `app.fonts`
+//    (Montserrat Medium and SemiBold), with tools/pocket as a JS bundle and
+//    as AOT sources.
 // 2. Reads every baked atlas (the bundle's pak in JS mode, font-<slot>.bin in
 //    AOT mode), takes the codepoints from its cmap and bakes the slot again
-//    with framework/compiler/bake-font.ts: tools/pocket's atlases must equal
-//    the bake from the declared faces and differ from the bake from the
-//    upstream defaults; the submodule CLI's atlases must equal the defaults.
-// 3. Checks that both depfiles list pocket.fonts.json and the declared faces.
-// 4. Compiles tests/aot-smoke/app (no pocket.fonts.json) both ways and checks
-//    that tools/pocket bakes the same atlases as the submodule CLI.
+//    with framework/compiler/bake-font.ts: each atlas must equal the bake
+//    from the declared faces, and an atlas of a declared family must differ
+//    from the bake from the PocketJS defaults.
+// 3. Checks that both depfiles list the declared faces.
+// 4. Compiles tests/aot-smoke/app (no `app.fonts`) both ways and checks that
+//    its atlases equal the bake from the defaults.
 //
 // Outputs go to .pocket-build/fonts-test/ (ignored). Needs
 // third_party/pocketjs/platforms/web/pocketjs.wasm for the AOT compiles
 // (`bun tools/wasm.ts` in the submodule).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { BUNDLE_SECTION, decodeBundle } from "../../third_party/pocketjs/contracts/spec/bundle.ts";
 import { FONT_CMAP_ENTRY_SIZE, FONT_HEADER_SIZE, FONT_MAGIC } from "../../third_party/pocketjs/contracts/spec/spec.ts";
 import { bakeAtlases } from "../../third_party/pocketjs/framework/compiler/bake-font.ts";
 import { keyFont, unpack } from "../../third_party/pocketjs/framework/compiler/pak.ts";
-import { readFontDeclaration } from "../../tools/fonts/declaration.ts";
+import { fontSlotInfo } from "../../third_party/pocketjs/framework/compiler/tailwind.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const out = join(root, ".pocket-build/fonts-test");
-const wrapper = join(root, "tools/pocket");
-const upstream = join(root, "third_party/pocketjs/tools/pocket.ts");
+const cli = join(root, "tools/pocket");
 const wasm = join(root, "third_party/pocketjs/platforms/web/pocketjs.wasm");
-const fontsApp = join(import.meta.dir, "app");
+const fontsApp = join(root, "apps/sticks3-demos");
 const smokeApp = join(root, "tests/aot-smoke/app");
+/** The `app.fonts` of apps/sticks3-demos/pocket.host.config.ts. */
+const declared = {
+  regular: join(fontsApp, "fonts/Montserrat-Medium.ttf"),
+  bold: join(fontsApp, "fonts/Montserrat-SemiBold.ttf"),
+};
 
 let failures = 0;
 function check(ok: boolean, message: string): void {
@@ -45,7 +50,6 @@ if (!existsSync(wasm)) {
 }
 rmSync(out, { recursive: true, force: true });
 
-type Cli = "wrapper" | "upstream";
 type Mode = "js" | "aot";
 interface Compiled {
   readonly atlases: Map<number, Uint8Array>;
@@ -53,22 +57,22 @@ interface Compiled {
 }
 
 /** `pocket compile` of the app whose host config is `<app>/pocket.host.config.ts`. */
-function compile(app: string, name: string, cli: Cli, mode: Mode): Compiled {
-  const dir = join(out, name, `${mode}-${cli}`);
+function compile(app: string, name: string, mode: Mode): Compiled {
+  const dir = join(out, name, mode);
   const depfile = `${dir}.d`;
   const config = join(app, "pocket.host.config.ts");
   const common = ["compile", "--config", config, "--plan-dir", join(dir, "plans"), "--depfile", depfile];
   const modeArgs = mode === "aot"
     ? ["--aot", "--out", join(dir, "aot")]
     : ["--outdir", join(dir, "compiler"), "--output", join(dir, "app.pkb")];
-  const command = cli === "wrapper" ? [wrapper, ...common, ...modeArgs] : [process.execPath, upstream, ...common, ...modeArgs];
+  const command = [cli, ...common, ...modeArgs];
   // AOT compiles create <project-root>/dist (ignored); remove it if this run made it.
   const dist = join(app, "dist"), hadDist = existsSync(dist);
   const result = spawnSync(command[0]!, command.slice(1), { cwd: root, encoding: "utf8" });
   if (!hadDist) rmSync(dist, { recursive: true, force: true });
   if (result.status !== 0) {
     process.stderr.write(result.stdout + result.stderr);
-    throw new Error(`${cli} ${mode} compile of ${name} failed (${result.status})`);
+    throw new Error(`${mode} compile of ${name} failed (${result.status})`);
   }
   const atlases = new Map<number, Uint8Array>();
   if (mode === "aot") {
@@ -114,61 +118,33 @@ async function rebake(atlas: Uint8Array, faces: Faces): Promise<Uint8Array> {
 const equal = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((value, i) => value === b[i]);
 const slotsOf = (compiled: Compiled) => [...compiled.atlases.keys()].sort((a, b) => a - b).join(",");
 
-// --- the declaring app --------------------------------------------------------
-const declaration = readFontDeclaration(join(fontsApp, "pocket.host.config.ts"));
-if (!declaration) throw new Error("tests/fonts/app has no pocket.fonts.json");
-const faces = declaration.faces;
-console.log(`declared: ${Object.entries(faces).map(([role, path]) => `${role}=${path.slice(root.length + 1)}`).join(" ")}`);
-
+// --- an app that declares app.fonts --------------------------------------------
+console.log(`declared: ${Object.entries(declared).map(([role, path]) => `${role}=${path.slice(root.length + 1)}`).join(" ")}`);
 for (const mode of ["js", "aot"] as const) {
-  const mine = compile(fontsApp, "fonts", "wrapper", mode);
-  const theirs = compile(fontsApp, "fonts", "upstream", mode);
-  check(slotsOf(mine) === "2,12,17", `${mode}: tools/pocket baked slots ${slotsOf(mine)} (16 px regular, 24 px bold, 14 px mono)`);
-  check(slotsOf(theirs) === slotsOf(mine), `${mode}: the submodule CLI baked the same slots`);
-  for (const [slot, atlas] of mine.atlases) {
-    check(equal(atlas, await rebake(atlas, faces)), `${mode}: slot ${slot} atlas equals the bake from the declared face`);
-    check(!equal(atlas, await rebake(atlas, {})), `${mode}: slot ${slot} atlas differs from the bake from the default face`);
+  const compiled = compile(fontsApp, "sticks3-demos", mode);
+  check(compiled.atlases.size > 0, `${mode}: sticks3-demos baked slots ${slotsOf(compiled)}`);
+  for (const [slot, atlas] of compiled.atlases) {
+    check(equal(atlas, await rebake(atlas, declared)), `${mode}: slot ${slot} atlas equals the bake from the declared faces`);
+    // The app declares no mono face: a mono slot keeps the default.
+    const info = fontSlotInfo(slot);
+    const family = info.mono ? "mono" : info.bold ? "bold" : "regular";
+    if (family !== "mono") {
+      check(!equal(atlas, await rebake(atlas, {})), `${mode}: slot ${slot} (${family}) atlas differs from the bake from the default face`);
+    }
   }
-  for (const [slot, atlas] of theirs.atlases) {
-    check(equal(atlas, await rebake(atlas, {})), `${mode}: submodule CLI slot ${slot} atlas equals the default-face bake`);
-  }
-  const listed = readFileSync(mine.depfile, "utf8");
-  for (const path of [declaration.file, ...Object.values(faces)]) {
+  const listed = readFileSync(compiled.depfile, "utf8");
+  for (const path of Object.values(declared)) {
     check(listed.includes(path), `${mode}: depfile lists ${path.slice(root.length + 1)}`);
   }
 }
 
-// --- an app without a declaration ---------------------------------------------
+// --- an app without app.fonts ----------------------------------------------------
 for (const mode of ["js", "aot"] as const) {
-  const mine = compile(smokeApp, "aot-smoke", "wrapper", mode);
-  const theirs = compile(smokeApp, "aot-smoke", "upstream", mode);
-  const same = slotsOf(mine) === slotsOf(theirs) &&
-    [...mine.atlases].every(([slot, atlas]) => equal(atlas, theirs.atlases.get(slot)!));
-  check(same, `${mode}: aot-smoke (no pocket.fonts.json) atlases equal the submodule CLI's (slots ${slotsOf(mine)})`);
-  check(readFileSync(mine.depfile, "utf8").includes(dirname(join(smokeApp, "pocket.host.config.ts"))),
-    `${mode}: aot-smoke depfile lists the app directory (a new pocket.fonts.json rebuilds)`);
+  const compiled = compile(smokeApp, "aot-smoke", mode);
+  let same = compiled.atlases.size > 0;
+  for (const [, atlas] of compiled.atlases) same &&= equal(atlas, await rebake(atlas, {}));
+  check(same, `${mode}: aot-smoke (no app.fonts) atlases equal the bake from the default faces (slots ${slotsOf(compiled)})`);
 }
-
-// --- declaration errors -------------------------------------------------------
-const scratch = join(out, "declarations");
-mkdirSync(scratch, { recursive: true });
-const config = join(scratch, "pocket.host.config.ts");
-const rejects = (declared: string, expected: RegExp, what: string) => {
-  writeFileSync(join(scratch, "pocket.fonts.json"), declared);
-  let message = "";
-  try {
-    readFontDeclaration(config);
-  } catch (error) {
-    message = (error instanceof Error ? error.message : String(error)).replaceAll(`${scratch}/`, "");
-  }
-  check(expected.test(message), `declaration with ${what} is rejected (${message || "accepted"})`);
-};
-rejects(`{ "semibold": "a.ttf" }`, /unknown field semibold/, "an unknown role");
-rejects(`{ "regular": "missing.ttf" }`, /file not found/, "a missing file");
-rejects(`{ "regular": "font.woff2" }`, /\.ttf or \.otf/, "a .woff2 face");
-rejects(`{ "regular": 1 }`, /nonempty path/, "a non-string path");
-rmSync(join(scratch, "pocket.fonts.json"));
-check(readFontDeclaration(config) === undefined, "no pocket.fonts.json means no declaration (upstream defaults)");
 
 console.log(failures ? `${failures} check(s) failed` : "all checks passed");
 process.exit(failures ? 1 : 0);

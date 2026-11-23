@@ -187,9 +187,9 @@ with `~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
 (`device_fields!`, the counterpart of the `hostNumber`/`hostText`/
 `hostArray` switches; `uptimeMs` also sets `bridged`, the `badgeClosed`
 event counts, `badgeTexture` and `badgeCanvas` arrive like any field).
-`build.rs` uses the shared in-place image loader
-(`m5_pocket_aot_build::emit_images`, docs/APP-HOST.md "Images") instead of
-the generated `load_images`, which copies every picture into the heap at
+`mount` calls the generated `load_images_in_place` (docs/APP-HOST.md
+"Images") instead of the generated `load_images`, which copies every
+picture into the heap at
 mount (7,167,252 bytes of IMG entries with the 116 big-number tiles and
 the glyph images): the IMG entries MicroTS bakes in the formats
 `images.json` selects (RGB565, RGBA4444 or RGBA8888, as in the JS bundle)
@@ -225,8 +225,8 @@ bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --a
 
 | Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM | Validated by |
 | --- | --- | --- | --- | --- |
-| JS | 11,392,592 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,745 of 341,760 bytes | firmware build |
-| AOT | 10,605,888 bytes | 16 % | 151,561 of 341,760 bytes | device run |
+| JS | 11,398,480 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,745 of 341,760 bytes | firmware build |
+| AOT | 10,667,584 bytes | 15 % | 151,561 of 341,760 bytes | device run |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
 budget when drawn, so the 8 MiB PSRAM holds only the textures on screen
@@ -235,30 +235,29 @@ four big-number tiles) plus the runtime heap: 6.5 MB of PSRAM stay free on
 the launcher.
 
 **Device run (AOT).** M5Stack StopWatch, ESP32-S3 revision v0.2, ESP-IDF
-v6.1-dev-8142. The firmware without the profiler boots to the launcher and
-runs. The numbers below are from the profiler build (`sdkconfig.profile`),
-with input scripted through its console (`tools/profile.py run`): a 100 s
-tour of the launcher, FluidBox, the four watch faces, the stopwatch and
-Audio.FFT, without a reset. The app task used 68,048 of 262,144 stack bytes
-and the helper task 1,712 of 12,288.
+v6.1-dev-8142, PocketJS `418e902b`. The firmware without the profiler boots
+to the launcher and runs. The numbers below are from the profiler build
+(`sdkconfig.profile`), with input scripted through its console
+(`tools/profile.py run`): a 100 s tour of the launcher, FluidBox, the four
+watch faces, the stopwatch and Audio.FFT, without a reset and without a
+failed tick. The app task used 69,360 of 262,144 stack bytes and the helper
+task 1,472 of 12,288.
 
-"Before" is the first image that started: the pinned PocketJS commit with
-`CONFIG_SPIRAM_XIP_FROM_PSRAM` off and a PSRAM app stack. "After" is this
-tree with `integration/stopwatch-device` of `HalfSweet/pocketjs` at
-`339872d4`: the pinned commit plus the changes of four pull requests that
-are not in it, pocketjs #758 (disjoint flush rows), #759 (RGB565 byte
-exchange), #760 (unchanged damage snapshot) and #761 (rasterizer row
-spans). #761 was rebased onto main afterwards; its rasterizer on the same
-base (`6229f21f`) measured the same raster time per row.
+"Before" is the first image that started: PocketJS `2c9fcf30` with
+`CONFIG_SPIRAM_XIP_FROM_PSRAM` off and a PSRAM app stack, and the
+application as it was. "After" is this tree. The display-path changes are
+in PocketJS: disjoint flush rows (#758), RGB565 byte exchange per word
+(#759), the unchanged damage snapshot (#760) and rasterizer row spans
+(#761).
 
 | Screen | Before: fps, tick | After: fps, tick |
 | --- | --- | --- |
 | Launcher, still | 30.0, 10.4 ms | 30.0, 6.9 ms |
-| Launcher, four swipes | 9.9, 79.9 ms | 18.2, 30.4 ms |
-| FluidBox | 7.4, 121.8 ms | 14.9, 45.0 ms |
-| Watch face, classic, watch lying flat | 24.7, 31.3 ms | 28.2, 20.0 ms |
+| Launcher, four swipes | 9.9, 79.9 ms | 19.9, 25.5 ms |
+| FluidBox | 7.4, 121.8 ms | 14.9, 45.4 ms |
+| Watch face, classic, watch lying flat | 24.7, 31.3 ms | 29.0, 19.3 ms |
 | Stopwatch, stopped | 14.9, 38.7 ms | 30.0, 17.9 ms |
-| Stopwatch, running | 7.3, 106.2 ms | 14.9, 52.2 ms |
+| Stopwatch, running | 7.3, 106.2 ms | 15.0, 52.3 ms |
 
 | Stage | Before | After |
 | --- | --- | --- |
@@ -268,10 +267,7 @@ base (`6229f21f`) measured the same raster time per row.
 | Model, FluidBox | 21.9 ms | 3.4 ms |
 | Flushes the display refused | about 15 in 24 s | 0 in 100 s |
 
-With the pinned PocketJS commit the display still refuses a flush whose
-rows repeat (`Flush(DisplayId(0), InvalidTarget)`, one frame dropped and the
-next repaints the panel) and the raster and flush stages take the "Before"
-times; the application, stack and host changes of this repository apply.
+The picture was not captured on the device: no pixel comparison ran there.
 
 What remains per frame, measured: the draw list is built again in every
 frame (2.6 ms on the launcher, 10 ms on the stopwatch page and the classic

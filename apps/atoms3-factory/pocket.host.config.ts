@@ -14,6 +14,12 @@ export default defineHostConfig({
     framework: "solid",
     viewport: { logical: [128, 128], presentation: "native" },
     features: ["input.buttons", "text.glyphs.baked"],
+    // The faces the font atlases are baked from (docs/FONTS.md).
+    fonts: {
+      regular: "fonts/EfontBiwidth16-Regular.ttf",
+      bold: "fonts/EfontBiwidth16-Bold.ttf",
+      mono: "fonts/EfontBiwidth12-Regular.ttf",
+    },
     aot: true,
     model: "compiled",
     tickHz: 30,

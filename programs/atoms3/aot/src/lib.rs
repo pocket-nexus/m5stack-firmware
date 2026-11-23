@@ -15,8 +15,6 @@ mod profile {
     include!(concat!(env!("OUT_DIR"), "/pocket_profile.rs"));
 }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
 
 /// Decoded artwork kept past a frame: one 128x128 RGB565 image.
 const TEXTURE_BUDGET: usize = 128 * 128 * 2;

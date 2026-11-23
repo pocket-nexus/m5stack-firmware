@@ -2,7 +2,7 @@
 
 ```text
 m5stack-firmware/
-├─ third_party/pocketjs/      PocketJS checkout pinned to 2c9fcf30, after v0.17.0 (submodule)
+├─ third_party/pocketjs/      PocketJS checkout pinned to 418e902b, after v0.17.0 (submodule)
 ├─ platforms/esp-idf/         ESP-IDF components owned by this repository
 │  ├─ m5_bsp_<board>/         board support taken from M5Stack sources
 │  └─ m5_pocket_app/          application host: JS/AOT mode, device bridge,
@@ -14,12 +14,12 @@ m5stack-firmware/
 │                             sdkconfig.defaults, partitions
 │  └─ aot/                    the program's AOT library crate
 ├─ apps/<board>-factory/      factory demo application (TSX views, TS models),
-│                             its host config, pocket.fonts.json and fonts/
+│                             its host config (with app.fonts) and fonts/
 ├─ apps/sticks3-demos/        StickS3 application: demos of the board in place
 │                             of a factory recreation, same layout
 ├─ tests/                     aot-smoke (both modes, both targets) and tool tests
-├─ tools/                     Pocket CLI wrapper (per-app fonts), formatter,
-│                             simulator screenshots (screenshots.ts)
+├─ tools/                     Pocket CLI launcher, formatter, frame profiler host
+│                             tool, simulator screenshots (screenshots.ts)
 └─ docs/                      reference documentation (APP-HOST.md: the host)
    └─ images/                 README screenshots, written by tools/screenshots.ts
 ```

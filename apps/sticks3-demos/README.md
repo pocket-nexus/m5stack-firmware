@@ -172,7 +172,7 @@ rate.
 | `home.ts`, `maze.ts`, `dice.ts`, `reaction.ts`, `snake.ts`, `level.ts`, `sound.ts`, `metronome.ts` | State modules of the home carousel and the demos |
 | `types.ts` | Records passed to the views |
 | `HomeView.tsx`, `MazeView.tsx`, `DiceView.tsx`, `ReactionView.tsx`, `SnakeView.tsx`, `LevelView.tsx`, `SoundView.tsx`, `MetronomeView.tsx`, `HeaderView.tsx`, `FooterView.tsx`, `BatteryView.tsx` | Views; props only |
-| `pocket.fonts.json`, `fonts/` | Montserrat Medium and SemiBold ([Fonts](#fonts)) |
+| `pocket.host.config.ts` (`app.fonts`), `fonts/` | Montserrat Medium and SemiBold ([Fonts](#fonts)) |
 
 Views are named `*View.tsx` so that no view shares a case-insensitive
 basename with a model module (`maze.ts`).
@@ -223,7 +223,7 @@ no `ActionHandler`.
 
 ## Fonts
 
-`pocket.fonts.json` declares Montserrat Medium as `regular` and Montserrat
+`app.fonts` in `pocket.host.config.ts` declares Montserrat Medium as `regular` and Montserrat
 SemiBold as `bold` ([docs/FONTS.md](../../docs/FONTS.md)); `mono` keeps the
 default and is not baked.
 

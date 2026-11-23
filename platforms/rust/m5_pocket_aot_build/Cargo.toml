@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 publish = false
-description = "build.rs support for m5_pocket_app AOT crates: exported profile, in-place font and image loaders"
+description = "build.rs support for m5_pocket_app AOT crates: the exported host profile"
 
 [lib]
 name = "m5_pocket_aot_build"

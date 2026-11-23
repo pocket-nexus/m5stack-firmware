@@ -16,7 +16,6 @@ per-app crate depends on it, implements `DeviceApp` for its generated
   frame and passes the queued request strings to the program.
 - `bridge`, `Field`, `device_fields!`: typed access to `m5_pocket/bridge.h`.
 - `M5Host`: a `microts::Host` that admits every input channel.
-- `load_font_in_place`: font atlases read from flash instead of heap copies.
 - On the device (`target_os = "none"`): the global allocator over
   `pocket_host_alloc`/`realloc`/`free` and the panic handler over
   `pocket_host_panic` (`pocket_runtime/src/hooks.c`).

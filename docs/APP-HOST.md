@@ -23,7 +23,7 @@ board bring-up; it passes handles and callbacks to `m5_pocket_app_start`.
 | `platforms/rust/m5_pocket_aot/` | Shared AOT crate: runtime, adapters, bridge, allocator, panic handler |
 | `platforms/rust/m5_pocket_aot_build/` | `build.rs` support of per-app crates |
 | `tests/aot-smoke/aot/` | Per-app AOT crate template |
-| `tools/pocket` | Pocket CLI of the submodule, run through `tools/pocket.ts`, which applies the app's `pocket.fonts.json` ([FONTS.md](FONTS.md)) |
+| `tools/pocket` | Pocket CLI of the submodule, run with Bun; it bakes the faces of `app.fonts` ([FONTS.md](FONTS.md)) |
 | `tools/profile.py` | Host side of the frame profiler: log capture with console steps, stage tables, PC capture symbols ([Frame profiler](#frame-profiler)) |
 | `tests/aot-smoke/` | Smoke program: the reference adoption |
 
@@ -530,8 +530,9 @@ matter: at `"s"` rustc does not inline the iterator chains of
 lists took milliseconds per frame on the StopWatch.
 
 `build.rs` calls `m5_pocket_aot_build::emit()`, which copies the exported
-profile to `OUT_DIR/pocket_profile.rs` and writes `OUT_DIR/m5_fonts.rs`
-(`load_fonts_in_place`, see below). `src/lib.rs`:
+profile to `OUT_DIR/pocket_profile.rs`. The generated `include.rs` defines
+the loaders `load_fonts`, `load_fonts_in_place`, `load_images` and
+`load_images_in_place` (see below). `src/lib.rs`:
 
 ```rust
 #![no_std]
@@ -544,7 +545,6 @@ use pocket_runtime::{GuestEnvironment, RuntimeError};
 #[allow(dead_code)]
 mod profile { include!(concat!(env!("OUT_DIR"), "/pocket_profile.rs")); }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 pub struct Board(Box<App>);
@@ -631,9 +631,10 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
 - **Static RAM of the library is small**: the whole AOT smoke firmware for
   esp32s3 without PSRAM uses 12,036 B `.data` and 6,824 B `.bss` (IDF
   included). Generated styles, fonts and code are flash.
-- **Fonts stay in flash** with `load_fonts_in_place` (`load_font_atlas_shared`).
-  The generated `load_fonts` would copy each atlas into the heap (the smoke
-  app's three atlases are 76 KB). Images: see [Images](#images).
+- **Fonts stay in flash** with the generated `load_fonts_in_place`
+  (`load_font_atlas_shared`). The generated `load_fonts` would copy each
+  atlas into the heap (the smoke app's three atlases are 76 KB). Images: see
+  [Images](#images).
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
   The smoke app used at most 19,528 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
@@ -661,35 +662,25 @@ sides no larger than 512 px. **The generated `load_images` copies every
 entry into the heap at mount** (`upload_img_entry`), so each picture costs
 its pixel bytes in flash and again in the heap.
 
-The opt-in in-place loader registers the same entries under the same names
-and leaves the pixels in flash:
+The generated `load_images_in_place` registers the same entries under the
+same names and leaves the pixels in flash:
 
 ```rust
-// build.rs
-m5_pocket_aot_build::emit();
-m5_pocket_aot_build::emit_images();
-```
-
-```rust
-// src/lib.rs
-include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
-// in DeviceApp::mount, instead of load_images(&mut ui):
+// src/lib.rs, in DeviceApp::mount, instead of load_images(&mut ui):
 load_images_in_place(&mut ui);
 ui.core_mut().set_texture_budget(bytes);
 ```
 
-`emit_images()` reads the `upload_img_entry` lines of the generated
-`include.rs` and writes `OUT_DIR/m5_images.rs` with `load_images_in_place`
-and `M5_IMAGE_BYTES`, the pixel bytes of all entries. A line it cannot read
-fails the build. Each entry goes through
-`m5_pocket_aot::load_image_in_place(ui, name, entry)`, which uploads it with
-`upload_img_entry_from`: the texture reads its pixels from flash and is
-decoded into the heap when a frame first draws it.
+It uploads each entry with `upload_img_entry_from`: the texture reads its
+pixels from the `include_bytes!` data in flash and is decoded into the heap
+when a frame first draws it. PocketJS generates both loaders since
+`ed8b0c71` (#748); before, `m5_pocket_aot_build` wrote the in-place ones
+from the lines of `include.rs`.
 
 | Loader | Flash | Heap |
 | --- | --- | --- |
-| generated `load_images` | `M5_IMAGE_BYTES` | `M5_IMAGE_BYTES`, allocated at mount |
-| `load_images_in_place` | `M5_IMAGE_BYTES` | a texture's bytes from the first frame that draws it |
+| `load_images` | the pixel bytes of all entries | the same again, allocated at mount |
+| `load_images_in_place` | the pixel bytes of all entries | a texture's bytes from the first frame that draws it |
 
 `ui.core_mut().set_texture_budget(bytes)` in `mount` bounds the decoded
 copies: when a frame is drawn, textures beyond the budget that the previous

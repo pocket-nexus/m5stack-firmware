@@ -36,7 +36,7 @@ BSP reads the panel ID and `m5_atoms3_display_init` returns
 | `CMakeLists.txt` | Project: `m5_pocket_app/components.cmake` and the BSP component |
 | `main/main.c` | Board bring-up, `m5_pocket_app_start` with the GC9107 (`M5_POCKET_DISPLAY_ESP_LCD`), memory limits, heap logs |
 | `main/atoms3_device.c` | Button click/hold → `BTN.CIRCLE`/`BTN.CROSS`; the factory functions' hardware behind the device bridge (Wi-Fi scan, I2C scan, UART bridge, PWM, ADC, IR, IMU) |
-| `aot/` | Per-app crate: links the MicroTS output with `platforms/rust/m5_pocket_aot`; the artwork is stored in flash as RGB565 (`images.json`) and decoded on first draw (`emit_images`, `load_images_in_place`) under a 32 KiB texture budget |
+| `aot/` | Per-app crate: links the MicroTS output with `platforms/rust/m5_pocket_aot`; the artwork is stored in flash as RGB565 (`images.json`) and decoded on first draw (the generated `load_images_in_place`) under a 32 KiB texture budget |
 | `pocket.host.json` | Host contract: 128×128 native, density 1, repaint, 30 Hz, buttons, baked glyphs |
 | `sdkconfig.defaults`, `partitions.csv`, `dependencies.lock` | Configuration (AOT mode, no PSRAM, 7 MB factory partition) |
 

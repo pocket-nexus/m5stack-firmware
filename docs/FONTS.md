@@ -1,21 +1,21 @@
 # Fonts
 
-**An application chooses its regular, bold and monospace faces in
-`pocket.fonts.json` beside its `pocket.host.config.ts`. `tools/pocket compile`
-bakes the font atlases from those faces in JS mode and in AOT mode. Text
-sizes stay those of the slot table of the pinned PocketJS (10, 12, 14, 16, 18,
-20, 24, 36 and 54 logical px); other sizes are drawn as images.**
+**An application chooses its regular, bold and monospace faces with
+`app.fonts` in its `pocket.host.config.ts`. `tools/pocket compile` bakes the
+font atlases from those faces in JS mode and in AOT mode. Text sizes stay
+those of the slot table of the pinned PocketJS (10, 12, 14, 16, 18, 20, 24,
+36 and 54 logical px); other sizes are drawn as images.**
 
-Without a declaration PocketJS (v0.17.0 to the pinned `2c9fcf30`) bakes
-Inter Regular, Inter Bold and JetBrains Mono Regular
-(`third_party/pocketjs/assets/fonts/`).
+Without `app.fonts` PocketJS bakes Inter Regular, Inter Bold and JetBrains
+Mono Regular (`third_party/pocketjs/assets/fonts/`). `app.fonts` is part of
+PocketJS since `1b5bd030` (#749); before, this repository injected the faces
+of a `pocket.fonts.json` through a wrapper around the Pocket CLI.
 
 ## Declare the faces
 
 ```text
 apps/stopwatch-factory/
 ├─ pocket.host.config.ts
-├─ pocket.fonts.json
 └─ fonts/
    ├─ Montserrat-Medium.ttf
    ├─ Montserrat-SemiBold.ttf
@@ -24,12 +24,18 @@ apps/stopwatch-factory/
    └─ MapleMono-OFL.txt
 ```
 
-```json
-{
-  "regular": "fonts/Montserrat-Medium.ttf",
-  "bold": "fonts/Montserrat-SemiBold.ttf",
-  "mono": "fonts/MapleMono-Medium.ttf"
-}
+```ts
+export default defineHostConfig({
+  host: "../../programs/stopwatch/pocket.host.json",
+  app: {
+    // ...
+    fonts: {
+      regular: "fonts/Montserrat-Medium.ttf",
+      bold: "fonts/Montserrat-SemiBold.ttf",
+      mono: "fonts/MapleMono-Medium.ttf",
+    },
+  },
+});
 ```
 
 | Field | Face of | Default |
@@ -38,9 +44,8 @@ apps/stopwatch-factory/
 | `bold` | text with `font-bold` | Inter Bold |
 | `mono` | text with `font-mono` | JetBrains Mono Regular |
 
-- The file sits in the directory of the host config that `pocket compile
-  --config` names (or that the CLI finds above the working directory). Paths
-  are relative to the file and must name an existing `.ttf` or `.otf`.
+- Paths are relative to the host config, name a `.ttf` or `.otf` and hold no
+  `..` segment: the faces sit in the application directory.
 - Every field is optional; an omitted field keeps the default face. Other
   fields are rejected.
 - The utilities select a role, not a weight: there is no `font-medium` or
@@ -85,73 +90,26 @@ README lists each face with its version or commit, source URL and licence.
 - Do not commit fonts without a licence that permits redistribution (system
   fonts, commercial fonts).
 
-## How tools/pocket applies the faces
+## How the faces are applied
 
-`tools/pocket` runs `tools/pocket.ts` with Bun. It runs the submodule's
-`tools/pocket.ts` in the same process with the same arguments, so argument
-handling, plan, type check, bundle, bytecode and depfile stay the submodule's.
-For `compile` with a declaration it installs two injection points first:
+`tools/pocket` runs the Pocket CLI of the submodule with Bun
+(`third_party/pocketjs/tools/pocket.ts`). The CLI reads `app.fonts` into the
+build plan, and both compiles bake from it:
 
-| Mode | Upstream call | Injection |
-| --- | --- | --- |
-| JS bundle | `compile-app.ts` runs `Bun.spawn([bun, tools/build.ts, --plan=…, …])` | The spawn gets `build.ts`'s own `--font-regular=`, `--font-bold=`, `--font-mono=` flags for the declared faces |
-| AOT (`--aot`) | `aot-compile.ts` imports `bakeAtlases` from `../framework/compiler/bake-font.ts` | A Bun runtime plugin resolves that one import to `tools/fonts/bake-font.ts`, which re-exports the upstream module and passes the declared faces as `regularTtf`/`boldTtf`/`monoTtf` |
+| Mode | Atlases |
+| --- | --- |
+| JS bundle | `tools/build.ts` bakes the pak's font entries from the plan's faces |
+| AOT (`--aot`) | `tools/aot-compile.ts` bakes `font-<slot>.bin` from them; the same atlases feed the MicroTS layout oracle, so baked layout uses the declared faces' metrics |
 
-In AOT mode the same atlases feed the MicroTS layout oracle, so baked layout
-uses the declared faces' metrics.
-
-After a successful compile, `tools/pocket.ts`:
-
-- exits with an error when a declaration exists and its injection point did
-  not run, naming the upstream call that changed. A changed submodule fails
-  the build instead of baking Inter;
-- adds to the `--depfile` rule the declaration, the declared faces and the
-  wrapper's sources (`tools/pocket`, `tools/pocket.ts`, `tools/fonts/*.ts`).
-  Without a declaration it adds the host config's directory, so creating
-  `pocket.fonts.json` rebuilds. The submodule already lists every face it
-  read.
-
-Every other command (`check`, `build`, `host export`, `pack`, ...) runs the
-submodule CLI unchanged. `pocket build`, which can compile the application
-itself, therefore bakes the default faces; ESP-IDF programs do not use it.
-`bun run pocket` (`package.json`) calls the submodule CLI directly and also
-bakes the defaults.
-
-### Why the mechanism is safe
-
-- The submodule is not modified. Both injection points use inputs the
-  submodule defines for this purpose: the `--font-*` flags of `tools/build.ts`
-  (listed in its header) and the `regularTtf`/`boldTtf`/`monoTtf` fields of
-  the exported `BakeOptions`.
-- Only calls that take no faces are changed: the spawn whose second element is
-  the submodule's `tools/build.ts`, and the import whose importer is the
-  submodule's `tools/aot-compile.ts`. Faces an upstream caller passes win.
-- Without a declaration, nothing is installed; `tests/fonts` checks that the
-  atlases equal the submodule CLI's byte for byte.
-- A missed injection fails the compile (above).
+The depfile of a compile lists the declared faces, so a changed face
+rebuilds.
 
 ### Submodule bumps
 
-After bumping `third_party/pocketjs`, check:
-
-1. `tools/compile-app.ts` still compiles a bundle by spawning
-   `[process.execPath, <pocketjs>/tools/build.ts, ...]` through `Bun.spawn`.
-2. `tools/build.ts` still accepts `--font-regular=`, `--font-bold=` and
-   `--font-mono=`.
-3. `tools/aot-compile.ts` still imports `bakeAtlases` from
-   `../framework/compiler/bake-font.ts`, and `BakeOptions` still names the
-   faces `regularTtf`, `boldTtf`, `monoTtf`.
-4. `tools/pocket.ts` still runs its command on import from `Bun.argv`, and
-   `compile` still reads `--config`/`--host-config`, `--project-root`,
-   `--depfile` and `--aot`.
-5. The depfile is still one Make rule (`target: dep \` lines).
-6. The slot table (`framework/compiler/tailwind.ts`, `MAX_FONT_SLOTS` in
-   `contracts/spec/spec.ts`) is unchanged; otherwise update the tables below.
-7. Whether upstream gained its own per-app face option; then replace the
-   wrapper with it.
-
-Then run `bun tests/fonts/check.ts` (items 1 to 5 fail it) and
-`bun tests/fonts/atlas-cost.ts` (item 6).
+After bumping `third_party/pocketjs`, check that the slot table
+(`framework/compiler/tailwind.ts`, `MAX_FONT_SLOTS` in
+`contracts/spec/spec.ts`) is unchanged; otherwise update the tables below.
+Then run `bun tests/fonts/check.ts` and `bun tests/fonts/atlas-cost.ts`.
 
 ## Sizes
 
@@ -175,7 +133,7 @@ baked.
 Sizes are logical px; the atlas is rasterised at the host contract's
 `display.rasterDensity` (Tab5: 2; StopWatch, StickS3, AtomS3: 1).
 
-Limits (PocketJS v0.17.0 to the pinned `2c9fcf30`, same slot table):
+Limits (PocketJS v0.17.0 to the pinned `418e902b`, same slot table):
 
 - **No arbitrary text sizes.** `text-[108px]`, `text-[64px]`, `text-[16px]`,
   `text-3xl` and `text-6xl` are unknown utilities: the class string does not
@@ -261,7 +219,7 @@ Where the bytes go:
 | Mode | Flash | RAM |
 | --- | --- | --- |
 | JS | The atlases are in the bundle's pak section in the application image | None for coverage: the embedded bundle is handed to the runtime in place (`pocket_memory_package` `take`) and atlases read their cells from it (`load_font_atlas_shared`) |
-| AOT | `font-<slot>.bin` are `include_bytes!` in the application library | None for coverage when the crate calls `load_fonts_in_place` (generated by `m5_pocket_aot_build`; every program in this repository does): atlases read their cells from flash through `load_font_atlas_shared`. The generated `load_fonts` instead copies the cells into the runtime heap (`Atlas::parse`) |
+| AOT | `font-<slot>.bin` are `include_bytes!` in the application library | None for coverage when the crate calls the generated `load_fonts_in_place` (every program in this repository does): atlases read their cells from flash through `load_font_atlas_shared`. The generated `load_fonts` instead copies the cells into the runtime heap (`Atlas::parse`) |
 
 AtomS3 runs AOT without PSRAM. With `load_fonts_in_place` its atlases cost
 flash, not internal RAM. A crate that uses the generated `load_fonts` instead
@@ -272,7 +230,10 @@ budgets the atlases against internal RAM (about 270 KB free while the
 
 ## Validation
 
-`bun tests/fonts/check.ts` compiles `tests/fonts/app` with `tools/pocket` and
-with the submodule CLI in both modes and compares every atlas with a bake from
-the declared and from the default faces; see `tests/fonts/README.md`. These
+`bun tests/fonts/check.ts` compiles `apps/sticks3-demos` (which declares
+`app.fonts`) and `tests/aot-smoke/app` (which does not) with `tools/pocket`
+in both modes and compares every atlas with a bake from the declared and from
+the default faces; see `tests/fonts/README.md`. At the bump to `418e902b`
+the AOT output of the four applications with `app.fonts` equalled, file by
+file, the output of the former wrapper at the same PocketJS commit. These
 are host-side checks and firmware builds, not device validation.

@@ -11,6 +11,11 @@ export default defineHostConfig({
     framework: "solid",
     viewport: { fixed: { logical: [640, 360], presentation: "native" } },
     features: ["input.touch", "text.glyphs.baked"],
+    // The faces the font atlases are baked from (docs/FONTS.md).
+    fonts: {
+      regular: "fonts/Montserrat-Medium.ttf",
+      bold: "fonts/Montserrat-SemiBold.ttf",
+    },
     tickHz: 30,
     aot: true,
     model: "compiled",

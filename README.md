@@ -133,7 +133,7 @@ AtomS3.
 subset so that both modes build: models are TypeScript state modules with
 typed top-level fields and synchronous functions, and views are Solid TSX
 within the
-[MicroTS Solid subset](https://github.com/pocket-nexus/pocketjs/blob/2c9fcf3096ada195e71bfe43da87fe29c38567e2/site/content/docs/microts-solid.md).
+[MicroTS Solid subset](https://github.com/pocket-nexus/pocketjs/blob/418e902b21d0926ed951a85b9aa232c64ff0b11b/site/content/docs/microts-solid.md).
 Gestures such as drags and swipes are model code that reads the `pointerX`,
 `pointerY` and `pointerDown` fields the host publishes, so they behave the
 same in both modes. Check a change against the subset without building
@@ -288,11 +288,11 @@ platforms/esp-idf/        board support components and the shared application ho
 platforms/rust/           shared Rust crates of the AOT mode
 third_party/pocketjs/     PocketJS (git submodule)
 tests/                    aot-smoke program (both modes, both targets), font checks
-tools/                    Pocket CLI wrapper, font baking, formatter, screenshots
+tools/                    Pocket CLI launcher, formatter, screenshots, frame profiler
 docs/                     reference documentation
 ```
 
-`third_party/pocketjs` is pinned to commit `2c9fcf30` of
+`third_party/pocketjs` is pinned to commit `418e902b` of
 [pocket-nexus/pocketjs](https://github.com/pocket-nexus/pocketjs), after the
 `v0.17.0` release.
 

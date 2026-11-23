@@ -16,8 +16,6 @@ mod profile {
     include!(concat!(env!("OUT_DIR"), "/pocket_profile.rs"));
 }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 
