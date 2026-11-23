@@ -87,8 +87,7 @@ All numbers are internal RAM; there is no PSRAM.
 Measured under QEMU (Espressif qemu-xtensa 9.2.2, `-machine esp32s3`), with
 the real application and limits but a transfer-only display instead of the
 GC9107 and no BSP or Wi-Fi in the image; scripted button pulses walk boot →
-menu → Wi-Fi → menu → IMU. Harness: `.pocket-build/validation/atoms3-memory/`
-(not committed).
+menu → Wi-Fi → menu → IMU.
 
 | Mode | Free before start | While running | Minimum | Result |
 | --- | --- | --- | --- | --- |

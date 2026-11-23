@@ -41,8 +41,8 @@ jobs:
     timeout-minutes: 75
     # ESP-IDF 6.2, the version the committed dependencies.lock files record.
     # The StopWatch AOT crate is a 100 MB generated view module (pocketjs
-    # #757), and rustc needs more memory for it than the 2-core runner of a
-    # private repository has: 7.9 GB and 3 GB of swap. Its job runs
+    # #757), and rustc needs more memory for it than a 2-core GitHub-hosted
+    # runner has: 7.9 GB and 3 GB of swap. Its job runs
     # privileged, removes preinstalled runner tools that the build does not
     # use (mounted below; the runner has about 7 GB of free disk) and adds an
     # 8 GB swap file; the crate then compiles in about 17 minutes. The other

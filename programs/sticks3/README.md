@@ -114,10 +114,6 @@ ESP-IDF 6.2 (`v6.1-dev-8142-g188e3e55bb2`), `esp_idf_size` on the map file:
 | `.data` / `.bss` | 14 686 / 10 208 | 14 416 / 9 936 |
 | IRAM | 16 384 of 16 384 | 16 384 of 16 384 |
 
-The UIFlow startup menu this program embedded before (its artwork, the Wi-Fi
-station and the setup portal) took about 4.02 MB (JS) and 3.11 MB (AOT) of
-application image and about 130 KB of static DIRAM in either mode.
-
 Runtime internal-RAM use was not measured: no device run, and the board
 bring-up (PMIC, panel) does not run under QEMU.
 

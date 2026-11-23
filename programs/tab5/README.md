@@ -122,8 +122,8 @@ full-surface repaint of 25 to 60 ms per core, a translated opaque page moved
 by DMA in under 20 ms and an icon-sized region in under 10 ms. The launcher
 repaints only small label rectangles once per poll period; the window springs
 repaint the union of the window's old and new rectangles each frame (up to
-800x480 raster for the RTC and camera windows), which can exceed one frame
-on hardware we have not measured.
+800x480 raster for the RTC and camera windows), which can exceed one frame;
+this has not been measured on hardware.
 
 **Two PPA lanes.** `display.ppa_lanes = 2` registers two PPA renderers behind
 `pocketjs_esp32p4_ppa_lanes`: each strip splits at a multiple of the 8-row

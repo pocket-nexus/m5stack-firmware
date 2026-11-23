@@ -3,8 +3,7 @@
 Seven demos of the M5Stack StickS3 hardware (IMU, keys, microphone, speaker,
 display) behind a home carousel. Built by `programs/sticks3` in JS mode (the
 default) and in AOT mode. This application is not a recreation of a factory
-firmware; the UIFlow2 startup menu that `apps/sticks3-factory` reproduced
-was removed (git history keeps it).
+firmware.
 
 ## Navigation
 
@@ -277,9 +276,8 @@ from flash.
 - Headless runs of the JS bundle in the PocketJS wasm core at 135 × 240 with
   a stand-in `globalThis.m5` (keys with press timestamps, IMU, microphone
   levels, battery, power key): screenshots of the home carousel (all cards,
-  wrap, charging, low battery) and of every demo, kept in
-  `.pocket-build/validation/sticks3-demos/`. A pixel-reading autopilot tilts
-  the ball through maze levels 1 to 3 (cleared in 9.3, 10.8 and 9.0 s of
+  wrap, charging, low battery) and of every demo. A pixel-reading autopilot
+  tilts the ball through maze levels 1 to 3 (cleared in 9.3, 10.8 and 9.0 s of
   simulated time) and level 4 shows its traps; a reaction pressed 230 ms
   after the green frame's `presentedMs` reads 230 ms; eight single-die
   throws come to rest on the face of the number shown; the requests arrive
