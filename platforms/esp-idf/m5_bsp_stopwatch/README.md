@@ -35,7 +35,7 @@ API is `include/m5_stopwatch/bsp.h`. The component has no PocketJS dependency.
 | --- | --- |
 | Internal I2C (I2C_NUM_0) | SDA GPIO47, SCL GPIO48, internal pull-ups |
 | CO5300 QSPI (SPI2, 80 MHz, mode 0) | SCLK GPIO40, D0 GPIO41, D1 GPIO42, D2 GPIO46, D3 GPIO45, CS GPIO39 |
-| CO5300 TE | GPIO38, input with pull-up, not used by the BSP |
+| CO5300 TE | GPIO38, input with pull-up, rising-edge interrupt (refresh timing) |
 | CO5300 reset | IOE1 IO5 |
 | Display power (L3B_EN) | IOE1 IO8 |
 | CST820 interrupt | GPIO13, input with pull-up |
@@ -70,7 +70,8 @@ touch controller:
    BSP gives up after 25 retries with `ESP_ERR_TIMEOUT` (the factory loop has
    no limit).
 4. 50 ms delay.
-5. Display: TE pin input, PM1 power LED off, SPI2 bus in quad mode
+5. Display: TE pin input and its edge interrupt, PM1 power LED off, SPI2 bus
+   in quad mode
    (`max_transfer_sz` from the configuration or 466 x 32 x 2 bytes), panel IO
    (80 MHz, mode 0, queue depth 10, 32-bit commands, 8-bit parameters), CO5300
    init list, COLMOD 0x55, the whole 480 x 480 controller memory filled with
@@ -98,6 +99,19 @@ an odd width. Pixels are RGB565 with the high byte sent first. `mirror` and
 `swap_xy` are not implemented. `esp_lcd_panel_reset` sends SWRESET (0x01) and
 waits 120 ms; `m5_stopwatch_init` does not call it, as the factory firmware
 does not reset the panel.
+
+`draw_bitmap`, brightness, display on/off, sleep and inversion take one mutex
+of the panel, so a display driver may draw from its own task while the
+program sets the brightness from another.
+
+**Refresh timing.** The init list turns the tearing-effect output on (0x35)
+with tear scanline 466 (0x44): TE rises when the panel has finished a scan of
+its 466 rows and stays high for the blanking interval. Measured: a period of
+16.88 ms (59.3 Hz), high for 1.1 ms. `m5_stopwatch_display_wait_refresh`
+blocks until the next rising edge and returns the `esp_timer` time of that
+edge and the period between the last two edges; it returns false without an
+edge within the timeout. One task may wait at a time. `src/refresh.c` takes
+the time in a GPIO interrupt.
 
 Column offset: the factory firmware drives a 468 x 466 window at memory column
 6 (M5StopWatch-UserDemo `main/hal/hal_display.cpp` lines 105-107:

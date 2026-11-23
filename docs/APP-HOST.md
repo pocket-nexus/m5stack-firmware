@@ -231,7 +231,7 @@ in AOT mode, where the application crate owns the `Ui`.
 
 | `display.kind` | Use | Object |
 | --- | --- | --- |
-| `M5_POCKET_DISPLAY_ESP_LCD` | SPI/QSPI/I80 panel with GRAM (CO5300 466×466, ST7789V2 135×240, GC9107 128×128) | upstream `pocket_display_esp_lcd`, RGB565 strips, config in `display.lcd` |
+| `M5_POCKET_DISPLAY_ESP_LCD` | SPI/QSPI/I80 panel with GRAM (CO5300 466×466, ST7789V2 135×240, GC9107 128×128) | upstream `pocket_display_esp_lcd`, config in `display.lcd`: RGB565 strips sent as they are rendered, or with `transfer_rows` whole frames (PSRAM with `buffer_caps`) that a presenter task sends behind the panel's scan (`wait_refresh`) |
 | `M5_POCKET_DISPLAY_ESP_DPI` | ESP32-P4 MIPI-DSI framebuffer (Tab5) | upstream `pocket_display_esp_dpi`, config in `display.dpi` |
 | `M5_POCKET_DISPLAY_CUSTOM` | Any `pocket_display_output_v1` the program owns | `display.custom`, `custom_context`, `custom_buffer_bytes` |
 
@@ -706,8 +706,8 @@ and the draw list all count as `pre`. The option selects
 | `draw` | AOT | Core ticks, layout, draw list, draw-list validation |
 | `damage` | host | Damage plan; on a frame that repaints nothing also the damage commit |
 | `raster` | host | From a strip's `acquire` to its `flush` |
-| `flush` | host | Byte swap and transfer submission |
-| `wait` | host | Blocked on a strip transfer |
+| `flush` | host | Byte swap and transfer submission; a staged display queues the rows for its presenter |
+| `wait` | host | Blocked on a strip transfer, or in `acquire` on a free render buffer of a staged display |
 | `post` | host | Between strips, damage commit |
 
 The host stages are cut at the calls of the display vtable, which the
@@ -716,7 +716,7 @@ profiler wraps, and at the input poll. Log lines:
 | Line | Content |
 | --- | --- |
 | `B boot=<us> int=<bytes> psram=<bytes>` | Time of the backend boot (mount and first frame), free heap after it |
-| `P fps=… frames=… skipped=… slow=… tick=<avg>/<max> hook=… <stage>=<avg>/<max> … strips=… rows=… allocs=… large=… largeB=… stack=… istack=… int=<free>/<min> psram=<free>/<min>` | One period: times in µs per frame; strips and rows flushed, allocations, allocations of 16 KiB or more and their bytes as totals of the period; unused stack of the app task and of the helper task |
+| `P fps=… frames=… skipped=… slow=… tick=<avg>/<max> hook=… <stage>=<avg>/<max> … strips=… rows=… allocs=… large=… largeB=… stack=… istack=… int=<free>/<min> psram=<free>/<min>` | One period: times in µs per frame; strips and rows flushed, allocations, allocations of 16 KiB or more and their bytes as totals of the period; unused stack of the app task and of the helper task. A staged `pocket_display_esp_lcd` adds `present=… unsynced=… late=… ptime=<µs>`: flushes its presenter sent in the period, those sent without a refresh report, those of which a transfer started when the next scan may have reached its rows, and the longest time from a flush to its last transfer since the start |
 | `S frame=<n> tick=… <stage>=… …` | One frame of at least `PROFILE_SLOW_MS`, at most four per period |
 | `N <text>` | An event: `contact down x y`, `contact up`, `buttons <mask>`, `request <text>`, `flush <status> rows <y>+<height> …` for a flush the display refused |
 

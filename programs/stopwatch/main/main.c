@@ -19,11 +19,19 @@
 
 static const char *TAG = "stopwatch";
 
-/* 32 full-width RGB565 rows per strip keep one QSPI transfer under the
+/* 32 full-width RGB565 rows per transfer keep one QSPI transfer under the
  * ESP32-S3 SPI DMA limit of 32 KiB. */
-#define STRIP_ROWS 32
+#define TRANSFER_ROWS 32
 
 static m5_stopwatch_handles_t board;
+
+/* The panel's TE edge as the display driver's refresh report. */
+static bool wait_refresh(void *context, uint32_t timeout_ms,
+                         pocket_display_esp_lcd_refresh *out) {
+  (void)context;
+  return m5_stopwatch_display_wait_refresh(timeout_ms, &out->start_us,
+                                           &out->period_us);
+}
 
 static uint32_t buttons(void *context) {
   (void)context;
@@ -80,10 +88,17 @@ void app_main(void) {
       .io = board.lcd_io,
       .width = M5_STOPWATCH_LCD_H_RES,
       .height = M5_STOPWATCH_LCD_V_RES,
-      .strip_rows = STRIP_ROWS,
+      /* Two frames in PSRAM. The presenter sends the rows a frame changed
+       * behind the panel's scan, so a refresh shows one frame. */
+      .strip_rows = M5_STOPWATCH_LCD_V_RES,
       .buffer_count = 2,
-      .frame_buffer_budget = 2 * M5_STOPWATCH_LCD_H_RES * STRIP_ROWS * 2,
+      .frame_buffer_budget =
+          2 * M5_STOPWATCH_LCD_H_RES * M5_STOPWATCH_LCD_V_RES * 2,
       .byte_swap = true,
+      .transfer_rows = TRANSFER_ROWS,
+      .buffer_caps = MALLOC_CAP_SPIRAM,
+      .wait_refresh = wait_refresh,
+      .presenter_core = 0,
   };
   config.input.buttons = buttons;
   config.input.touch = touch;
