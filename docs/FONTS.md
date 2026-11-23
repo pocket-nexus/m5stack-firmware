@@ -6,7 +6,7 @@ bakes the font atlases from those faces in JS mode and in AOT mode. Text
 sizes stay those of the slot table of the pinned PocketJS (10, 12, 14, 16, 18,
 20, 24, 36 and 54 logical px); other sizes are drawn as images.**
 
-Without a declaration PocketJS (v0.17.0 to the pinned `472b4a2a`) bakes
+Without a declaration PocketJS (v0.17.0 to the pinned `2c9fcf30`) bakes
 Inter Regular, Inter Bold and JetBrains Mono Regular
 (`third_party/pocketjs/assets/fonts/`).
 
@@ -175,7 +175,7 @@ baked.
 Sizes are logical px; the atlas is rasterised at the host contract's
 `display.rasterDensity` (Tab5: 2; StopWatch, StickS3, AtomS3: 1).
 
-Limits (PocketJS v0.17.0 to the pinned `472b4a2a`, same slot table):
+Limits (PocketJS v0.17.0 to the pinned `2c9fcf30`, same slot table):
 
 - **No arbitrary text sizes.** `text-[108px]`, `text-[64px]`, `text-[16px]`,
   `text-3xl` and `text-6xl` are unknown utilities: the class string does not
@@ -211,7 +211,7 @@ Commissioner 108 px with the ASCII charset every atlas carries is 1,392,496 B
 - Text colour does not apply to an image: a digit shown in several colours
   needs one image per colour, or a white image under a colour the image
   pipeline applies. Images are `PSM_8888` unless `images.json` gives
-  `psm: 2` (`PSM_4444`); AOT uploads images as RGBA8888.
+  `psm: 2` (`PSM_4444`); AOT bakes the same format.
 - Small mono text at other sizes (Maple Mono 28/48 px): digit images as above,
   or the nearest table size of the `regular` or `bold` face.
 

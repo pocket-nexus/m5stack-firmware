@@ -166,15 +166,14 @@ with `~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
 (`device_fields!`, the counterpart of the `hostNumber`/`hostText`/
 `hostArray` switches; `uptimeMs` also sets `bridged`, the `badgeClosed`
 event counts, `badgeTexture` and `badgeCanvas` arrive like any field).
-`build.rs` uses the shared image loader (`m5_pocket_aot_build::emit_images`,
-docs/APP-HOST.md "Images") instead of the generated `load_images`, which
-would embed every picture as RGBA8888 and copy it into the heap at mount
-(about 10 MB of flash and heap with the 116 big-number tiles): each picture
-is stored in the format `images.json` selects (RGB565, RGBA4444 or
-RGBA8888, as in the JS bundle) and registered with `ImageStorage::Flash`, so
-a texture is read from flash when first drawn; `mount` bounds the decoded
-copies with a 2 MiB texture budget. (The program's own in-place loader that
-preceded it produced the same formats and storage, so it was dropped.)
+`build.rs` uses the shared in-place image loader
+(`m5_pocket_aot_build::emit_images`, docs/APP-HOST.md "Images") instead of
+the generated `load_images`, which copies every picture into the heap at
+mount (7,167,252 bytes of IMG entries with the 116 big-number tiles and
+the glyph images): the IMG entries MicroTS bakes in the formats
+`images.json` selects (RGB565, RGBA4444 or RGBA8888, as in the JS bundle)
+stay in flash and a texture is decoded when first drawn; `mount` bounds the
+decoded copies with a 2 MiB texture budget.
 
 The badge picture is handed to PocketJS in one function,
 `badge_texture_update` in `main/services.c`, the same in both modes:
@@ -208,7 +207,7 @@ Firmware builds only; no device run (ESP-IDF 6.x, esp32s3).
 | Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM |
 | --- | --- | --- | --- |
 | JS | 11,342,848 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 10 % | 154,905 of 341,760 bytes |
-| AOT | 10,625,568 bytes | 16 % | 152,721 of 341,760 bytes |
+| AOT | 10,621,248 bytes | 16 % | 152,721 of 341,760 bytes |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
 budget when drawn, so the 8 MiB PSRAM holds only the textures on screen (estimate:

@@ -602,66 +602,52 @@ bridge and requests; it does not validate timing or a real panel.
 
 ### Images
 
-**MicroTS's generated `load_images` embeds each image's 1x picture as
-RGBA8888 and copies it into the heap at mount.** It ignores the
-`@<density>x` variants and `images.json`, so on a host with raster density 2
-the AOT artwork is half the resolution the JS bundle draws, and every picture
-costs four bytes per pixel twice: in flash and in the heap.
+MicroTS bakes each image the application draws as an IMG pak entry,
+`images/image-<n>.img` in the AOT directory, from the inputs and with the
+checks of the guest build: the `@<density>x` variant at the host's raster
+density, the format and sampling `images.json` declares (`"psm": 0` RGB565,
+`2` RGBA4444, `3` or absent RGBA8888; `"linear": true`), and power-of-two
+sides no larger than 512 px. **The generated `load_images` copies every
+entry into the heap at mount** (`upload_img_entry`), so each picture costs
+its pixel bytes in flash and again in the heap.
 
-The opt-in replacement registers the same names with the pictures the JS
-build packs, in flash or in the heap:
+The opt-in in-place loader registers the same entries under the same names
+and leaves the pixels in flash:
 
 ```rust
 // build.rs
 m5_pocket_aot_build::emit();
-m5_pocket_aot_build::emit_images(
-    concat!(env!("CARGO_MANIFEST_DIR"), "/../../../apps/<board>-factory"), // app directory
-    2,                                                                      // raster density
-);
+m5_pocket_aot_build::emit_images();
 ```
 
 ```rust
 // src/lib.rs
 include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
 // in DeviceApp::mount, instead of load_images(&mut ui):
-load_images_at_density(&mut ui, m5_pocket_aot::ImageStorage::Heap); // or ::Flash
+load_images_in_place(&mut ui);
+ui.core_mut().set_texture_budget(bytes);
 ```
 
-`emit_images(app_dir, density)` reads the images the generated `include.rs`
-registers and writes `OUT_DIR/m5_images.rs` with `load_images_at_density`
-and `M5_IMAGE_BYTES`, the pixel bytes of all pictures. For each image:
+`emit_images()` reads the `upload_img_entry` lines of the generated
+`include.rs` and writes `OUT_DIR/m5_images.rs` with `load_images_in_place`
+and `M5_IMAGE_BYTES`, the pixel bytes of all entries. A line it cannot read
+fails the build. Each entry goes through
+`m5_pocket_aot::load_image_in_place(ui, name, entry)`, which uploads it with
+`upload_img_entry_from`: the texture reads its pixels from flash and is
+decoded into the heap when a frame first draws it.
 
-- **Pixels**: `<stem>@<density>x.png` beside the image in `app_dir` when the
-  density is above 1 and that file exists (decoded with the `png` 0.17.16
-  crate, a build dependency only; its sides must be powers of two or the
-  build fails); otherwise the RGBA8888 stream MicroTS generated from the 1x
-  file, already on a power-of-two canvas.
-- **Format**: as `images.json` in `app_dir` declares, the encoding the JS
-  pak uses: `"psm": 0` RGB565, `2` RGBA4444, `3` or absent RGBA8888;
-  `"linear": true` selects bilinear sampling. Other `psm` values are stored
-  as RGBA8888 with a Cargo warning.
-- **Upload**: `m5_pocket_aot::upload_image(ui, name, pixels, width, height, psm, flags, storage)`.
-
-| `ImageStorage` | Flash | Heap |
+| Loader | Flash | Heap |
 | --- | --- | --- |
-| `Heap` | `M5_IMAGE_BYTES` | `M5_IMAGE_BYTES`, allocated at mount (`upload_texture_flags`) |
-| `Flash` | `M5_IMAGE_BYTES` | a texture's bytes from the first frame that draws it (`upload_texture_from`) |
+| generated `load_images` | `M5_IMAGE_BYTES` | `M5_IMAGE_BYTES`, allocated at mount |
+| `load_images_in_place` | `M5_IMAGE_BYTES` | a texture's bytes from the first frame that draws it |
 
-With `Flash`, `ui.core_mut().set_texture_budget(bytes)` in `mount` bounds the
-decoded copies: when a frame is drawn, textures beyond the budget that the
-previous frame did not draw are released, least recently drawn first, and
-decoded again by the next frame that draws them. Zero, the default, keeps
-every texture once drawn. Use `Flash` without PSRAM or when the pictures do
-not fit the heap together (AtomS3, StopWatch); `Heap` keeps the first-draw
-copy out of the frame and suits a board with PSRAM to spare.
-
-| Program | Generated `load_images` | `load_images_at_density` |
-| --- | --- | --- |
-| Tab5 (density 2, `Heap`) | 1x, RGBA8888 | 22 pictures @2x, RGB565/RGBA8888 per `images.json`: 3,469,312 B heap and flash (same pixels as the program's former loader) |
-
-AtomS3 and StopWatch have their own `Flash` loaders that predate the helper;
-`emit_images(.., 1)` with `ImageStorage::Flash` covers both (StopWatch's
-RGBA4444 tiles and `linear` flags included).
+`ui.core_mut().set_texture_budget(bytes)` in `mount` bounds the decoded
+copies: when a frame is drawn, textures beyond the budget that the previous
+frame did not draw are released, least recently drawn first, and decoded
+again by the next frame that draws them. Zero, the default, keeps every
+texture once drawn. AtomS3 (no PSRAM) and StopWatch (8 MB of pictures) load
+in place; Tab5 uses the generated `load_images`, which keeps the first-draw
+copy out of the frame on a board with PSRAM to spare.
 
 ## Validation
 

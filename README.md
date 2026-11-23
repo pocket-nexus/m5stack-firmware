@@ -54,19 +54,25 @@ Each program README gives its AOT build command and the board facts.
 
 ## PocketJS version
 
-`third_party/pocketjs` is pinned to `472b4a2a` on `pocket-nexus/pocketjs`
-main, four commits after the `v0.17.0` release (`83c6cac9`):
+`third_party/pocketjs` is pinned to `2c9fcf30` on `pocket-nexus/pocketjs`
+main, after the `v0.17.0` release (`83c6cac9`). The changes this repository
+uses:
 
 | Commit | Change |
 | --- | --- |
 | `21ac1ca3` | A rounded box with a flat fill keeps its corners under a turned transform (#322) |
 | `8759ed00` | Arcs (`arcWidth`) are drawn under a turned transform (#731) |
 | `660a35bd` | The guest frame carries the hovering pointer, wheel scroll and exact touch positions; capability `input.scroll` (#730) |
-| `472b4a2a` | Zephyr display pixels in Zephyr's byte order (#703) |
+| `7ad336fa` | AOT images are baked as IMG entries from the `@<density>x` variant in the `images.json` format, with the guest build's size check (#734) |
+| `1a2cbafb` | Generated Rust without unused-code warnings (#736) |
+| `45a65e0e`, `478f0ba9`, `8ce7be89`, `4eaf48b6`, `2c9fcf30` | Compiled-model fixes: a negated negative constant, a module constant read twice, extensionless model imports from every module, the model under the views' path spelling, `app.theme` animations in the guest build (#732, #733, #735, #737, #738) |
 
-The programs here declare neither `input.pointer` nor `input.scroll`; the
-input records grew (`pocket_input_frame.scroll`, three `pocket_guest_frame`
-fields) and the host's C input source zero-fills the new field.
+The range also holds a Zephyr display fix (#703), the PocketUI framework
+module (#739) and site changes, which the programs do not use. The programs
+here declare neither `input.pointer` nor `input.scroll`; the input records
+grew (`pocket_input_frame.scroll`, three `pocket_guest_frame` fields) and the
+host's C input source zero-fills the new field. The AOT crates of AtomS3 and
+StopWatch read the baked IMG entries in place (docs/APP-HOST.md "Images").
 
 ## License
 
