@@ -25,17 +25,22 @@ typedef struct {
   esp_lcd_panel_handle_t panel;
 } m5_atoms3_display_t;
 
-// Brings up SPI3, the panel IO and the GC9107: reset, vendor init, RGB565,
-// rotation 0 with the 32-row GRAM offset, display on. The panel expects
-// big-endian RGB565 on the wire. No color-transfer callback is registered on
-// the IO, so a display driver may install its own. The GRAM is not cleared.
+// Brings up SPI3, the panel IO and the GC9107 on the board's pins: reset,
+// vendor init, RGB565, rotation 0 with the 32-row GRAM offset, display on.
+// On the AtomS3R the panel ID is read first (RDDID); a panel other than the
+// GC9107, such as the ST7735S of some AtomS3R units, returns
+// ESP_ERR_NOT_SUPPORTED. The panel expects big-endian RGB565 on the wire. No
+// color-transfer callback is registered on the IO, so a display driver may
+// install its own. The GRAM is not cleared.
 esp_err_t m5_atoms3_display_init(const m5_atoms3_display_config_t *config,
                                  m5_atoms3_display_t *out);
 // Deletes the panel and IO and frees the SPI bus.
 void m5_atoms3_display_deinit(m5_atoms3_display_t *display);
 
-// LEDC backlight on GPIO16 (M5GFX Light_PWM: 256 Hz, 9 bits, offset 48).
-// `brightness` is 0..255; M5GFX starts at 127.
+// AtomS3: LEDC backlight on GPIO16 (M5GFX Light_PWM: 256 Hz, 9 bits, offset
+// 48). AtomS3R: the LED driver at 0x30 on the internal I2C bus
+// (m5_atoms3_i2c_internal_init), brightness written to register 0x0E (M5GFX
+// Light_M5StackAtomS3R). `brightness` is 0..255; M5GFX starts at 127.
 esp_err_t m5_atoms3_backlight_init(uint8_t brightness);
 esp_err_t m5_atoms3_backlight_set(uint8_t brightness);
 

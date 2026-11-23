@@ -1,7 +1,11 @@
 idf_component_register(
     SRCS
+        "src/bmi270.c"
+        "src/bmi270_config.c"
+        "src/board.c"
         "src/button.c"
         "src/display.c"
+        "src/imu.c"
         "src/imu_mpu6886.c"
         "src/ir_nec.c"
         "src/panel_gc9107.c"
@@ -10,6 +14,7 @@ idf_component_register(
     PRIV_INCLUDE_DIRS "src"
     REQUIRES esp_driver_gpio esp_driver_i2c esp_lcd
     PRIV_REQUIRES
+        efuse
         esp_adc
         esp_driver_ledc
         esp_driver_rmt

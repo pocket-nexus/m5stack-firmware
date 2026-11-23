@@ -5,6 +5,7 @@
 // and include/ir_timings.h (Espressif infrared_tools), and from the
 // factory's ir_tx_init/ir_tx_send (src/main.cpp). The legacy rmt_item32_t
 // builder is replaced by rmt_symbol_word_t frames sent with a copy encoder.
+// The LED is on GPIO4 (AtomS3) or GPIO47 (AtomS3R).
 #include "m5_atoms3/ir.h"
 
 #include "driver/rmt_tx.h"
@@ -40,7 +41,9 @@ esp_err_t m5_atoms3_ir_init(void) {
     return ESP_OK;
   }
   const rmt_tx_channel_config_t config = {
-      .gpio_num = M5_ATOMS3_IR_PIN,
+      .gpio_num = m5_atoms3_board() == M5_ATOMS3_BOARD_ATOMS3R
+                      ? M5_ATOMS3R_IR_PIN
+                      : M5_ATOMS3_IR_PIN,
       .clk_src = RMT_CLK_SRC_DEFAULT,
       .resolution_hz = 1000000,
       .mem_block_symbols = 64,
