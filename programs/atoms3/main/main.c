@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2026 m5stack-firmware contributors
 // SPDX-License-Identifier: MIT
 //
-// M5Stack AtomS3 program: the GC9107 panel, the button and the factory
-// functions' hardware, running apps/atoms3-factory through m5_pocket_app.
-// The ESP32-S3FN8 has no PSRAM: every buffer below is internal RAM, and the
-// heap is logged at each stage (programs/atoms3/README.md, memory budget).
+// M5Stack AtomS3 and AtomS3R program: the GC9107 panel, the button and the
+// factory functions' hardware, running apps/atoms3-factory through
+// m5_pocket_app. m5_bsp_atoms3 picks the board's pins at run time. The
+// AtomS3's ESP32-S3FN8 has no PSRAM, and the image does not enable the
+// AtomS3R's: every buffer below is internal RAM, and the heap is logged at
+// each stage (programs/atoms3/README.md, memory budget).
 #include "atoms3_device.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -45,6 +47,7 @@ static void after_frame(void *context, int32_t status) {
 void app_main(void) {
   static atoms3_device_t device;
   static m5_atoms3_display_t display;
+  ESP_LOGI(TAG, "board %s", m5_atoms3_board_name());
   log_heap("boot");
 
   ESP_ERROR_CHECK(m5_atoms3_display_init(

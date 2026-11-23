@@ -3,8 +3,9 @@
 PocketJS recreation of the M5Stack AtomS3 factory demo,
 [m5stack/M5AtomS3-UserDemo](https://github.com/m5stack/M5AtomS3-UserDemo)
 at `8eaf37b3ccf9a8d7c4bf4c2dea0e7925ede6328d` (`src/main.cpp`,
-`src/img_res.c`). It runs in `programs/atoms3`, in AOT mode only (the QuickJS guest with
-this bundle does not fit in the AtomS3's internal RAM).
+`src/img_res.c`). It runs in `programs/atoms3` on the AtomS3 and the
+AtomS3R, in AOT mode only (the QuickJS guest with this bundle does not fit
+in the AtomS3's internal RAM).
 
 ## Files
 
@@ -51,7 +52,7 @@ for click and hold.
 | `func_pwm_t` | `io_pwm_01..04` artwork, "F: 1Khz", duty `0xNN` | next mode (both pins, both pins, G1 only, G2 only); duty 0x0F in mode 0, 0 otherwise | LEDC 1 kHz 8-bit on G1/G2; each USB byte sets the duty |
 | `func_adc_t` | `io_adc_01` artwork, G1 and G2 voltages `N.NV` every 90 ms | none | ADC1 channels 0/1, mean of 32 reads |
 | `func_ir_t` | `ir_send_01/02` artwork, sent command `0xNN` in purple on a white box | next mode: USB byte → IR, or an incrementing command every second | NEC (extended) on GPIO4, address = low 16 bits of the MAC |
-| `func_imu_t` | Canvas: two circles and a cross in #CCCC33 and a ball that follows roll and pitch | none | MPU6886, Madgwick filter in `app.ts` |
+| `func_imu_t` | Canvas: two circles and a cross in #CCCC33 and a ball that follows roll and pitch | none | MPU6886 (AtomS3) or BMI270 (AtomS3R), Madgwick filter in `app.ts` |
 
 The factory's unused `io_test_img` artwork is not included.
 

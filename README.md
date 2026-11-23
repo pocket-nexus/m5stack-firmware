@@ -43,13 +43,15 @@ builds in two modes:
 | [Tab5](programs/tab5/README.md) | ESP32-P4 (+ ESP32-C6 radio), 32 MB PSRAM, 16 MB flash | 5" 720×1280 MIPI-DSI, touch; UI in landscape | [Factory demo](apps/tab5-factory/README.md): startup animation, launcher, 15 panel windows | JS, AOT |
 | [StopWatch](programs/stopwatch/README.md) (C152) | ESP32-S3, 8 MB PSRAM, 16 MB flash | 1.75" 466×466 round AMOLED, touch | [Factory demo](apps/stopwatch-factory/README.md): launcher and the nine applications it opens | JS, AOT |
 | [StickS3](programs/sticks3/README.md) (K150) | ESP32-S3, 8 MB PSRAM, 8 MB flash | 1.14" 135×240 IPS | [Board demos](apps/sticks3-demos/README.md): marble maze, dice, reaction timer, snake, spirit level, sound meter, metronome | JS, AOT |
-| [AtomS3](programs/atoms3/README.md) | ESP32-S3, no PSRAM, 8 MB flash | 0.85" 128×128 IPS | [Factory demo](apps/atoms3-factory/README.md): Wi-Fi, I2C, UART, PWM, ADC, IR and IMU functions | AOT only |
+| [AtomS3, AtomS3R](programs/atoms3/README.md) | ESP32-S3, no PSRAM, 8 MB flash (AtomS3R: 8 MB PSRAM, not used) | 0.85" 128×128 IPS | [Factory demo](apps/atoms3-factory/README.md): Wi-Fi, I2C, UART, PWM, ADC, IR and IMU functions | AOT only |
 
 JS mode is the default for every board except the AtomS3. With 512 KB of
 SRAM and no PSRAM, the AtomS3 runs out of internal RAM while the QuickJS
 guest boots, so its program builds AOT mode only
-([measurements](programs/atoms3/README.md#memory-budget)). The AtomS3R is a
-different board and is not supported.
+([measurements](programs/atoms3/README.md#memory-budget)). The same image
+runs on the AtomS3R: the board support reads the chip package at boot and
+uses the AtomS3R's pins, backlight and IMU. AtomS3R units with an ST7735S
+panel are not supported.
 
 The factory demos are recreated from M5Stack's sources:
 [M5Tab5-UserDemo](https://github.com/m5stack/M5Tab5-UserDemo),
