@@ -41,6 +41,10 @@ Architecture and implementation notes belong in `docs/`, not here.
 - A `third_party/pocketjs` bump is its own commit,
   `build(deps): bump pocketjs to <short-sha>`, with the upstream commit range
   in the body.
+- `main` keeps a linear history: no merge commits. Squash merge is the
+  preferred way to merge a pull request; its title becomes the commit header
+  and follows the rules above. Use a rebase merge only when the commits of
+  the pull request must stay separate on `main`.
 
 ## Formatting
 
