@@ -40,12 +40,19 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     # ESP-IDF 6.2, the version the committed dependencies.lock files record.
-    # Privileged for swapon: rustc takes about 5 GB for the StopWatch AOT
-    # crate (a 100 MB generated view module), and the 2-core runner of a
-    # private repository has 7 GB of memory.
+    # The StopWatch AOT crate is a 100 MB generated view module, and rustc
+    # needs more memory for it than the runner of a private repository has
+    # (7 GB). Its job runs privileged, removes preinstalled runner tools that
+    # the build does not use (mounted below) to make disk space, and adds an
+    # 8 GB swap file. The other jobs build without swap.
     container:
       image: espressif/idf:release-v6.2
       options: --privileged
+      volumes:
+        - /usr/local/lib/android:/runner-tools/android
+        - /usr/share/dotnet:/runner-tools/dotnet
+        - /opt/ghc:/runner-tools/ghc
+        - /opt/hostedtoolcache/CodeQL:/runner-tools/codeql
     strategy:
       fail-fast: false
       matrix:
@@ -53,7 +60,7 @@ jobs:
           - { name: tab5-js, dir: programs/tab5, target: esp32p4, defaults: "" }
           - { name: tab5-aot, dir: programs/tab5, target: esp32p4, defaults: "sdkconfig.defaults;sdkconfig.aot" }
           - { name: stopwatch-js, dir: programs/stopwatch, target: esp32s3, defaults: "" }
-          - { name: stopwatch-aot, dir: programs/stopwatch, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot" }
+          - { name: stopwatch-aot, dir: programs/stopwatch, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot", swap: true }
           - { name: sticks3-js, dir: programs/sticks3, target: esp32s3, defaults: "" }
           - { name: sticks3-aot, dir: programs/sticks3, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot" }
           - { name: atoms3-aot, dir: programs/atoms3, target: esp32s3, defaults: "" }
@@ -65,13 +72,17 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Container packages and swap
+      - name: Container packages
         run: |
           apt-get update -qq
-          apt-get install -y -qq --no-install-recommends curl unzip xz-utils ca-certificates >/dev/null
+          apt-get install -y -qq --no-install-recommends curl unzip xz-utils ca-certificates time >/dev/null
           git config --global --add safe.directory '*'
-          nproc; df -h /__w
-          # An 8 GB swap file on the runner's disk (the workspace mount), outside the checkout.
+          nproc; free -m; df -h /__w
+      - name: Disk space and an 8 GB swap file
+        if: matrix.swap
+        run: |
+          rm -rf /runner-tools/android/* /runner-tools/dotnet/* /runner-tools/ghc/* /runner-tools/codeql/*
+          df -h /__w
           fallocate -l 8G /__w/swapfile && chmod 600 /__w/swapfile
           mkswap /__w/swapfile >/dev/null && swapon /__w/swapfile
           free -m
@@ -110,7 +121,8 @@ jobs:
           . "$IDF_PATH/export.sh" >/dev/null
           args=(-B build -DSDKCONFIG=build/sdkconfig)
           if [ -n "${{ matrix.defaults }}" ]; then args+=(-DSDKCONFIG_DEFAULTS="${{ matrix.defaults }}"); fi
-          idf.py "${args[@]}" set-target ${{ matrix.target }} build
+          # GNU time reports the largest memory of any process of the build (rustc).
+          /usr/bin/time -f "peak RSS of the build: %M KB, wall %E" idf.py "${args[@]}" set-target ${{ matrix.target }} build
           cd build
           python -m esptool --chip ${{ matrix.target }} merge-bin \
             -o "$GITHUB_WORKSPACE/m5stack-sample-${{ matrix.name }}.bin" @flash_args
