@@ -31,7 +31,7 @@ builds in two modes:
 - [Preview without a board](#preview-without-a-board)
 - [How it works](#how-it-works)
 - [Repository layout](#repository-layout)
-- [Status and limits](#status-and-limits)
+- [Known limits](#known-limits)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -294,11 +294,8 @@ docs/                     reference documentation
 [pocket-nexus/pocketjs](https://github.com/pocket-nexus/pocketjs), after the
 `v0.17.0` release.
 
-## Status and limits
+## Known limits
 
-- The 0.1.0 images are built in CI and the applications were checked in the
-  PocketJS simulator; the AtomS3 AOT image also ran under QEMU. They have not
-  been tested on the boards yet.
 - Tab5: no camera preview (the camera window stays black), Wi-Fi access
   point (the window shows the factory text) or USB-A host.
 - StopWatch: no Wi-Fi station or Wi-Fi setup access point (the badge
