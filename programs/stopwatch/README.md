@@ -31,8 +31,15 @@ embeds `apps/stopwatch-factory` with `m5_pocket_app()`.
   (`M5_POCKET_DISPLAY_ESP_LCD`, two RGB565 strips of 466 × 32 px, 29,824
   bytes each, under the ESP32-S3 SPI DMA limit, byte-swapped), the CST820
   contact as `touch`, KEYA/KEYB as `BTN.LTRIGGER`/`BTN.RTRIGGER`, a 6 MiB
-  QuickJS heap in PSRAM and a 64 KiB internal-RAM app task on core 1
-  (internal because the request hook writes NVS).
+  QuickJS heap in PSRAM and the app task on core 1. In JS mode its stack is
+  64 KiB of internal RAM (the request hook writes NVS). In AOT mode it is
+  256 KiB of PSRAM: the compiled application used 68,048 bytes while it
+  mounted, 64 KiB overflowed, and internal RAM has no free block of 80 KiB
+  when the task is created. The host then runs the request hook on its
+  helper task (12 KiB of internal RAM,
+  `CONFIG_M5_POCKET_APP_INTERNAL_STACK`), and `badge_texture_update` passes
+  the badge decode, which reads FAT, to it with `m5_pocket_app_run_internal`
+  (docs/APP-HOST.md, "Flash operations from the hooks").
 - `main/services.c` is the board side of the device bridge. Before every
   frame it publishes `uptimeMs`, the wall clock (system time, set from the
   RX8130CE at boot), `keyA`/`keyB`, the IMU and, once per second, the
@@ -150,6 +157,11 @@ idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
     -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot" set-target esp32s3 build
 idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig -p <port> flash monitor
 ```
+
+**Code and read-only data run from flash.** `CONFIG_SPIRAM_XIP_FROM_PSRAM`
+copies both into PSRAM and aborts at boot when they do not fit: the AOT
+image has 8,126,464 bytes of read-only data (the pictures) and 2,424,832
+bytes of code for 8 MiB of PSRAM.
 
 The two modes need different managed components (AOT links no QuickJS), so
 JS mode keeps `dependencies.lock` and AOT mode `dependencies.aot.lock`

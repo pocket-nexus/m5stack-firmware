@@ -192,7 +192,33 @@ app task's priority and core:
 
 One round trip costs about 0.4 ms on an ESP32-S3 at 240 MHz (measured:
 `before_frame` took 1.07 ms without and 1.45 ms with one call per frame), so
-a hook asks first whether there is work.
+a hook asks first whether there is work. The StopWatch program checks
+`stopwatch_badge_image_pending()` before it decodes a badge picture from FAT.
+
+### Program textures
+
+`m5_pocket_app_set_texture(app, name, rgb565, width, height, stride_bytes, &handle)`
+uploads a picture the program produced (a decoded photo, a camera frame) and
+binds it to an image name the views draw (`<Image src={name}>`), in both
+modes. Pixels are PSM_5650 (red in the low five bits, as the JS pak stores
+RGB565), `width` and `height` powers of two, rows `stride_bytes` apart; the
+host repacks a padded stride. Calling it again for the name frees the
+previous texture; NULL pixels free it and unbind the name. Call it from the
+app task hooks (`before_frame`, `on_request`, `after_frame`); at most
+`M5_POCKET_APP_TEXTURES_MAX` (8) names are bound at once.
+
+| Mode | Upload | Name binding |
+| --- | --- | --- |
+| JS | `pocket/textures.h` (`uploadTexture` op) into the guest's core | `m5.textures(registerTexture)` at the start of the next frame (`connectDevice`) |
+| AOT | `m5_pocket_aot_upload_texture` into the compiled app's `Ui` | `Ui::register_image`, immediately |
+
+An image node resolves its name when it is created or re-bound, so publish a
+`device.ts` value with the change (the returned handle, for example) that
+remounts the view; the StopWatch badge publishes `badgeTexture`.
+
+In JS mode `m5_pocket_app_runtime(app)` still returns the running
+`pocket_runtime` for other runtime operations from the hooks; it returns NULL
+in AOT mode, where the application crate owns the `Ui`.
 
 ### Displays
 
@@ -585,7 +611,11 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
   The smoke app used at most 19,528 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
-  `stack_free_min`.
+  `stack_free_min`. The StopWatch application used 68,048 B while it mounted
+  (device measurement): the generated code has stack frames of up to
+  26,880 B (`update_at`), 17,536 B (`AppApp::new`) and 17,456 B (`mount`).
+  Its app task has a 256 KiB stack in PSRAM
+  ([Flash operations](#flash-operations-from-the-hooks)).
 
 Measured under QEMU (esp32s3, no PSRAM, AOT smoke, 240×135, two 16-row
 strips of 7,680 B each): internal heap free 377,872 B after the display

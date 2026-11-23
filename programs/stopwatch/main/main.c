@@ -93,8 +93,17 @@ void app_main(void) {
   config.js_heap_limit = 6 * 1024 * 1024;
   config.js_stack_limit = 48 * 1024;
   config.js_prefer_psram = true;
+#if CONFIG_M5_POCKET_APP_MODE_AOT
+  /* The compiled application used 68,048 bytes of stack while it mounted
+   * (measured). Internal RAM has no free block of 80 KiB at this point, so
+   * the stack is in PSRAM; the host runs the request hook, which writes NVS
+   * and starts Wi-Fi, on its internal-stack helper task. */
+  config.task_stack_bytes = 256 * 1024;
+  config.task_stack_caps = MALLOC_CAP_SPIRAM;
+#else
   /* Internal-RAM stack: the request hook writes NVS (flash). */
   config.task_stack_bytes = 64 * 1024;
+#endif
   config.task_core = 1;
 
   m5_pocket_app *app = NULL;
