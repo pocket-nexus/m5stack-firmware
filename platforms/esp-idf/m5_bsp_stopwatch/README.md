@@ -154,7 +154,9 @@ I2S0 master, standard Philips format, 16-bit stereo slots, MCLK on, at
 Strength 1..100 maps to a duty of `25 + strength * 75 / 100` percent on IOE1
 PWM channel 0; strength 0 or duration 0 stops the motor. A one-shot
 `esp_timer` writes duty 0 after the duration; a new call replaces a running
-vibration.
+vibration. The timer callback writes duty 0 when the stop time of the latest
+call has passed. It does not ask `esp_timer_is_active`, which reports a timer
+as active while its own callback runs (ESP-IDF 6.x).
 
 ## Provenance
 
