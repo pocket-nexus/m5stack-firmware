@@ -45,6 +45,22 @@ idf.py -p <port> flash monitor
 
 Each program README gives its AOT build command and the board facts.
 
+## Continuous integration and releases
+
+The Firmware workflow (`.github/workflows/firmware.yml`) runs on pushes to
+`main`, on pull requests and on `v*` tags. It checks formatting and the
+per-app fonts, and builds the seven firmware configurations and the four
+`tests/aot-smoke` configurations in the `espressif/idf:release-v6.2`
+container with Rust 1.98.1 and Espressif's Xtensa Rust 1.97.0.0. MicroTS
+generates a 100 MB view module for the StopWatch AOT crate (pocketjs #757),
+more than rustc can compile in the 7.9 GB of memory and 3 GB of swap of a
+private repository's 2-core runner. That job runs privileged, removes
+preinstalled runner tools it does not use to make disk space and adds an
+8 GB swap file; it takes about 25 minutes, the other builds 3 to 5. Each
+build uploads a merged flash image (`esptool merge-bin`, written at 0x0) as an
+artifact. A `v<version>` tag publishes a GitHub release with the firmware
+images and the section of that version in [CHANGELOG.md](CHANGELOG.md).
+
 ## Documentation
 
 - [Repository structure](docs/STRUCTURE.md)

@@ -1,0 +1,160 @@
+# Builds every firmware configuration of the repository. A pushed `v*` tag
+# also publishes a GitHub release: one merged flash image per board and mode
+# (written at offset 0x0), with the notes of that version in CHANGELOG.md.
+name: Firmware
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run format:check
+      - name: MicroTS layout oracle (Rust 1.98.1, wasm32)
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --target wasm32-unknown-unknown
+          (cd third_party/pocketjs && bun tools/wasm.ts)
+      - run: bun tests/fonts/check.ts
+
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    # ESP-IDF 6.2, the version the committed dependencies.lock files record.
+    # The StopWatch AOT crate is a 100 MB generated view module (pocketjs
+    # #757), and rustc needs more memory for it than the 2-core runner of a
+    # private repository has: 7.9 GB and 3 GB of swap. Its job runs
+    # privileged, removes preinstalled runner tools that the build does not
+    # use (mounted below; the runner has about 7 GB of free disk) and adds an
+    # 8 GB swap file; the crate then compiles in about 17 minutes. The other
+    # jobs build without swap.
+    container:
+      image: espressif/idf:release-v6.2
+      options: --privileged
+      volumes:
+        - /usr/local/lib/android:/runner-tools/android
+        - /usr/share/dotnet:/runner-tools/dotnet
+        - /opt/ghc:/runner-tools/ghc
+        - /opt/hostedtoolcache/CodeQL:/runner-tools/codeql
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: tab5-js, dir: programs/tab5, target: esp32p4, defaults: "" }
+          - { name: tab5-aot, dir: programs/tab5, target: esp32p4, defaults: "sdkconfig.defaults;sdkconfig.aot" }
+          - { name: stopwatch-js, dir: programs/stopwatch, target: esp32s3, defaults: "" }
+          - { name: stopwatch-aot, dir: programs/stopwatch, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot", swap: true }
+          - { name: sticks3-js, dir: programs/sticks3, target: esp32s3, defaults: "" }
+          - { name: sticks3-aot, dir: programs/sticks3, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot" }
+          - { name: atoms3-aot, dir: programs/atoms3, target: esp32s3, defaults: "" }
+          - { name: aot-smoke-js-s3, dir: tests/aot-smoke, target: esp32s3, defaults: "" }
+          - { name: aot-smoke-js-p4, dir: tests/aot-smoke, target: esp32p4, defaults: "" }
+          - { name: aot-smoke-aot-s3, dir: tests/aot-smoke, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot;sdkconfig.nopsram" }
+          - { name: aot-smoke-aot-p4, dir: tests/aot-smoke, target: esp32p4, defaults: "sdkconfig.defaults;sdkconfig.aot" }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Container packages
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends curl unzip xz-utils ca-certificates time >/dev/null
+          git config --global --add safe.directory '*'
+          nproc; free -m; df -h /__w
+      - name: Disk space and an 8 GB swap file
+        if: matrix.swap
+        run: |
+          rm -rf /runner-tools/android/* /runner-tools/dotnet/* /runner-tools/ghc/* /runner-tools/codeql/*
+          df -h /__w
+          fallocate -l 8G /__w/swapfile && chmod 600 /__w/swapfile
+          mkswap /__w/swapfile >/dev/null && swapon /__w/swapfile
+          free -m
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      # The PocketJS runtime archive (JS mode) and the AOT library build from
+      # source: Rust 1.98.1 for ESP32-P4 and the wasm layout oracle, Espressif's
+      # Xtensa toolchain as the rustup toolchain `esp` for ESP32-S3, the paths
+      # m5_pocket_app/components.cmake and project_include.cmake look up.
+      - name: Rust 1.98.1
+        run: |
+          curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustup" toolchain install 1.98.1 --profile minimal \
+            --target riscv32imafc-unknown-none-elf --target wasm32-unknown-unknown
+      - name: Xtensa Rust 1.97.0.0 as the rustup toolchain `esp`
+        if: matrix.target == 'esp32s3'
+        run: |
+          dist="$RUNNER_TEMP/esp-rust-dist"; mkdir -p "$dist"
+          base=https://github.com/esp-rs/rust-build/releases/download/v1.97.0.0
+          curl -fsSL -o "$dist/rust.tar.xz" "$base/rust-1.97.0.0-x86_64-unknown-linux-gnu.tar.xz"
+          curl -fsSL -o "$dist/rust-src.tar.xz" "$base/rust-src-1.97.0.0.tar.xz"
+          tar -xf "$dist/rust.tar.xz" -C "$dist"
+          tar -xf "$dist/rust-src.tar.xz" -C "$dist"
+          "$dist/rust-nightly-x86_64-unknown-linux-gnu/install.sh" --prefix="$HOME/.rustup/toolchains/esp" --disable-ldconfig
+          "$dist/rust-src-nightly/install.sh" --prefix="$HOME/.rustup/toolchains/esp" --disable-ldconfig
+          "$HOME/.cargo/bin/rustup" run esp rustc --version
+      - name: idf.py build
+        working-directory: ${{ matrix.dir }}
+        run: |
+          . "$IDF_PATH/export.sh" >/dev/null
+          args=(-B build -DSDKCONFIG=build/sdkconfig)
+          if [ -n "${{ matrix.defaults }}" ]; then args+=(-DSDKCONFIG_DEFAULTS="${{ matrix.defaults }}"); fi
+          # GNU time reports the largest memory of any process of the build (rustc).
+          /usr/bin/time -f "peak RSS of the build: %M KB, wall %E" idf.py "${args[@]}" set-target ${{ matrix.target }} build
+          cd build
+          python -m esptool --chip ${{ matrix.target }} merge-bin \
+            -o "$GITHUB_WORKSPACE/m5stack-sample-${{ matrix.name }}.bin" @flash_args
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.name }}
+          path: m5stack-sample-${{ matrix.name }}.bin
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [checks, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: images
+          merge-multiple: true
+      - name: Publish the release with the firmware images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## " v "( |$)" { found = 1; next } /^## / && found { exit } found' \
+            CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "CHANGELOG.md has no section for $version" >&2; exit 1; fi
+          rm -f images/m5stack-sample-aot-smoke-*.bin
+          for f in images/*.bin; do mv "$f" "${f%.bin}-${GITHUB_REF_NAME}.bin"; done
+          gh release create "$GITHUB_REF_NAME" images/*.bin --title "$GITHUB_REF_NAME" --notes-file notes.md
