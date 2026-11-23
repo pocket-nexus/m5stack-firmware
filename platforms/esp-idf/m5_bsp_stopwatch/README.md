@@ -147,7 +147,10 @@ SensorAPI are not ported. Readings are scaled by 8192 LSB/g and
 I2S0 master, standard Philips format, 16-bit stereo slots, MCLK on, at
 44.1 kHz; the ES8311 is opened through `esp_codec_dev` with one channel and
 16 bits, input gain 30 dB. `m5_stopwatch_audio_write` and
-`m5_stopwatch_audio_read` block until the samples are transferred.
+`m5_stopwatch_audio_read` block until the samples are transferred. The
+transmit channel clears each DMA buffer after it was sent
+(`auto_clear_after_cb`): without new samples it sends zeros. The I2S default
+replays the DMA ring, 6 buffers of 240 frames (32.7 ms at 44.1 kHz).
 
 ## Vibration
 
