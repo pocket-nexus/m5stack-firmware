@@ -87,6 +87,10 @@ advances its own clock from the frame count and takes key clicks from
   screen centre, as the factory turns its panel (`watch_face_manager.cpp`).
   Ticks, hands, time digits, date pill, big-number digits, the simple-face
   dot and the text baselines turn with it. Differences:
+  - The panel follows gravity in turns (`watch.ts`): a turn starts when the
+    panel is 3° off and ends within 1°. The reading of a hand that holds
+    the watch still moves by a degree or two; following it repainted the
+    whole face in every frame.
   - The number-flow tiles and digit windows are not in the panel. A digit
     window is `overflow-hidden`, and PocketJS clips a turned subtree to the
     axis-aligned bounds of the turned window, which shows the neighbouring
