@@ -3,7 +3,7 @@ import { defineHostConfig } from "@pocketjs/framework/host-config";
 export default defineHostConfig({
   host: "../pocket.host.json",
   app: {
-    id: "dev.m5stack-sample.aot-smoke",
+    id: "dev.m5stack-firmware.aot-smoke",
     title: "M5 AOT smoke",
     version: "0.1.0",
     entry: "main.tsx",

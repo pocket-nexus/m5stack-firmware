@@ -1,9 +1,9 @@
-# m5stack-sample
+# m5stack-firmware
 
 [English](README.md) | 简体中文
 
-[![Firmware](https://github.com/pocket-nexus/m5stack-sample/actions/workflows/firmware.yml/badge.svg)](https://github.com/pocket-nexus/m5stack-sample/actions/workflows/firmware.yml)
-[![Release](https://img.shields.io/github/v/release/pocket-nexus/m5stack-sample)](https://github.com/pocket-nexus/m5stack-sample/releases)
+[![Firmware](https://github.com/pocket-nexus/m5stack-firmware/actions/workflows/firmware.yml/badge.svg)](https://github.com/pocket-nexus/m5stack-firmware/actions/workflows/firmware.yml)
+[![Release](https://img.shields.io/github/v/release/pocket-nexus/m5stack-firmware)](https://github.com/pocket-nexus/m5stack-firmware/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 这是四块 M5Stack 开发板的固件，界面是用
@@ -134,16 +134,16 @@ AOT crate 如何构建。
 
 ## 烧录发布的固件
 
-每个 [Release](https://github.com/pocket-nexus/m5stack-sample/releases) 都为
+每个 [Release](https://github.com/pocket-nexus/m5stack-firmware/releases) 都为
 每块开发板的每种模式提供一个合并后的 flash 镜像
-`m5stack-sample-<board>-<js|aot>-<version>.bin`，其中包含 bootloader、分区表和
+`m5stack-firmware-<board>-<js|aot>-<version>.bin`，其中包含 bootloader、分区表和
 应用。用 [esptool](https://github.com/espressif/esptool) 写入偏移 0x0：
 
 ```sh
-esptool --chip esp32p4 write-flash 0x0 m5stack-sample-tab5-js-v0.1.0.bin       # Tab5
-esptool --chip esp32s3 write-flash 0x0 m5stack-sample-stopwatch-js-v0.1.0.bin  # StopWatch
-esptool --chip esp32s3 write-flash 0x0 m5stack-sample-sticks3-js-v0.1.0.bin    # StickS3
-esptool --chip esp32s3 write-flash 0x0 m5stack-sample-atoms3-aot-v0.1.0.bin    # AtomS3
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.0.bin       # Tab5
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-js-v0.1.0.bin  # StopWatch
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.0.bin    # StickS3
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.0.bin    # AtomS3
 ```
 
 [CHANGELOG.md](CHANGELOG.md) 列出了每个版本的镜像和变更。
@@ -171,8 +171,8 @@ espup install --toolchain-version 1.97.0.0     # ESP32-S3 开发板需要
 ### 克隆与安装
 
 ```sh
-git clone --recurse-submodules https://github.com/pocket-nexus/m5stack-sample.git
-cd m5stack-sample
+git clone --recurse-submodules https://github.com/pocket-nexus/m5stack-firmware.git
+cd m5stack-firmware
 bun install                 # JavaScript 依赖和 git hooks
 . $IDF_PATH/export.sh
 ```

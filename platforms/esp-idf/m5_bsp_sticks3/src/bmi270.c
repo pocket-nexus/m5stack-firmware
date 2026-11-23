@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2023 Bosch Sensortec GmbH
  * SPDX-FileCopyrightText: 2026 lbuque <1102390310@qq.com>
- * SPDX-FileCopyrightText: 2026 M5Stack-sample contributors
+ * SPDX-FileCopyrightText: 2026 m5stack-firmware contributors
  *
  * SPDX-License-Identifier: MIT AND BSD-3-Clause
  */

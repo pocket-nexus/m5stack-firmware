@@ -71,7 +71,7 @@ async function compileRequest(): Promise<Compile | undefined> {
 function installFaces(declaration: FontDeclaration): void {
   active.faces = { ...declaration.faces };
   Bun.plugin({
-    name: "m5stack-sample-app-fonts",
+    name: "m5stack-firmware-app-fonts",
     setup(build) {
       build.onResolve({ filter: /\/framework\/compiler\/bake-font(?:\.ts)?$/ }, request => {
         if (request.importer !== upstreamAotCompile) return undefined;
