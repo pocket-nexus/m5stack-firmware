@@ -218,7 +218,7 @@ buffer bytes); otherwise the software rasterizer draws.
 display, else 1); the app task renders the upper rows and a helper task pinned
 to `ppa_helper_core` (default 1) the lower rows, at the same time. Keep each
 half of a strip a multiple of the 64-byte DMA cache line, or that half renders
-in software. `ppa_lanes` 0 or 1 is the single renderer. For Tab5 (two 48-row
+in software. `ppa_lanes` 0 or 1 is the single renderer. For Tab5 (two 40-row
 × 1280-px RGB565 strips, 640×360 logical at raster density 2 turned onto the
 720×1280 panel):
 
@@ -226,8 +226,8 @@ in software. `ppa_lanes` 0 or 1 is the single renderer. For Tab5 (two 48-row
 config.display.kind = M5_POCKET_DISPLAY_ESP_DPI;
 config.display.dpi = (pocket_display_esp_dpi_config){ /* framebuffer, 720, 1280,
     .width = 1280, .height = 720, .turned = true, .scale = 1,
-    .strip_rows = 48, .row_alignment = 2,
-    .frame_buffer_budget = 2 * 48 * 1280 * 2, ... */ };
+    .strip_rows = 40, .row_alignment = 8,
+    .frame_buffer_budget = 2 * 40 * 1280 * 2, ... */ };
 config.display.ppa = true;
 config.display.ppa_lanes = 2;
 ```

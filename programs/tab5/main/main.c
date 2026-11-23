@@ -19,8 +19,13 @@
 
 static const char *TAG = "tab5";
 
-/* Each of the two internal-RAM staging strips. */
-#define TAB5_STRIP_BYTES (128U * 1024U)
+/* Each of the two internal-RAM staging strips: 40 raster rows of 1280 px.
+ * Each strip is one DMA-capable block, and the two land in different heap
+ * regions. At start the largest free blocks are 196,608 B (the 256 KiB L2
+ * region) and 118,784 B (the retention region), measured on a Tab5 with the
+ * ST7121 panel, so a strip must stay below 118,784 B: 48 rows (122,880 B)
+ * leave the second strip unallocated. */
+#define TAB5_STRIP_BYTES (100U * 1024U)
 /* GDMA copies queued at once: strip presents plus retained moves. */
 #define TAB5_COPY_BACKLOG 12U
 #define TAB5_GUEST_HEAP (24U * 1024U * 1024U)
@@ -136,10 +141,13 @@ void app_main(void) {
 
   m5_pocket_app_config config;
   m5_pocket_app_config_defaults(&config);
-  /* The picture in raster pixels: the logical viewport times the raster
-   * density. The image's physical size is the portrait panel. */
-  const uint32_t density =
-      config.image->physical_height / config.image->logical_width;
+  /* The picture in raster pixels: the logical viewport times the host
+   * contract's raster density, the density the host renders at. The
+   * image's physical size follows the bundle's orientation (1280x720 for
+   * this landscape bundle), so it does not give the density. */
+  assert(config.image->facts && config.image->facts->display);
+  const uint32_t density = config.image->facts->display->raster_density;
+  assert(density >= 1U);
   board.unit = 1.0f / (float)density;
   display_config(&config.display, config.image->logical_width * density,
                  config.image->logical_height * density);

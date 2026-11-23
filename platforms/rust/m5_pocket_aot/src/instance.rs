@@ -93,7 +93,13 @@ unsafe fn build<D: DeviceApp>(config: &AotConfig, facts: AppFacts) -> Option<Ins
     let Some(profile) = facts.profile else {
         return fail("profile", "no exported profile");
     };
-    let viewport = profile.viewport;
+    // The application's logical viewport is the profile's first logical size.
+    // `profile.viewport` is the physical panel (720x1280 on the Tab5, whose
+    // application is 640x360 at raster density 2); the runtime does not admit
+    // it as a logical viewport.
+    let Some(&viewport) = profile.logical_viewports.first() else {
+        return fail("profile", "no logical viewport");
+    };
     let mut runtime = match Runtime::new(RuntimeConfig {
         profile_hash: facts.profile_hash,
         host_abi: facts.host_abi,

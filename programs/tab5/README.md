@@ -48,7 +48,7 @@ before committing.
 | Application image | 7,429,296 bytes (0x715cb0), 59 % of the 12 MiB `factory` partition | 6,411,168 bytes (0x61d3a0), 51 % |
 | Flash contents | (bundle 4,551,304 bytes, of which 4,053,008 are the pack; 574,360 bytes of font atlases) | font atlases 562,640 bytes |
 | Internal RAM, static (DIRAM) | 102,420 of 441,296 bytes (.data 15,456, .bss 14,680) | 101,832 bytes (.data 15,440, .bss 14,656) |
-| Staging strips | 2 x 122,880 bytes internal DMA RAM (48 raster rows of 1280 px) | same |
+| Staging strips | 2 x 102,400 bytes internal DMA RAM (40 raster rows of 1280 px) | same |
 | Heaps | QuickJS and runtime heap limits 24 MiB each, PSRAM preferred | runtime heap limit 24 MiB; the 22 pictures are copied into the heap at mount: 3,469,312 bytes (also in flash) |
 | App task stack | 192 KiB in PSRAM, QuickJS stack limit 144 KiB | 192 KiB in PSRAM |
 
@@ -109,7 +109,11 @@ PPA turns each damaged rectangle 90 degrees counter-clockwise into the panel
 framebuffer, the orientation LVGL's `LV_DISPLAY_ROTATION_90` gives the
 factory firmware. One AXI GDMA channel pair carries whole-row copies and
 retained moves. A turned strip must be a multiple of 8 raster rows; the
-strip is 48 rows (122,880 bytes), so a full 1280x720 frame is 15 strips.
+strip is 40 rows (102,400 bytes), so a full 1280x720 frame is 18 strips.
+Each strip is one DMA-capable internal block and the two land in different
+heap regions; at start the largest free blocks are 196,608 bytes and
+118,784 bytes (measured on a Tab5 with the ST7121 panel), so 48-row strips
+(122,880 bytes) do not fit.
 
 The touch controller reports panel coordinates; the program sets
 `mirror_y` and `swap_xy` on the `esp_lcd_touch` handle, so picture
@@ -170,7 +174,19 @@ and turns 20 ms capture chunks into the chart columns.
 `idf.py build` succeeds in JS mode and in AOT mode for esp32p4. The program's
 `main` and `m5_bsp_tab5` compile with `m5_strict_warnings` (the warnings IDF
 relaxes restored as errors); the AOT build, MicroTS-generated Rust included,
-has no warnings. No M5Stack hardware was connected: no device
-run, flash or measurement happened. The application was checked with
-`pocket compile` (JS bundle and `--aot` admission) and simulator screenshots
+has no warnings. The application was checked with `pocket compile` (JS bundle
+and `--aot` admission) and simulator screenshots
 (`apps/tab5-factory/tools/preview.ts`).
+
+Device run: a Tab5 with an ESP32-P4 revision v1.3 and the ST7121 panel (ST7123
+touch firmware 1.80.1.16), ESP-IDF v6.1-dev-8142, read from the serial log
+(the `tab5:` statistics every 5 s, 30 s after reset):
+
+| Mode | App started | Frame rate | Longest frame | Internal RAM free |
+| --- | --- | --- | --- | --- |
+| JS | 6.8 s after reset | 20 fps during the startup animation, then 3 to 9 fps on the launcher | 606 ms | 161,139 bytes |
+| AOT | 3.8 s after reset | 30 fps | 67.5 ms | 162,359 bytes |
+
+Both modes render through the same display and PPA path; on the launcher a
+JS-mode frame takes about 250 ms. The log does not show what the panel
+displays, and touch, audio and the board services were not exercised.
