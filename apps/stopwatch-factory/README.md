@@ -171,6 +171,15 @@ the trigger, slider value and ":("). 408 images, 1,812,480 bytes. Run
 `scripts/import-factory-assets.ts` first, then `scripts/gen-glyphs.ts`
 (the asset import rewrites `images/` and `images.json`).
 
+The root model publishes the codepoints and pen positions of every
+glyph-image text as array signals (`clockIds`, `swTimeIds`, `swTimeXs`, …
+in `app.ts`) and lays a text out when it changes. A glyph view reads its
+`ids` and `xs` in every `<Show>`; a compiled view reads a signal in place
+and evaluates a call again at each use, so `ids={glyphIds(text())}` laid
+the text out once per glyph and slot: 2,083 heap allocations and 20 ms per
+frame on the stopwatch page, 70 allocations and 3.7 ms with the signals
+(StopWatch, AOT).
+
 ## FluidBox limit
 
 The factory simulates 450 particles with a 3D double-density SPH at 80 Hz

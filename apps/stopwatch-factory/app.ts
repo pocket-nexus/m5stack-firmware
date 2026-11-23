@@ -218,6 +218,28 @@ export const [badgeMessage, setBadgeMessage] = createSignal<string>("");
 // FluidBox.
 export const [fluidDots, setFluidDots] = createSignal<Dot[]>([]);
 
+// Texts drawn with the factory glyph images (Maple Mono 28/48 px,
+// Commissioner 108 px): the codepoint of every character and its pen
+// position. A glyph view reads them in every glyph slot. A view reads a
+// signal in place; a call in a binding would lay the text out again for
+// every slot, so the model lays a text out when it changes.
+export const [clockIds, setClockIds] = createSignal<i32[]>([]);
+export const [clockPen, setClockPen] = createSignal<i32[]>([]);
+export const [watchTimeIds, setWatchTimeIds] = createSignal<i32[]>([]);
+export const [watchTimeXs, setWatchTimeXs] = createSignal<i32[]>([]);
+export const [plainIds, setPlainIds] = createSignal<i32[]>([]);
+export const [plainXs, setPlainXs] = createSignal<i32[]>([]);
+export const [swTimeIds, setSwTimeIds] = createSignal<i32[]>([]);
+export const [swTimeXs, setSwTimeXs] = createSignal<i32[]>([]);
+export const [swEmptyIds, setSwEmptyIds] = createSignal<i32[]>([]);
+export const [swEmptyXs, setSwEmptyXs] = createSignal<i32[]>([]);
+export const [levelIds, setLevelIds] = createSignal<i32[]>([]);
+export const [levelXs, setLevelXs] = createSignal<i32[]>([]);
+export const [sadIds, setSadIds] = createSignal<i32[]>([]);
+export const [sadXs, setSadXs] = createSignal<i32[]>([]);
+export const [ringIds, setRingIds] = createSignal<i32[]>([]);
+export const [ringXs, setRingXs] = createSignal<i32[]>([]);
+
 // ------------------------------ shell state --------------------------------
 
 let firstLauncherOpen: boolean = true;
@@ -229,6 +251,13 @@ let lastFrameMs: f64 = 0.0;
 let lapScroll: i32 = 0;
 let lapScrollOrigin: i32 = 0;
 let lapDragging: boolean = false;
+/** The texts whose glyph layout is published; "" and -1 before the first. */
+let laidClock: string = "";
+let laidWatch: string = "";
+let laidPlain: string = "";
+let laidStopwatch: string = "";
+let laidRing: string = "";
+let laidLevel: i32 = -1;
 
 function two(value: i32): string {
   return value < 10 ? `0${value}` : `${value}`;
@@ -241,6 +270,10 @@ function updateClock(force: boolean): void {
   lastClockUpdate = device.uptimeMs;
   const text = stopwatch.letterO(`${two(device.hour)}:${two(device.minute)}`);
   setClockText(text);
+  if (text !== laidClock) {
+    laidClock = text;
+    setClockIds(textlayout.ids(text));
+  }
   setClock0(stopwatch.letterO(`${idiv(device.hour, 10)}`));
   setClock1(stopwatch.letterO(`${device.hour % 10}`));
   setClock3(stopwatch.letterO(`${idiv(device.minute, 10)}`));
@@ -431,8 +464,20 @@ function publishWatch(): void {
   setHourAngle(f32(watch.hourAngle()) as Deg);
   setMinuteAngle(f32(watch.minuteAngle()) as Deg);
   setSecondAngle(f32(watch.secondAngle()) as Deg);
-  setWatchTime(stopwatch.letterO(`${two(watch.shownHour)}:${two(watch.shownMinute)}`));
-  setPlainTime(`${two(watch.shownHour)}:${two(watch.shownMinute)}`);
+  const time = stopwatch.letterO(`${two(watch.shownHour)}:${two(watch.shownMinute)}`);
+  setWatchTime(time);
+  if (time !== laidWatch) {
+    laidWatch = time;
+    setWatchTimeIds(textlayout.ids(time));
+    setWatchTimeXs(textlayout.centred(time, glyphs.M28_CODES, glyphs.M28_ADVANCE, 233));
+  }
+  const plain = `${two(watch.shownHour)}:${two(watch.shownMinute)}`;
+  setPlainTime(plain);
+  if (plain !== laidPlain) {
+    laidPlain = plain;
+    setPlainIds(textlayout.ids(plain));
+    setPlainXs(textlayout.centred(plain, glyphs.C108_CODES, glyphs.C108_ADVANCE, 233));
+  }
   setWatchWeekday(WEEKDAYS[device.weekday]);
   setWatchDay(stopwatch.letterO(two(device.day)));
   setWatchDate(`${device.year}/${device.month}/${device.day} ${WEEKDAYS[device.weekday]}`);
@@ -491,7 +536,13 @@ export function stopwatchRight(): void {
 
 function publishStopwatch(): void {
   setSwState(stopwatch.state);
-  setSwTime(stopwatch.format(stopwatch.elapsedMs()));
+  const elapsed = stopwatch.format(stopwatch.elapsedMs());
+  setSwTime(elapsed);
+  if (elapsed !== laidStopwatch) {
+    laidStopwatch = elapsed;
+    setSwTimeIds(textlayout.ids(elapsed));
+    setSwTimeXs(textlayout.centred(elapsed, glyphs.M48_CODES, glyphs.M48_ADVANCE, 233));
+  }
   const count = len(stopwatch.laps);
   if (len(swLaps()) !== count) {
     const rows: LapRow[] = [];
@@ -643,7 +694,13 @@ export function alarmDismiss(): void {
 
 function publishRinging(): void {
   setRinging(alarms.ringing >= 0);
-  setRingTime(`${two(alarms.ringHour)}:${two(alarms.ringMinute)}`);
+  const ring = `${two(alarms.ringHour)}:${two(alarms.ringMinute)}`;
+  setRingTime(ring);
+  if (ring !== laidRing) {
+    laidRing = ring;
+    setRingIds(textlayout.ids(ring));
+    setRingXs(textlayout.centred(ring, glyphs.C108_CODES, glyphs.C108_ADVANCE, 233));
+  }
 }
 
 // Settings -----------------------------------------------------------------
@@ -652,6 +709,12 @@ function publishSetup(): void {
   setSetupScreen(setup.screen);
   setSetupScroll(setup.scroll);
   setSetupLevel(setup.level);
+  if (setup.level !== laidLevel) {
+    laidLevel = setup.level;
+    const level = `${setup.level}`;
+    setLevelIds(textlayout.ids(level));
+    setLevelXs(textlayout.centred(level, glyphs.C108_CODES, glyphs.C108_ADVANCE, 233));
+  }
   setSetupDateStage(setup.dateStage);
   setSfxOn(device.buttonSfx);
   setVibrateOn(device.buttonVibrate);
@@ -893,6 +956,12 @@ function frame(): void {
 
 export async function run(): Promise<void> {
   buildTicks();
+  // Fixed glyph texts: the clock character box, "-.-" and ":(".
+  setClockPen(textlayout.pens("0", glyphs.M28_CODES, glyphs.M28_ADVANCE, 1));
+  setSwEmptyIds(textlayout.ids("-.-"));
+  setSwEmptyXs(textlayout.centred("-.-", glyphs.M28_CODES, glyphs.M28_ADVANCE, 233));
+  setSadIds(textlayout.ids(":("));
+  setSadXs(textlayout.pens(":(", glyphs.C108_CODES, glyphs.C108_ADVANCE, 80));
   updateClock(true);
   for (let step: i32 = 0; step < 2147483647; step++) {
     await frames(1);
@@ -910,37 +979,6 @@ export async function run(): Promise<void> {
     }
     frame();
   }
-}
-
-// Text drawn with the factory glyph images (Maple Mono 28/48 px,
-// Commissioner 108 px); bindings of the root view call these.
-export function glyphIds(text: string): i32[] {
-  return textlayout.ids(text);
-}
-
-export function m28Centred(text: string, centre: i32): i32[] {
-  return textlayout.centred(text, glyphs.M28_CODES, glyphs.M28_ADVANCE, centre);
-}
-
-export function m48Centred(text: string, centre: i32): i32[] {
-  return textlayout.centred(text, glyphs.M48_CODES, glyphs.M48_ADVANCE, centre);
-}
-
-export function largeCentred(text: string, centre: i32): i32[] {
-  return textlayout.centred(text, glyphs.C108_CODES, glyphs.C108_ADVANCE, centre);
-}
-
-export function largeFrom(text: string, x: i32): i32[] {
-  return textlayout.pens(text, glyphs.C108_CODES, glyphs.C108_ADVANCE, x);
-}
-
-export function numberText(value: i32): string {
-  return `${value}`;
-}
-
-/** Pen of a single Maple Mono 28 character in its 20 px clock box. */
-export function clockPens(text: string): i32[] {
-  return textlayout.pens(text, glyphs.M28_CODES, glyphs.M28_ADVANCE, 1);
 }
 
 // Host entry points for the JS-mode bridge (docs/APP-HOST.md).
