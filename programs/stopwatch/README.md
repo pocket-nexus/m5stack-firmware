@@ -158,6 +158,15 @@ idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
 idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig -p <port> flash monitor
 ```
 
+Add `sdkconfig.profile` for the frame profiler (docs/APP-HOST.md, "Frame
+profiler"), in either mode:
+
+```sh
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot;sdkconfig.profile" set-target esp32s3 build
+python ../../tools/profile.py run <port> run.log --reset @idle 5s
+```
+
 **Code and read-only data run from flash.** `CONFIG_SPIRAM_XIP_FROM_PSRAM`
 copies both into PSRAM and aborts at boot when they do not fit: the AOT
 image has 8,126,464 bytes of read-only data (the pictures) and 2,424,832

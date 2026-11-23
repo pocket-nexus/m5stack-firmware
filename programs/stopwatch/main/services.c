@@ -323,6 +323,8 @@ uint32_t stopwatch_services_buttons(void) {
   if (!gpio_get_level(M5_STOPWATCH_PIN_BUTTON_B)) {
     bits |= BUTTON_B_BIT;
   }
+  /* Keys the frame profiler's console holds (0 without the profiler). */
+  bits |= m5_pocket_app_scripted_buttons() & (BUTTON_A_BIT | BUTTON_B_BIT);
   return bits;
 }
 
