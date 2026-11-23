@@ -65,7 +65,6 @@ import {
   rollerMinute,
   rollerSecond,
   rtcReady,
-  spinnerAngle,
   scanInternal,
   scanPortA,
   screen,
@@ -560,7 +559,6 @@ export default function App() {
               <Show when={recordState() !== 0}>
                 <View class="absolute left-[282] top-[23.75] w-[38] h-[38]">
                   <Spinner
-                    angle={spinnerAngle()}
                     track="absolute left-0 top-0 w-[38] h-[38] bg-[#2F3237] arc-start-[0] arc-sweep-[360] arc-width-[1.5]"
                     arc={recordState() === 1
                       ? "absolute left-0 top-0 w-[38] h-[38] bg-[#E17822] arc-start-[0] arc-sweep-[60] arc-width-[1.5]"
@@ -609,7 +607,6 @@ export default function App() {
               <Show when={recordState() !== 0}>
                 <View class="absolute left-[148.75] top-[20] w-[38] h-[38]">
                   <Spinner
-                    angle={spinnerAngle()}
                     track="absolute left-0 top-0 w-[38] h-[38] bg-[#2F3237] arc-start-[0] arc-sweep-[360] arc-width-[1.5]"
                     arc={recordState() === 1
                       ? "absolute left-0 top-0 w-[38] h-[38] bg-[#E17822] arc-start-[0] arc-sweep-[60] arc-width-[1.5]"
@@ -837,7 +834,6 @@ export default function App() {
               <Show when={musicOn()}>
                 <View class="absolute left-[148.25] top-[28.5] w-[45] h-[45]">
                   <Spinner
-                    angle={spinnerAngle()}
                     track="absolute left-0 top-0 w-[45] h-[45] bg-[#2F3237] arc-start-[0] arc-sweep-[360] arc-width-[2]"
                     arc="absolute left-0 top-0 w-[45] h-[45] bg-[#31D584] arc-start-[0] arc-sweep-[60] arc-width-[2]"
                   />

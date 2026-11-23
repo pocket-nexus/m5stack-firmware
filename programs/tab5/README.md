@@ -66,10 +66,11 @@ device run happened.
 - **Drags and scrolling**: neither mode uses framework gestures. The rollers
   and the Ext.Port1/MBUS scrolling are model code driven by `pointerX`,
   `pointerY` and `pointerDown`, identical in both modes.
-- **Animations**: all motion (startup, window springs, toasts, label bumps,
-  IMU dot, spinners) is computed by the model each frame and written as
-  style values, so both modes run the same frames; nothing uses baked
-  timelines or `animate()`.
+- **Animations**: the motion of the startup, window springs, toasts, label
+  bumps and IMU dot is computed by the model each frame and written as style
+  values. The spinner arcs turn with the built-in `animate-spin`, a timeline
+  baked at the application's 30 ticks per second that the core plays in both
+  modes: one turn a second. Nothing uses `animate()`.
 - **Picture loading**: MicroTS bakes each picture from its `@2x` variant
   in the format `images.json` names (the background tiles and I2C charts as
   RGB565, the rest RGBA8888), as the JS build does, so both modes draw the
