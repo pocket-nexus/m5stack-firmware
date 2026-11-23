@@ -14,6 +14,7 @@ uint32_t m5_pocket_app_scripted_buttons(void) { return 0; }
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/queue.h"
+#include "pocket/display_esp_lcd.h"
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -60,6 +61,9 @@ typedef struct {
 static struct {
   const pocket_display_output_v1 *inner;
   void *inner_context;
+  /* The display when it is a pocket_display_esp_lcd, for its counters. */
+  const pocket_display_esp_lcd *lcd;
+  pocket_display_esp_lcd_stats presented;
   pocket_display_output_v1 table;
   QueueHandle_t queue;
   TaskHandle_t app_task;
@@ -125,6 +129,8 @@ static int32_t wrap_identity(void *context, pocket_buffer_identity *out) {
 static int32_t wrap_acquire(void *context, const pocket_rect *region,
                             pocket_target *out) {
   (void)context;
+  /* A staged display blocks here until a render buffer is free. */
+  m5_pocket_profile_stage(M5_POCKET_STAGE_WAIT);
   const int32_t status = P.inner->acquire(P.inner_context, region, out);
   if (P.in_tick)
     P.frame.strips++;
@@ -222,6 +228,19 @@ static void print_period(const report *r) {
            (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL),
            (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
            (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM));
+  pocket_display_esp_lcd_stats now = {.struct_size = sizeof(now)};
+  if (P.lcd && pocket_display_esp_lcd_get_stats(P.lcd, &now)) {
+    /* Staged presentation, this period: flushes presented, without a
+     * refresh report, late for the next scan; the longest time from a flush
+     * to its last transfer since the start. */
+    at = put(line, sizeof(line), at,
+             " present=%" PRIu32 " unsynced=%" PRIu32 " late=%" PRIu32
+             " ptime=%" PRIu32,
+             now.frames - P.presented.frames,
+             now.unsynced - P.presented.unsynced, now.late - P.presented.late,
+             now.present_us_max);
+    P.presented = now;
+  }
   ESP_LOGI(TAG, "%s", line);
 }
 
@@ -282,6 +301,8 @@ void m5_pocket_profile_wrap_display(m5_pocket_devices *devices) {
   const pocket_display_output_v1 *inner = devices->display;
   P.inner = inner;
   P.inner_context = devices->display_context;
+  if (inner == pocket_display_esp_lcd_vtable())
+    P.lcd = devices->display_context;
   P.table = (pocket_display_output_v1){
       .struct_size = sizeof(P.table),
       .descriptor = wrap_descriptor,
