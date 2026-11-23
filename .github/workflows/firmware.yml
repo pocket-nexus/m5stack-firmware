@@ -40,7 +40,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     # ESP-IDF 6.2, the version the committed dependencies.lock files record.
-    container: espressif/idf:release-v6.2
+    # Privileged for swapon: rustc takes about 5 GB for the StopWatch AOT
+    # crate (a 100 MB generated view module), and the 2-core runner of a
+    # private repository has 7 GB of memory.
+    container:
+      image: espressif/idf:release-v6.2
+      options: --privileged
     strategy:
       fail-fast: false
       matrix:
@@ -60,11 +65,16 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Container packages
+      - name: Container packages and swap
         run: |
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends curl unzip xz-utils ca-certificates >/dev/null
           git config --global --add safe.directory '*'
+          nproc; df -h /__w
+          # An 8 GB swap file on the runner's disk (the workspace mount), outside the checkout.
+          fallocate -l 8G /__w/swapfile && chmod 600 /__w/swapfile
+          mkswap /__w/swapfile >/dev/null && swapon /__w/swapfile
+          free -m
       - uses: actions/checkout@v7
         with:
           submodules: recursive
