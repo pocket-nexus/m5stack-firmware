@@ -4,6 +4,70 @@ Each version is a git tag `v<version>`. The Firmware workflow publishes the
 section of that version as the release notes, with one merged flash image per
 board and mode.
 
+## 0.1.2 - 2026-11-23
+
+StopWatch: the AOT image starts on the board, draws 15 to 30 frames per
+second and shows whole frames. PocketJS `98ead939`; ESP-IDF 6.2, as in 0.1.1.
+
+| Image | Board | Application | Mode |
+| --- | --- | --- | --- |
+| `m5stack-firmware-tab5-js-v0.1.2.bin` | Tab5 (ESP32-P4) | Tab5 factory demo | JS |
+| `m5stack-firmware-tab5-aot-v0.1.2.bin` | Tab5 (ESP32-P4) | Tab5 factory demo | AOT |
+| `m5stack-firmware-stopwatch-js-v0.1.2.bin` | StopWatch C152 (ESP32-S3) | StopWatch factory demo | JS |
+| `m5stack-firmware-stopwatch-aot-v0.1.2.bin` | StopWatch C152 (ESP32-S3) | StopWatch factory demo | AOT |
+| `m5stack-firmware-sticks3-js-v0.1.2.bin` | StickS3 (ESP32-S3) | Seven board demos | JS |
+| `m5stack-firmware-sticks3-aot-v0.1.2.bin` | StickS3 (ESP32-S3) | Seven board demos | AOT |
+| `m5stack-firmware-atoms3-aot-v0.1.2.bin` | AtomS3 and AtomS3R (ESP32-S3) | AtomS3 factory demo | AOT |
+
+Each image holds the bootloader, the partition table and the application and
+is written at offset 0x0:
+
+```sh
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.2.bin
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.2.bin
+```
+
+- **StopWatch, AOT image**:
+  - It starts on the board. The 0.1.0 and 0.1.1 AOT images restart in a
+    loop.
+  - Frame rates on the board: 30 frames per second on a still screen, 19
+    during launcher swipes, 15 on screens that repaint the whole panel
+    (FluidBox, the running stopwatch).
+  - The panel shows whole frames. The firmware renders a frame into PSRAM
+    and sends its rows behind the panel's scan, timed by the TE signal.
+  - The speaker is silent between sounds, and the vibration motor stops
+    after its duration.
+  - Text under a turned transform turns: the lucky wheel's sector labels,
+    and the date and weekday of a turned watch face.
+  - The watch face follows gravity in turns: a turn starts when the face is
+    3° off and ends within 1°.
+- **All boards**: PocketJS `98ead939`. The AOT images build the PocketJS
+  crates that run in every frame (rasterizer, retained core, damage tracker,
+  presenter, driver adapters) for speed. Applications declare their font
+  faces with `app.fonts` in `pocket.host.config.ts`; the atlases are the
+  same.
+- **Tab5, StickS3, AtomS3**: the applications and the board support are
+  those of 0.1.1. With the PocketJS rasterizer of this version the edge
+  pixels of turned shapes differ (40 pixels of the StickS3 dice screen and 4
+  of the Tab5 RTC window in the README screenshots).
+- **Development**: a frame profiler for the application host
+  (`CONFIG_M5_POCKET_APP_PROFILE`, `tools/profile.py`): stage times of every
+  tick, scripted touch and keys over USB Serial/JTAG, and a program counter
+  sampler (`docs/APP-HOST.md`).
+
+**Known issues**: the StopWatch JS image does not start on the board; it
+restarts in a loop, as the 0.1.0 and 0.1.1 JS images do
+(`programs/stopwatch/README.md`). Flash the AOT image. The Tab5 JS frame rate
+(3 to 9 frames per second on the launcher in 0.1.1) was not measured again.
+
+**Validation**: firmware builds in CI. Device runs of local builds of the
+same sources (ESP-IDF v6.1-dev-8142): a StopWatch (ESP32-S3 v0.2) in AOT
+mode ran a scripted 100 s tour of the launcher, FluidBox, the four watch
+faces, the stopwatch and Audio.FFT without a reset; all 582 frames were sent
+behind a TE-timed scan, and the panel was watched and showed no tear. The
+StopWatch JS build was run and does not start. Tab5, StickS3, AtomS3 and
+AtomS3R were built and not run for this release.
+
 ## 0.1.1 - 2026-11-23
 
 Tab5 fixes and AtomS3R support. PocketJS `2c9fcf30` and ESP-IDF 6.2, as in
