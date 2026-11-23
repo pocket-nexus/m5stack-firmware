@@ -244,10 +244,12 @@ and the helper task 1,712 of 12,288.
 
 "Before" is the first image that started: the pinned PocketJS commit with
 `CONFIG_SPIRAM_XIP_FROM_PSRAM` off and a PSRAM app stack. "After" is this
-tree with two branches of `HalfSweet/pocketjs` that are not in the pinned
-commit: `perf/raster-fast-paths` (rasterizer row spans) and
-`perf/esp-display` (disjoint flush rows, RGB565 byte exchange, unchanged
-damage snapshot).
+tree with `integration/stopwatch-device` of `HalfSweet/pocketjs` at
+`339872d4`: the pinned commit plus the changes of four pull requests that
+are not in it, pocketjs #758 (disjoint flush rows), #759 (RGB565 byte
+exchange), #760 (unchanged damage snapshot) and #761 (rasterizer row
+spans). #761 was rebased onto main afterwards; its rasterizer on the same
+base (`6229f21f`) measured the same raster time per row.
 
 | Screen | Before: fps, tick | After: fps, tick |
 | --- | --- | --- |
