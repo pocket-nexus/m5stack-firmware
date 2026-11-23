@@ -183,7 +183,7 @@ function shade(i: i32, face: i32): i32 {
   const a = ry[i] * RAD;
   const b = -rx[i] * RAD;
   const c = TILT_Y * RAD;
-  const d = (0.0 - TILT_X) * RAD;
+  const d = -TILT_X * RAD;
   let x = NORMAL_X[face];
   let y = NORMAL_Y[face];
   let z = NORMAL_Z[face];

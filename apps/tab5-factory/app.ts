@@ -21,7 +21,6 @@ import {
   codePoints,
   fromCodePoint,
   type f64,
-  type Deg,
   type i32,
   type Px,
 } from "@pocketjs/framework/solid/std";
@@ -976,9 +975,6 @@ function stepCamera(): void {
 
 /** 0 idle, 1 recording, 2 playing (the HAL's MicTestState). */
 export const [recordState, setRecordState] = createSignal<i32>(0);
-/** The spinner arc's start angle: one turn a second. */
-export const [spinnerAngle, setSpinnerAngle] = createSignal<Deg>(0);
-const DEGREE: Deg = 1;
 export const [musicOn, setMusicOn] = createSignal<boolean>(false);
 export interface ChartColumn {
   id: i32;
@@ -1022,9 +1018,6 @@ function stepAudioWindows(): void {
   const music: boolean = windowState(WIN_MUSIC) !== STATE_CLOSED;
   if (!mic && !headphone && !music) {
     return;
-  }
-  if (recordState() !== 0 || musicOn()) {
-    setSpinnerAngle(DEGREE * f32(imod(frameCount * 12, 360)));
   }
   setChartA(columns(captureLeft));
   setChartB(columns(captureRight));

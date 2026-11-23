@@ -66,10 +66,11 @@ device run happened.
 - **Drags and scrolling**: neither mode uses framework gestures. The rollers
   and the Ext.Port1/MBUS scrolling are model code driven by `pointerX`,
   `pointerY` and `pointerDown`, identical in both modes.
-- **Animations**: all motion (startup, window springs, toasts, label bumps,
-  IMU dot, spinners) is computed by the model each frame and written as
-  style values, so both modes run the same frames; nothing uses baked
-  timelines or `animate()`.
+- **Animations**: the motion of the startup, window springs, toasts, label
+  bumps and IMU dot is computed by the model each frame and written as style
+  values. The spinner arcs turn with the built-in `animate-spin`, a timeline
+  baked at the application's 30 ticks per second that the core plays in both
+  modes: one turn a second. Nothing uses `animate()`.
 - **Picture loading**: MicroTS bakes each picture from its `@2x` variant
   in the format `images.json` names (the background tiles and I2C charts as
   RGB565, the rest RGBA8888), as the JS build does, so both modes draw the
@@ -168,8 +169,8 @@ and turns 20 ms capture chunks into the chart columns.
 
 `idf.py build` succeeds in JS mode and in AOT mode for esp32p4. The program's
 `main` and `m5_bsp_tab5` compile with `m5_strict_warnings` (the warnings IDF
-relaxes restored as errors); the six "value assigned is never read" Rust
-warnings of an AOT build come from MicroTS-generated code. No M5Stack hardware was connected: no device
+relaxes restored as errors); the AOT build, MicroTS-generated Rust included,
+has no warnings. No M5Stack hardware was connected: no device
 run, flash or measurement happened. The application was checked with
 `pocket compile` (JS bundle and `--aot` admission) and simulator screenshots
 (`apps/tab5-factory/tools/preview.ts`).

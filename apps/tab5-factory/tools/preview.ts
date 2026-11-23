@@ -12,8 +12,16 @@
 // `bun tools/wasm.ts` in the submodule (an ignored build output).
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { bootBundle, type SimContact } from "../../../third_party/pocketjs/programs/sim/sim.ts";
+import type { SimContact } from "../../../third_party/pocketjs/programs/sim/sim.ts";
 import { encodePng } from "./png.ts";
+
+// The bundle runs 30 core ticks per second (pocket.host.config.ts tickHz).
+// The simulator reads its tick rate when sim.ts is first imported (60 by
+// default), so set it before the import: one core tick per 30 Hz frame, as
+// on the device; otherwise baked timelines (the spinners' animate-spin) run
+// twice as fast.
+(globalThis as { __POCKET_TICK_HZ__?: number }).__POCKET_TICK_HZ__ = 30;
+const { bootBundle } = await import("../../../third_party/pocketjs/programs/sim/sim.ts");
 
 const [bundleDir, wasm, outDir] = process.argv.slice(2).map(path => resolve(path));
 if (!bundleDir || !wasm || !outDir) throw new Error("usage: preview.ts <bundle dir> <pocketjs.wasm> <out dir>");
