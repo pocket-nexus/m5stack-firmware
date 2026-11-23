@@ -1,27 +1,33 @@
 # programs/atoms3
 
-ESP-IDF program for the M5Stack AtomS3: it brings up the board with
-`platforms/esp-idf/m5_bsp_atoms3` and runs `apps/atoms3-factory` through
-`platforms/esp-idf/m5_pocket_app`. **The program is AOT-only**: the
+ESP-IDF program for the M5Stack AtomS3 and AtomS3R: it brings up the board
+with `platforms/esp-idf/m5_bsp_atoms3` and runs `apps/atoms3-factory`
+through `platforms/esp-idf/m5_pocket_app`. **The program is AOT-only**: the
 application is compiled by MicroTS into the Rust library of `aot/`; the
 QuickJS guest is not built (see [Memory budget](#memory-budget) for why).
 
+**One image runs on both boards.** At boot the BSP reads the chip's package
+version from eFuse (QFN56: AtomS3, LGA56: AtomS3R) and uses that board's
+pins; `main.c` logs `board AtomS3` or `board AtomS3R`.
+
 ## Board facts
 
-| Item | Value |
-| --- | --- |
-| SoC | ESP32-S3FN8, dual-core 240 MHz, 512 KiB SRAM, **no PSRAM**, 8 MB flash |
-| Display | 0.85" 128×128 IPS, GC9107 on SPI3 (MOSI 21, SCLK 17, DC 33, CS 15, RST 34), 40 MHz, GRAM row offset 32 |
-| Backlight | GPIO16, LEDC 256 Hz, brightness 127 at boot |
-| Button | GPIO41, active low |
-| IMU | MPU6886 at 0x68 on I2C SDA 38 / SCL 39 |
-| IR | GPIO4, NEC with 38 kHz carrier |
-| Port A | G1 = GPIO1, G2 = GPIO2 |
-| USB | USB Serial/JTAG: console and the factory's USB serial bridge |
+| Item | AtomS3 | AtomS3R |
+| --- | --- | --- |
+| SoC | ESP32-S3FN8, dual-core 240 MHz, 512 KiB SRAM, **no PSRAM**, 8 MB flash | ESP32-S3-PICO-1-N8R8, 512 KiB SRAM, 8 MB PSRAM (not enabled by this image), 8 MB flash |
+| Display | 0.85" 128×128 IPS, GC9107 on SPI3 (MOSI 21, SCLK 17, DC 33, CS 15, RST 34), 40 MHz, GRAM row offset 32 | GC9107 on SPI3 (MOSI 21, SCLK 15, DC 42, CS 14, RST 48), same settings; panel ID checked at boot |
+| Backlight | GPIO16, LEDC 256 Hz, brightness 127 at boot | LED driver at 0x30 on the internal I2C bus, brightness 127 at boot |
+| Button | GPIO41, active low | same |
+| IMU | MPU6886 at 0x68 on I2C SDA 38 / SCL 39 | BMI270 at 0x68 on I2C SDA 45 / SCL 0 |
+| IR | GPIO4, NEC with 38 kHz carrier | GPIO47, same |
+| Port A | G1 = GPIO1, G2 = GPIO2 | same |
+| USB | USB Serial/JTAG: console and the factory's USB serial bridge | same |
 
-The AtomS3R (ESP32-S3-PICO with 8 MB PSRAM, BMI270/BMM150, other panel
-pins, I2C backlight) is a different board and is not supported. Details and
-sources: `platforms/esp-idf/m5_bsp_atoms3/README.md`.
+The image does not enable PSRAM, so the AtomS3R runs with the AtomS3's
+memory budget. AtomS3R units with an ST7735S panel are not supported: the
+BSP reads the panel ID and `m5_atoms3_display_init` returns
+`ESP_ERR_NOT_SUPPORTED`. Details and sources:
+`platforms/esp-idf/m5_bsp_atoms3/README.md`.
 
 ## Files
 
@@ -113,6 +119,13 @@ bring-up, after start and every 300 frames.
 
 ## Validation
 
-`idf.py build` in AOT mode, AOT admission, and the QEMU runs above. **No
-device run happened** (no AtomS3 was connected); panel init, IR, Port A and
-Wi-Fi are unverified on hardware.
+`idf.py build` in AOT mode, AOT admission, and the QEMU runs above.
+
+Device run on an AtomS3R (ESP32-S3-PICO-1 revision v0.2, GC9107 panel, ID
+`0x079100`), ESP-IDF v6.1-dev-8142, serial log: board detected as AtomS3R,
+BMI270 ready, AOT mode at 30 Hz, internal heap free 328,972 bytes before
+start, 217,652 after start and 124,780 (minimum 124,416) while running.
+On the board: the boot rings, the menu artwork and the backlight show; a
+click moves to the next function and a hold enters and leaves it; in the
+IMU function the ball rolls towards the tilt. IR, Port A and Wi-Fi were not
+exercised. No AtomS3 has run this image.

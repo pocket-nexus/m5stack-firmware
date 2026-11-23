@@ -3,13 +3,13 @@
 //
 // Ported to ESP-IDF from M5Unified 0.3.0
 // src/utility/imu/MPU6886_Class.inl (begin, setGyroFsr, setAccelFsr,
-// getImuRawData). Register values are unchanged.
-#include "m5_atoms3/imu.h"
+// getImuRawData). Register values are unchanged. The AtomS3's IMU behind
+// the m5_atoms3/imu.h API (src/imu.c).
+#include "imu_chips.h"
 
 #include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "m5_atoms3/board.h"
 
 static const char *TAG = "m5_atoms3_imu";
 
@@ -31,18 +31,6 @@ static const char *TAG = "m5_atoms3_imu";
 #define ACCEL_RES (8.0f / 32768.0f)
 #define GYRO_RES (2000.0f / 32768.0f)
 
-esp_err_t m5_atoms3_i2c_internal_init(i2c_master_bus_handle_t *out) {
-  const i2c_master_bus_config_t config = {
-      .i2c_port = I2C_NUM_1,
-      .sda_io_num = M5_ATOMS3_I2C_INTERNAL_SDA,
-      .scl_io_num = M5_ATOMS3_I2C_INTERNAL_SCL,
-      .clk_source = I2C_CLK_SRC_DEFAULT,
-      .glitch_ignore_cnt = 7,
-      .flags.enable_internal_pullup = true,
-  };
-  return i2c_new_master_bus(&config, out);
-}
-
 static esp_err_t write_reg(const m5_atoms3_imu_t *imu, uint8_t reg,
                            uint8_t value) {
   const uint8_t data[2] = {reg, value};
@@ -55,8 +43,8 @@ static esp_err_t read_regs(const m5_atoms3_imu_t *imu, uint8_t reg,
                                      I2C_TIMEOUT_MS);
 }
 
-esp_err_t m5_atoms3_imu_init(i2c_master_bus_handle_t bus,
-                             m5_atoms3_imu_t *out) {
+esp_err_t m5_atoms3_mpu6886_init(i2c_master_bus_handle_t bus,
+                                 m5_atoms3_imu_t *out) {
   ESP_RETURN_ON_FALSE(bus && out, ESP_ERR_INVALID_ARG, TAG, "invalid arg");
   out->dev = NULL;
   out->who_am_i = 0;
@@ -75,7 +63,7 @@ esp_err_t m5_atoms3_imu_init(i2c_master_bus_handle_t bus,
   if (err != ESP_OK || (out->who_am_i != M5_ATOMS3_MPU6886_WHOAMI &&
                         out->who_am_i != 0x68 && out->who_am_i != 0x71)) {
     ESP_LOGW(TAG, "no MPU6886 (WHO_AM_I 0x%02x)", out->who_am_i);
-    m5_atoms3_imu_deinit(out);
+    m5_atoms3_mpu6886_deinit(out);
     return ESP_ERR_NOT_FOUND;
   }
   write_reg(out, REG_PWR_MGMT_1, 0x80);
@@ -107,8 +95,8 @@ esp_err_t m5_atoms3_imu_init(i2c_master_bus_handle_t bus,
   return ESP_OK;
 }
 
-esp_err_t m5_atoms3_imu_read(const m5_atoms3_imu_t *imu,
-                             m5_atoms3_imu_sample_t *out) {
+esp_err_t m5_atoms3_mpu6886_read(const m5_atoms3_imu_t *imu,
+                                 m5_atoms3_imu_sample_t *out) {
   ESP_RETURN_ON_FALSE(imu && imu->dev && out, ESP_ERR_INVALID_ARG, TAG,
                       "invalid arg");
   uint8_t status = 0;
@@ -129,7 +117,7 @@ esp_err_t m5_atoms3_imu_read(const m5_atoms3_imu_t *imu,
   return ESP_OK;
 }
 
-void m5_atoms3_imu_deinit(m5_atoms3_imu_t *imu) {
+void m5_atoms3_mpu6886_deinit(m5_atoms3_imu_t *imu) {
   if (imu && imu->dev) {
     i2c_master_bus_rm_device(imu->dev);
     imu->dev = NULL;

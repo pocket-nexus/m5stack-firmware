@@ -40,12 +40,13 @@ Tab5、StopWatch 和 AtomS3 的程序复刻了各自的出厂演示；StickS3 �
 | [Tab5](programs/tab5/README.md) | ESP32-P4（+ ESP32-C6 无线），32 MB PSRAM，16 MB flash | 5 英寸 720×1280 MIPI-DSI，触摸；界面横屏 | [出厂演示](apps/tab5-factory/README.md)：启动动画、启动器、15 个面板窗口 | JS、AOT |
 | [StopWatch](programs/stopwatch/README.md)（C152） | ESP32-S3，8 MB PSRAM，16 MB flash | 1.75 英寸 466×466 圆形 AMOLED，触摸 | [出厂演示](apps/stopwatch-factory/README.md)：启动器及其打开的九个应用 | JS、AOT |
 | [StickS3](programs/sticks3/README.md)（K150） | ESP32-S3，8 MB PSRAM，8 MB flash | 1.14 英寸 135×240 IPS | [板载功能演示](apps/sticks3-demos/README.md)：弹珠迷宫、骰子、反应计时、贪吃蛇、水平仪、声音计、节拍器 | JS、AOT |
-| [AtomS3](programs/atoms3/README.md) | ESP32-S3，无 PSRAM，8 MB flash | 0.85 英寸 128×128 IPS | [出厂演示](apps/atoms3-factory/README.md)：Wi-Fi、I2C、UART、PWM、ADC、红外和 IMU 功能 | 仅 AOT |
+| [AtomS3、AtomS3R](programs/atoms3/README.md) | ESP32-S3，无 PSRAM，8 MB flash（AtomS3R：8 MB PSRAM，未使用） | 0.85 英寸 128×128 IPS | [出厂演示](apps/atoms3-factory/README.md)：Wi-Fi、I2C、UART、PWM、ADC、红外和 IMU 功能 | 仅 AOT |
 
 除 AtomS3 外，所有开发板默认使用 JS 模式。AtomS3 只有 512 KB SRAM、没有
 PSRAM，QuickJS guest 启动时会耗尽内部 RAM，因此它的程序只构建 AOT 模式
-（[测量数据](programs/atoms3/README.md#memory-budget)）。AtomS3R 是另一块开发板，
-不在支持范围内。
+（[测量数据](programs/atoms3/README.md#memory-budget)）。同一个镜像也能在 AtomS3R
+上运行：板级支持在启动时读取芯片封装，改用 AtomS3R 的引脚、背光和 IMU。使用
+ST7735S 屏幕的 AtomS3R 不在支持范围内。
 
 出厂演示依据 M5Stack 的源码复刻：
 [M5Tab5-UserDemo](https://github.com/m5stack/M5Tab5-UserDemo)、
