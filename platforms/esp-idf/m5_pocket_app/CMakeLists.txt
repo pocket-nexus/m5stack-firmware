@@ -6,8 +6,8 @@ if(NOT m5_pocket_app_mode)
     set(m5_pocket_app_mode JS)
 endif()
 
-set(m5_pocket_app_srcs "src/app.c" "src/bridge.c" "src/input.c"
-    "src/internal_call.c")
+set(m5_pocket_app_srcs "src/app.c" "src/bridge.c" "src/input.c" "src/internal_call.c" "src/profile.c"
+    "src/profile_tools.c")
 set(m5_pocket_app_requires pocket_runtime pocket_display_esp_lcd)
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND m5_pocket_app_requires pocket_display_esp_dpi pocket_render_esp_ppa)
@@ -24,7 +24,7 @@ idf_component_register(
     INCLUDE_DIRS "include"
     PRIV_INCLUDE_DIRS "src"
     REQUIRES ${m5_pocket_app_requires}
-    PRIV_REQUIRES esp_timer freertos heap log
+    PRIV_REQUIRES esp_timer freertos heap log esp_driver_gptimer esp_hal_usb
     REQUIRED_IDF_TARGETS esp32p4 esp32s3
 )
 
@@ -48,6 +48,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         target_link_options(${COMPONENT_LIB} INTERFACE
             "-Wl,--undefined=m5_pocket_bridge_next_value"
             "-Wl,--undefined=m5_pocket_bridge_next_event"
-            "-Wl,--undefined=m5_pocket_bridge_dispatch_request")
+            "-Wl,--undefined=m5_pocket_bridge_dispatch_request"
+            "-Wl,--undefined=m5_pocket_profile_stage")
     endif()
 endif()

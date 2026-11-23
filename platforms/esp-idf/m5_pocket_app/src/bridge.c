@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "m5_pocket/app.h"
+#include "profile.h"
 #include "sdkconfig.h"
 #include <stdlib.h>
 #include <string.h>
@@ -288,6 +289,8 @@ esp_err_t m5_pocket_bridge_dispatch_request(const char *text, size_t length) {
   unlock();
   if (!handler)
     return ESP_ERR_INVALID_STATE;
+  m5_pocket_profile_note("request %.*s", (int)(length > 80 ? 80 : length),
+                         text);
   m5_pocket_request request = {
       .struct_size = sizeof(request), .text = text, .text_length = length};
   size_t at = 0;

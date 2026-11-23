@@ -1,4 +1,5 @@
 #include "app_internal.h"
+#include "profile.h"
 #include <string.h>
 
 /* The program's input callbacks as one pocket_input_source_v1. The runtime
@@ -21,14 +22,28 @@ static int32_t poll(void *context, pocket_input_frame_builder *builder) {
   if (!input || !builder || builder->struct_size < sizeof(*builder) ||
       !builder->append)
     return POCKET_STATUS_INVALID;
+  m5_pocket_profile_stage(M5_POCKET_STAGE_INPUT);
   pocket_input_frame frame = {.struct_size = sizeof(frame)};
   if (input->buttons)
     frame.buttons = input->buttons(input->context);
 
   pocket_contact contact = {.struct_size = sizeof(contact), .id = 1};
+  float x = 0, y = 0;
+  bool down = input->touch && input->touch(input->context, &x, &y);
+  /* The profiler console's scripted contact and buttons. */
+  m5_pocket_profile_input(&frame.buttons, &down, &x, &y);
+#if CONFIG_M5_POCKET_APP_PROFILE
+  static bool was_down;
+  static uint32_t held_buttons;
+  if (down != was_down)
+    m5_pocket_profile_note("contact %s %d %d", down ? "down" : "up", (int)x,
+                           (int)y);
+  if (frame.buttons != held_buttons)
+    m5_pocket_profile_note("buttons %#x", (unsigned)frame.buttons);
+  was_down = down;
+  held_buttons = frame.buttons;
+#endif
   if (input->touch) {
-    float x = 0, y = 0;
-    bool down = input->touch(input->context, &x, &y);
     if (down) {
       contact.x = x;
       contact.y = y;
@@ -62,6 +77,7 @@ static int32_t poll(void *context, pocket_input_frame_builder *builder) {
     if (input->motion(input->context, &motion))
       frame.motion = &motion;
   }
+  m5_pocket_profile_stage(M5_POCKET_STAGE_PRE);
   return builder->append(builder->context, &frame);
 }
 

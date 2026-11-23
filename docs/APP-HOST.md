@@ -24,6 +24,7 @@ board bring-up; it passes handles and callbacks to `m5_pocket_app_start`.
 | `platforms/rust/m5_pocket_aot_build/` | `build.rs` support of per-app crates |
 | `tests/aot-smoke/aot/` | Per-app AOT crate template |
 | `tools/pocket` | Pocket CLI of the submodule, run through `tools/pocket.ts`, which applies the app's `pocket.fonts.json` ([FONTS.md](FONTS.md)) |
+| `tools/profile.py` | Host side of the frame profiler: log capture with console steps, stage tables, PC capture symbols ([Frame profiler](#frame-profiler)) |
 | `tests/aot-smoke/` | Smoke program: the reference adoption |
 
 ## Adopt the component in a program
@@ -135,6 +136,13 @@ m5_strict_warnings(${COMPONENT_LIB})
 | `CONFIG_M5_POCKET_APP_TASK_STACK` | 65536 | App task stack bytes |
 | `CONFIG_M5_POCKET_APP_TASK_PRIORITY` | 5 | App task priority |
 | `CONFIG_M5_POCKET_APP_INTERNAL_STACK` | 8192 | Stack bytes of the internal-stack helper task ([Flash operations](#flash-operations-from-the-hooks)) |
+| `CONFIG_M5_POCKET_APP_PROFILE` | n | [Frame profiler](#frame-profiler) |
+| `CONFIG_M5_POCKET_APP_PROFILE_PERIOD_MS` | 1000 | Profiler report period |
+| `CONFIG_M5_POCKET_APP_PROFILE_SLOW_MS` | 100 | A frame that takes at least this long is reported on its own |
+| `CONFIG_M5_POCKET_BRIDGE_SLOTS` | 48 | Distinct board → app value names |
+| `CONFIG_M5_POCKET_BRIDGE_EVENTS` | 16 | Event FIFO depth |
+| `CONFIG_M5_POCKET_BRIDGE_TEXT_MAX` | 96 | Longest text value, bytes |
+| `CONFIG_M5_POCKET_BRIDGE_ARRAY_MAX` | 256 | Longest array value, elements |
 
 An AOT-only program (for example AtomS3, no PSRAM) puts
 `CONFIG_M5_POCKET_APP_MODE_AOT=y` in `sdkconfig.defaults`; its build never
@@ -672,6 +680,80 @@ again by the next frame that draws them. Zero, the default, keeps every
 texture once drawn. AtomS3 (no PSRAM) and StopWatch (8 MB of pictures) load
 in place; Tab5 uses the generated `load_images`, which keeps the first-draw
 copy out of the frame on a board with PSRAM to spare.
+
+## Frame profiler
+
+**`CONFIG_M5_POCKET_APP_PROFILE=y` times the stages of every tick on the app
+task and logs them from a task on core 0** (tag `m5_prof`), so the log write
+does not run on the app task. It works in both modes; the guest stages are
+entered by the AOT library, and in JS mode the guest turn, the core ticks
+and the draw list all count as `pre`. The option selects
+`CONFIG_HEAP_USE_HOOKS` to count the app task's heap allocations.
+
+| Stage | From | Content |
+| --- | --- | --- |
+| `hook` | host | The program's `before_frame` hook (outside the tick) |
+| `pre` | host | Runtime entry, input encoding |
+| `input` | host | Input source poll (the program's touch read) |
+| `bridge` | AOT | Board values and events into `device.ts` |
+| `translate` | AOT | Guest frame into `microts::Input` |
+| `appin` | AOT | `AppApp::frame` up to the model's readiness snapshot |
+| `model` | AOT | Model resume, input dispatch, react, settle |
+| `view` | AOT | View update, lifecycle hooks, commands |
+| `reqs` | AOT | Requests to the program's handler |
+| `draw` | AOT | Core ticks, layout, draw list, draw-list validation |
+| `damage` | host | Damage plan; on a frame that repaints nothing also the damage commit |
+| `raster` | host | From a strip's `acquire` to its `flush` |
+| `flush` | host | Byte swap and transfer submission |
+| `wait` | host | Blocked on a strip transfer |
+| `post` | host | Between strips, damage commit |
+
+The host stages are cut at the calls of the display vtable, which the
+profiler wraps, and at the input poll. Log lines:
+
+| Line | Content |
+| --- | --- |
+| `B boot=<us> int=<bytes> psram=<bytes>` | Time of the backend boot (mount and first frame), free heap after it |
+| `P fps=… frames=… skipped=… slow=… tick=<avg>/<max> hook=… <stage>=<avg>/<max> … strips=… rows=… allocs=… large=… largeB=… stack=… istack=… int=<free>/<min> psram=<free>/<min>` | One period: times in µs per frame; strips and rows flushed, allocations, allocations of 16 KiB or more and their bytes as totals of the period; unused stack of the app task and of the helper task |
+| `S frame=<n> tick=… <stage>=… …` | One frame of at least `PROFILE_SLOW_MS`, at most four per period |
+| `N <text>` | An event: `contact down x y`, `contact up`, `buttons <mask>`, `request <text>`, `flush <status> rows <y>+<height> …` for a flush the display refused |
+
+**Console.** The profiler reads lines from the USB Serial/JTAG port. It
+polls the receive FIFO every 10 ms and does not use the USB Serial/JTAG
+driver: that component links a connection monitor into every build that
+includes it, and the monitor does not start under QEMU.
+
+| Line | Effect |
+| --- | --- |
+| `t <x> <y>` / `u` | Contact down at a logical position, held / contact up |
+| `p <x> <y> [frames]` | Tap: down for `frames` frames (default 3) |
+| `w <x0> <y0> <x1> <y1> <frames>` | Swipe over `frames` frames, then up |
+| `k <mask> [frames]` | Hold `POCKET_BTN_*` bits (hex); 0 frames holds until `k 0` |
+| `r <request>` | Dispatch a request to the program's handler from the app task |
+| `c <ms>` | Sample the app task's program counter for `ms`, then dump |
+
+The scripted contact and buttons are merged into the host's input poll. A
+program that also reads its keys elsewhere adds
+`m5_pocket_app_scripted_buttons()` (the StopWatch publishes `keyA`/`keyB`
+from its GPIOs).
+
+**Sampler.** `c <ms>` runs a 997 µs timer whose interrupt is allocated on the
+app task's core. It reads the interrupted program counter and return address
+from the frame the interrupt entry saved in the task's TCB and tags them with
+the running stage. The dump lists every distinct `(stage, pc, return address)`
+with its count. Time spent in a critical section (the IDF heap) shows as one
+ROM address called from `vPortExitCritical`.
+
+**Host tool.** With the ESP-IDF Python environment:
+
+```sh
+# capture, with console steps: "5s" waits, "@name" starts a section
+python tools/profile.py run <port> run.log --reset @idle 5s @swipe "w 380 233 80 233 12" 3s "c 3000" 6s
+python tools/profile.py table run.log            # stage averages and peaks per section, ms
+python tools/profile.py symbols run.log programs/<board>/build-aot/<project>.elf --stage raster
+```
+
+`run` opens the port without resetting the chip unless `--reset` is given.
 
 ## Validation
 

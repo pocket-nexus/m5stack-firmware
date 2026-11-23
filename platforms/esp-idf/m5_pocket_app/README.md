@@ -23,3 +23,4 @@ reference program.
 | `src/bridge.c` | Value slots, event FIFO, request parsing |
 | `src/input.c` | The program's input callbacks as one `pocket_input_source_v1` |
 | `src/internal_call.c` | Helper task with an internal-RAM stack for an app task whose stack is in PSRAM |
+| `src/profile.c`, `src/profile_tools.c` | Frame profiler (`CONFIG_M5_POCKET_APP_PROFILE`): stage times, console, PC sampler |

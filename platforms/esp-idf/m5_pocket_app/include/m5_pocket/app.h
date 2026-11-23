@@ -211,6 +211,12 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app, m5_pocket_app_stats *out);
  * PSRAM stack runs. */
 esp_err_t m5_pocket_app_run_internal(void (*fn)(void *context), void *context);
 
+/* POCKET_BTN_* bits the frame profiler's console holds (`k <mask>`), for a
+ * program that also reads its keys outside the buttons callback; 0 without
+ * CONFIG_M5_POCKET_APP_PROFILE. The host merges them into the buttons
+ * callback's result itself. Call from the app task hooks. */
+uint32_t m5_pocket_app_scripted_buttons(void);
+
 /* JS mode: the running pocket_runtime, for runtime operations such as
  * pocket/textures.h. Call only from the app task (before_frame, on_request,
  * after_frame). NULL in AOT mode (the application library owns its Ui) and
