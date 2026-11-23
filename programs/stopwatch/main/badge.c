@@ -1128,6 +1128,13 @@ static void decode_jpeg(uint8_t *jpeg, size_t size,
            info.height, 1u << shift, canvas);
 }
 
+bool stopwatch_badge_image_pending(void) {
+  taskENTER_CRITICAL(&s_dirty_mux);
+  const bool dirty = s_dirty;
+  taskEXIT_CRITICAL(&s_dirty_mux);
+  return dirty;
+}
+
 bool stopwatch_badge_take_image(stopwatch_badge_image *out) {
   if (out == NULL) {
     return false;

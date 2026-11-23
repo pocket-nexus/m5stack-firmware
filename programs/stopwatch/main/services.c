@@ -323,6 +323,8 @@ uint32_t stopwatch_services_buttons(void) {
   if (!gpio_get_level(M5_STOPWATCH_PIN_BUTTON_B)) {
     bits |= BUTTON_B_BIT;
   }
+  /* Keys the frame profiler's console holds (0 without the profiler). */
+  bits |= m5_pocket_app_scripted_buttons() & (BUTTON_A_BIT | BUTTON_B_BIT);
   return bits;
 }
 
@@ -330,15 +332,31 @@ static m5_pocket_app *running_app;
 
 void stopwatch_services_set_app(m5_pocket_app *app) { running_app = app; }
 
+typedef struct {
+  stopwatch_badge_image image;
+  bool changed;
+} badge_take;
+
+static void badge_take_image(void *argument) {
+  badge_take *take = argument;
+  take->changed = stopwatch_badge_take_image(&take->image);
+}
+
 /* The one place that hands the badge picture to PocketJS, in both modes:
  * m5_pocket_app_set_texture uploads a newly decoded picture and binds it to
  * the image name the badge view draws; the published handle makes the view
  * remount it. */
 static void badge_texture_update(void) {
-  stopwatch_badge_image image;
-  if (!running_app || !stopwatch_badge_take_image(&image)) {
+  if (!running_app || !stopwatch_badge_image_pending()) {
     return;
   }
+  /* The decode reads the FAT partition: on an internal stack. */
+  badge_take take = {.changed = false};
+  if (m5_pocket_app_run_internal(badge_take_image, &take) != ESP_OK ||
+      !take.changed) {
+    return;
+  }
+  stopwatch_badge_image image = take.image;
   int32_t handle = -1;
   if (m5_pocket_app_set_texture(running_app, "images/badge_slot.png",
                                 image.pixels, image.canvas_w, image.canvas_h,

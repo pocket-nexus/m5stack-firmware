@@ -41,7 +41,7 @@ pub use instance::{
 };
 pub use sys::log;
 
-use alloc::{rc::Rc, string::String, vec::Vec};
+use alloc::{string::String, vec::Vec};
 use microts::{Input, Ui};
 use pocket_runtime::{GuestEnvironment, RuntimeError};
 
@@ -67,29 +67,6 @@ pub trait DeviceApp: Sized + 'static {
     /// The `device.ts` request queue (`device_requests_mut()`), drained after
     /// every frame.
     fn requests(&mut self) -> Option<&mut Vec<String>>;
-}
-
-/// Load a baked font atlas in place: its coverage cells stay in flash
-/// (`load_font_atlas_shared`) instead of the heap copy the generated
-/// `load_fonts` makes.
-pub fn load_font_in_place(ui: &mut Ui, bytes: &'static [u8]) -> bool {
-    let storage: Rc<dyn AsRef<[u8]>> = Rc::new(bytes);
-    ui.core_mut()
-        .load_font_atlas_shared(storage, 0..bytes.len())
-}
-
-/// Register the IMG pak entry `entry` (a generated `images/image-<n>.img`)
-/// under `name`, the name the generated view draws, with its pixels in place:
-/// the texture reads them from flash (`upload_img_entry_from`) and is decoded
-/// into the heap when a frame first draws it, then released again under the
-/// core's texture budget (`ui.core_mut().set_texture_budget(bytes)`; zero,
-/// the default, keeps every drawn texture). The generated `load_images`
-/// copies every entry into the heap at mount (`upload_img_entry`).
-pub fn load_image_in_place(ui: &mut Ui, name: &str, entry: &'static [u8]) {
-    let storage: Rc<dyn AsRef<[u8]>> = Rc::new(entry);
-    let id = ui.core_mut().upload_img_entry_from(storage, 0..entry.len());
-    assert!(id >= 0, "image upload failed");
-    ui.register_image(name, id);
 }
 
 /// Define the `m5_pocket/aot.h` functions for one [`DeviceApp`].

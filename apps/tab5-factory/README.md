@@ -40,7 +40,7 @@ the 1280x720 `launcher_bg` is cut into six tiles (`launcher-bg-<row>-<column>`).
 
 ## Fonts
 
-`pocket.fonts.json` declares the faces the factory's LVGL fonts are built
+`app.fonts` in `pocket.host.config.ts` declares the faces the factory's LVGL fonts are built
 from (LVGL's `lv_font_montserrat_*` are Montserrat Medium): `regular`
 `fonts/Montserrat-Medium.ttf`, `bold` `fonts/Montserrat-SemiBold.ttf` (no
 text uses `font-bold`, so no bold atlas is baked). `tools/pocket compile`

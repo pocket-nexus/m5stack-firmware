@@ -31,8 +31,15 @@ embeds `apps/stopwatch-factory` with `m5_pocket_app()`.
   (`M5_POCKET_DISPLAY_ESP_LCD`, two RGB565 strips of 466 × 32 px, 29,824
   bytes each, under the ESP32-S3 SPI DMA limit, byte-swapped), the CST820
   contact as `touch`, KEYA/KEYB as `BTN.LTRIGGER`/`BTN.RTRIGGER`, a 6 MiB
-  QuickJS heap in PSRAM and a 64 KiB internal-RAM app task on core 1
-  (internal because the request hook writes NVS).
+  QuickJS heap in PSRAM and the app task on core 1. In JS mode its stack is
+  64 KiB of internal RAM (the request hook writes NVS). In AOT mode it is
+  256 KiB of PSRAM: the compiled application uses 69,360 bytes of stack, and
+  internal RAM has no free block of that size when the task is created. The
+  host then runs the request hook on its
+  helper task (12 KiB of internal RAM,
+  `CONFIG_M5_POCKET_APP_INTERNAL_STACK`), and `badge_texture_update` passes
+  the badge decode, which reads FAT, to it with `m5_pocket_app_run_internal`
+  (docs/APP-HOST.md, "Flash operations from the hooks").
 - `main/services.c` is the board side of the device bridge. Before every
   frame it publishes `uptimeMs`, the wall clock (system time, set from the
   RX8130CE at boot), `keyA`/`keyB`, the IMU and, once per second, the
@@ -151,6 +158,19 @@ idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
 idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig -p <port> flash monitor
 ```
 
+Add `sdkconfig.profile` for the frame profiler (docs/APP-HOST.md, "Frame
+profiler"), in either mode:
+
+```sh
+idf.py -B build-aot -DSDKCONFIG=build-aot/sdkconfig \
+    -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.aot;sdkconfig.profile" set-target esp32s3 build
+python ../../tools/profile.py run <port> run.log --reset @idle 5s
+```
+
+**Code and read-only data run from flash.** `CONFIG_SPIRAM_XIP_FROM_PSRAM`
+stays off: the AOT image has 8,131,156 bytes of read-only data (the
+pictures) and 2,416,484 bytes of code, which do not fit the 8 MiB of PSRAM.
+
 The two modes need different managed components (AOT links no QuickJS), so
 JS mode keeps `dependencies.lock` and AOT mode `dependencies.aot.lock`
 (selected in `CMakeLists.txt`). Both share `managed_components/`: run the
@@ -166,9 +186,9 @@ with `~/.rustup/toolchains/esp/bin/cargo` and runs the Pocket CLI through
 (`device_fields!`, the counterpart of the `hostNumber`/`hostText`/
 `hostArray` switches; `uptimeMs` also sets `bridged`, the `badgeClosed`
 event counts, `badgeTexture` and `badgeCanvas` arrive like any field).
-`build.rs` uses the shared in-place image loader
-(`m5_pocket_aot_build::emit_images`, docs/APP-HOST.md "Images") instead of
-the generated `load_images`, which copies every picture into the heap at
+`mount` calls the generated `load_images_in_place` (docs/APP-HOST.md
+"Images") instead of the generated `load_images`, which copies every
+picture into the heap at
 mount (7,167,252 bytes of IMG entries with the 116 big-number tiles and
 the glyph images): the IMG entries MicroTS bakes in the formats
 `images.json` selects (RGB565, RGBA4444 or RGBA8888, as in the JS bundle)
@@ -202,14 +222,35 @@ bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --a
 
 ## Validation
 
-Firmware builds only; no device run (ESP-IDF 6.x, esp32s3).
-
-| Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM |
-| --- | --- | --- | --- |
-| JS | 11,342,848 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 10 % | 154,905 of 341,760 bytes |
-| AOT | 10,621,248 bytes | 16 % | 152,721 of 341,760 bytes |
+| Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM | Validated by |
+| --- | --- | --- | --- | --- |
+| JS | 11,398,480 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,745 of 341,760 bytes | firmware build |
+| AOT | 10,668,784 bytes | 15 % | 151,561 of 341,760 bytes | device run |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
-budget when drawn, so the 8 MiB PSRAM holds only the textures on screen (estimate:
+budget when drawn, so the 8 MiB PSRAM holds only the textures on screen
 (at most about 1 MB for the launcher's three icon textures, the guide or
-four big-number tiles) plus the runtime heap).
+four big-number tiles) plus the runtime heap: 6.5 MB of PSRAM stay free on
+the launcher.
+
+**Device run (AOT).** M5Stack StopWatch, ESP32-S3 revision v0.2, ESP-IDF
+v6.1-dev-8142, PocketJS `418e902b`. The firmware boots to the launcher and
+runs. The frame rates are from the profiler build (`sdkconfig.profile`) with
+input scripted through its console (`tools/profile.py run`): a 100 s tour of
+the launcher, FluidBox, the four watch faces, the stopwatch and Audio.FFT,
+without a reset and without a failed tick.
+
+| Screen | Frames per second | Tick |
+| --- | --- | --- |
+| Launcher, still | 30.0 | 6.9 ms |
+| Launcher, swipes | 19.9 | 25.5 ms |
+| FluidBox | 14.9 | 45.4 ms |
+| Watch face, classic, watch lying flat | 29.0 | 19.3 ms |
+| Stopwatch, stopped | 30.0 | 17.9 ms |
+| Stopwatch, running | 15.0 | 52.3 ms |
+
+A screen that repaints the whole panel in every frame (FluidBox, the running
+stopwatch, a watch face while it turns) runs at 15 frames per second. The
+app task used 69,360 of 262,144 stack bytes and the helper task 1,472 of
+12,288. The picture was not captured on the device, and JS mode was not run
+on it.

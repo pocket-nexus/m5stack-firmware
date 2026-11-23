@@ -29,6 +29,10 @@ static esp_codec_dev_handle_t s_codec;
 static esp_err_t i2s_init(void) {
   i2s_chan_config_t chan_cfg =
       I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+  /* Without new samples the transmitter sends zeros. The default replays
+   * the DMA ring (6 x 240 frames, 32.7 ms at 44.1 kHz), so the last tone
+   * would repeat until the next write. */
+  chan_cfg.auto_clear_after_cb = true;
   ESP_RETURN_ON_ERROR(i2s_new_channel(&chan_cfg, &s_tx, &s_rx), TAG,
                       "i2s channel");
   const i2s_std_config_t std_cfg = {

@@ -1,6 +1,6 @@
 //! The `m5_pocket/aot.h` functions, generic over the per-app [`DeviceApp`].
 
-use crate::{bridge, input::FrameInput, sys::log, DeviceApp};
+use crate::{bridge, input::FrameInput, sys, sys::log, DeviceApp};
 use alloc::{boxed::Box, format};
 use core::ffi::c_void;
 use microts::{
@@ -58,6 +58,7 @@ impl<D: DeviceApp> AotApp for Hosted<D> {
 
     fn frame(&mut self, frame: &GuestFrame<'_>) -> Result<(), RuntimeError> {
         // Board values and events into device.ts, before input dispatch.
+        sys::enter(sys::stage::BRIDGE);
         let mut changed = false;
         let app = &mut self.app;
         bridge::for_each_value(|value| changed |= app.value(value));
@@ -65,14 +66,18 @@ impl<D: DeviceApp> AotApp for Hosted<D> {
         if changed {
             app.invalidate();
         }
+        sys::enter(sys::stage::TRANSLATE);
         let input = self.input.translate(frame, app.ui_mut());
+        sys::enter(sys::stage::APP_INPUT);
         app.frame(&input);
         // Requests the frame queued, in order.
+        sys::enter(sys::stage::REQUESTS);
         if let Some(requests) = app.requests() {
             for request in requests.drain(..) {
                 bridge::request(&request);
             }
         }
+        sys::enter(sys::stage::DRAW);
         Ok(())
     }
 }

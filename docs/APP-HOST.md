@@ -23,7 +23,8 @@ board bring-up; it passes handles and callbacks to `m5_pocket_app_start`.
 | `platforms/rust/m5_pocket_aot/` | Shared AOT crate: runtime, adapters, bridge, allocator, panic handler |
 | `platforms/rust/m5_pocket_aot_build/` | `build.rs` support of per-app crates |
 | `tests/aot-smoke/aot/` | Per-app AOT crate template |
-| `tools/pocket` | Pocket CLI of the submodule, run through `tools/pocket.ts`, which applies the app's `pocket.fonts.json` ([FONTS.md](FONTS.md)) |
+| `tools/pocket` | Pocket CLI of the submodule, run with Bun; it bakes the faces of `app.fonts` ([FONTS.md](FONTS.md)) |
+| `tools/profile.py` | Host side of the frame profiler: log capture with console steps, stage tables, PC capture symbols ([Frame profiler](#frame-profiler)) |
 | `tests/aot-smoke/` | Smoke program: the reference adoption |
 
 ## Adopt the component in a program
@@ -134,6 +135,10 @@ m5_strict_warnings(${COMPONENT_LIB})
 | `CONFIG_M5_POCKET_APP_MODE_JS` / `_AOT` | JS | Application mode (choice) |
 | `CONFIG_M5_POCKET_APP_TASK_STACK` | 65536 | App task stack bytes |
 | `CONFIG_M5_POCKET_APP_TASK_PRIORITY` | 5 | App task priority |
+| `CONFIG_M5_POCKET_APP_INTERNAL_STACK` | 8192 | Stack bytes of the internal-stack helper task ([Flash operations](#flash-operations-from-the-hooks)) |
+| `CONFIG_M5_POCKET_APP_PROFILE` | n | [Frame profiler](#frame-profiler) |
+| `CONFIG_M5_POCKET_APP_PROFILE_PERIOD_MS` | 1000 | Profiler report period |
+| `CONFIG_M5_POCKET_APP_PROFILE_SLOW_MS` | 100 | A frame that takes at least this long is reported on its own |
 | `CONFIG_M5_POCKET_BRIDGE_SLOTS` | 48 | Distinct board → app value names |
 | `CONFIG_M5_POCKET_BRIDGE_EVENTS` | 16 | Event FIFO depth |
 | `CONFIG_M5_POCKET_BRIDGE_TEXT_MAX` | 96 | Longest text value, bytes |
@@ -173,7 +178,29 @@ runtime tick, the request handler for each request, and `after_frame`.
 `m5_pocket_app_stop` joins the task and destroys runtime, renderer, display
 adapter and the host's input source; panel, IO and touch handles stay the
 program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
-the longest frame and the smallest unused stack seen.
+the longest frame and the smallest unused stack seen, of the app task and of
+the internal-stack helper task.
+
+### Flash operations from the hooks
+
+**A task whose stack is in PSRAM cannot make a flash operation**: NVS, FAT,
+`esp_partition` and Wi-Fi start switch the cache off, and IDF asserts
+`esp_task_stack_is_sane_cache_disabled()`. With
+`task_stack_caps = MALLOC_CAP_SPIRAM` the host starts one helper task with a
+stack of `CONFIG_M5_POCKET_APP_INTERNAL_STACK` bytes in internal RAM, at the
+app task's priority and core:
+
+- `on_request` runs on the helper task while the app task waits. A request
+  handler may write NVS or start Wi-Fi as it does on an internal app stack.
+- `before_frame`, `after_frame` and the input callbacks run on the app task.
+  They pass flash work to
+  `m5_pocket_app_run_internal(fn, context)`, which runs `fn` on the helper
+  task and returns when it finished. On a task with an internal stack it
+  calls `fn` directly, so the same program code serves both stack kinds.
+
+One round trip costs about 0.4 ms on an ESP32-S3 at 240 MHz, so a hook asks
+first whether there is work: the StopWatch program checks
+`stopwatch_badge_image_pending()` before it decodes a badge picture from FAT.
 
 ### Program textures
 
@@ -263,7 +290,7 @@ register further `pocket_input_source_v1` objects, such as
 | `js_stack_limit` | 64 KiB | QuickJS stack limit; keep below the task stack |
 | `js_prefer_psram` | false | QuickJS allocations from PSRAM first |
 | `task_stack_bytes` | `CONFIG_M5_POCKET_APP_TASK_STACK` | App task stack |
-| `task_stack_caps` | 0 (internal RAM) | `MALLOC_CAP_SPIRAM` puts the stack in PSRAM; then no flash writes from the hooks |
+| `task_stack_caps` | 0 (internal RAM) | `MALLOC_CAP_SPIRAM` puts the stack in PSRAM; see [Flash operations](#flash-operations-from-the-hooks) |
 | `task_priority`, `task_core` | Kconfig, -1 | `-1` = no affinity |
 
 Runtime allocations go through `pocket_host_alloc` (`pocket_runtime/src/hooks.c`):
@@ -481,11 +508,28 @@ m5-pocket-aot-build = { path = "../../../platforms/rust/m5_pocket_aot_build" }
 opt-level = "s"
 panic = "abort"
 overflow-checks = false
+
+# Code that runs every frame: rasterizer, retained core, damage tracker and
+# draw-list decoder, presenter, driver adapters.
+[profile.release.package.pocket-raster]
+opt-level = 3
+[profile.release.package.pocketjs-core]
+opt-level = 3
+[profile.release.package.pocket-render]
+opt-level = 3
+[profile.release.package.pocket-runtime]
+opt-level = 3
+[profile.release.package.pocket-drivers]
+opt-level = 3
 ```
 
+The generated application code stays at `opt-level = "s"`; the crates that
+run in every frame build for speed.
+
 `build.rs` calls `m5_pocket_aot_build::emit()`, which copies the exported
-profile to `OUT_DIR/pocket_profile.rs` and writes `OUT_DIR/m5_fonts.rs`
-(`load_fonts_in_place`, see below). `src/lib.rs`:
+profile to `OUT_DIR/pocket_profile.rs`. The generated `include.rs` defines
+the loaders `load_fonts`, `load_fonts_in_place`, `load_images` and
+`load_images_in_place` (see below). `src/lib.rs`:
 
 ```rust
 #![no_std]
@@ -498,7 +542,6 @@ use pocket_runtime::{GuestEnvironment, RuntimeError};
 #[allow(dead_code)]
 mod profile { include!(concat!(env!("OUT_DIR"), "/pocket_profile.rs")); }
 include!(concat!(env!("POCKETJS_AOT_DIR"), "/include.rs"));
-include!(concat!(env!("OUT_DIR"), "/m5_fonts.rs"));
 
 type App = generated::AppApp<generated::AppModel, M5Host>;
 pub struct Board(Box<App>);
@@ -585,13 +628,16 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
 - **Static RAM of the library is small**: the whole AOT smoke firmware for
   esp32s3 without PSRAM uses 12,036 B `.data` and 6,824 B `.bss` (IDF
   included). Generated styles, fonts and code are flash.
-- **Fonts stay in flash** with `load_fonts_in_place` (`load_font_atlas_shared`).
-  The generated `load_fonts` would copy each atlas into the heap (the smoke
-  app's three atlases are 76 KB). Images: see [Images](#images).
+- **Fonts stay in flash** with the generated `load_fonts_in_place`
+  (`load_font_atlas_shared`). The generated `load_fonts` would copy each
+  atlas into the heap (the smoke app's three atlases are 76 KB). Images: see
+  [Images](#images).
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
   The smoke app used at most 19,528 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
-  `stack_free_min`.
+  `stack_free_min`. The StopWatch application uses 69,360 B (device
+  measurement); its app task has a 256 KiB stack in PSRAM
+  ([Flash operations](#flash-operations-from-the-hooks)).
 
 Measured under QEMU (esp32s3, no PSRAM, AOT smoke, 240×135, two 16-row
 strips of 7,680 B each): internal heap free 377,872 B after the display
@@ -611,35 +657,23 @@ sides no larger than 512 px. **The generated `load_images` copies every
 entry into the heap at mount** (`upload_img_entry`), so each picture costs
 its pixel bytes in flash and again in the heap.
 
-The opt-in in-place loader registers the same entries under the same names
-and leaves the pixels in flash:
+The generated `load_images_in_place` registers the same entries under the
+same names and leaves the pixels in flash:
 
 ```rust
-// build.rs
-m5_pocket_aot_build::emit();
-m5_pocket_aot_build::emit_images();
-```
-
-```rust
-// src/lib.rs
-include!(concat!(env!("OUT_DIR"), "/m5_images.rs"));
-// in DeviceApp::mount, instead of load_images(&mut ui):
+// src/lib.rs, in DeviceApp::mount, instead of load_images(&mut ui):
 load_images_in_place(&mut ui);
 ui.core_mut().set_texture_budget(bytes);
 ```
 
-`emit_images()` reads the `upload_img_entry` lines of the generated
-`include.rs` and writes `OUT_DIR/m5_images.rs` with `load_images_in_place`
-and `M5_IMAGE_BYTES`, the pixel bytes of all entries. A line it cannot read
-fails the build. Each entry goes through
-`m5_pocket_aot::load_image_in_place(ui, name, entry)`, which uploads it with
-`upload_img_entry_from`: the texture reads its pixels from flash and is
-decoded into the heap when a frame first draws it.
+It uploads each entry with `upload_img_entry_from`: the texture reads its
+pixels from the `include_bytes!` data in flash and is decoded into the heap
+when a frame first draws it.
 
 | Loader | Flash | Heap |
 | --- | --- | --- |
-| generated `load_images` | `M5_IMAGE_BYTES` | `M5_IMAGE_BYTES`, allocated at mount |
-| `load_images_in_place` | `M5_IMAGE_BYTES` | a texture's bytes from the first frame that draws it |
+| `load_images` | the pixel bytes of all entries | the same again, allocated at mount |
+| `load_images_in_place` | the pixel bytes of all entries | a texture's bytes from the first frame that draws it |
 
 `ui.core_mut().set_texture_budget(bytes)` in `mount` bounds the decoded
 copies: when a frame is drawn, textures beyond the budget that the previous
@@ -648,6 +682,79 @@ again by the next frame that draws them. Zero, the default, keeps every
 texture once drawn. AtomS3 (no PSRAM) and StopWatch (8 MB of pictures) load
 in place; Tab5 uses the generated `load_images`, which keeps the first-draw
 copy out of the frame on a board with PSRAM to spare.
+
+## Frame profiler
+
+**`CONFIG_M5_POCKET_APP_PROFILE=y` times the stages of every tick on the app
+task and logs them from a task on core 0** (tag `m5_prof`), so the log write
+does not run on the app task. It works in both modes; the guest stages are
+entered by the AOT library, and in JS mode the guest turn, the core ticks
+and the draw list all count as `pre`. The option selects
+`CONFIG_HEAP_USE_HOOKS` to count the app task's heap allocations.
+
+| Stage | From | Content |
+| --- | --- | --- |
+| `hook` | host | The program's `before_frame` hook (outside the tick) |
+| `pre` | host | Runtime entry, input encoding |
+| `input` | host | Input source poll (the program's touch read) |
+| `bridge` | AOT | Board values and events into `device.ts` |
+| `translate` | AOT | Guest frame into `microts::Input` |
+| `appin` | AOT | `AppApp::frame` up to the model's readiness snapshot |
+| `model` | AOT | Model resume, input dispatch, react, settle |
+| `view` | AOT | View update, lifecycle hooks, commands |
+| `reqs` | AOT | Requests to the program's handler |
+| `draw` | AOT | Core ticks, layout, draw list, draw-list validation |
+| `damage` | host | Damage plan; on a frame that repaints nothing also the damage commit |
+| `raster` | host | From a strip's `acquire` to its `flush` |
+| `flush` | host | Byte swap and transfer submission |
+| `wait` | host | Blocked on a strip transfer |
+| `post` | host | Between strips, damage commit |
+
+The host stages are cut at the calls of the display vtable, which the
+profiler wraps, and at the input poll. Log lines:
+
+| Line | Content |
+| --- | --- |
+| `B boot=<us> int=<bytes> psram=<bytes>` | Time of the backend boot (mount and first frame), free heap after it |
+| `P fps=… frames=… skipped=… slow=… tick=<avg>/<max> hook=… <stage>=<avg>/<max> … strips=… rows=… allocs=… large=… largeB=… stack=… istack=… int=<free>/<min> psram=<free>/<min>` | One period: times in µs per frame; strips and rows flushed, allocations, allocations of 16 KiB or more and their bytes as totals of the period; unused stack of the app task and of the helper task |
+| `S frame=<n> tick=… <stage>=… …` | One frame of at least `PROFILE_SLOW_MS`, at most four per period |
+| `N <text>` | An event: `contact down x y`, `contact up`, `buttons <mask>`, `request <text>`, `flush <status> rows <y>+<height> …` for a flush the display refused |
+
+**Console.** The profiler reads lines from the USB Serial/JTAG port. It
+polls the receive FIFO every 10 ms and does not install the USB Serial/JTAG
+driver.
+
+| Line | Effect |
+| --- | --- |
+| `t <x> <y>` / `u` | Contact down at a logical position, held / contact up |
+| `p <x> <y> [frames]` | Tap: down for `frames` frames (default 3) |
+| `w <x0> <y0> <x1> <y1> <frames>` | Swipe over `frames` frames, then up |
+| `k <mask> [frames]` | Hold `POCKET_BTN_*` bits (hex); 0 frames holds until `k 0` |
+| `r <request>` | Dispatch a request to the program's handler from the app task |
+| `c <ms>` | Sample the app task's program counter for `ms`, then dump |
+
+The scripted contact and buttons are merged into the host's input poll. A
+program that also reads its keys elsewhere adds
+`m5_pocket_app_scripted_buttons()` (the StopWatch publishes `keyA`/`keyB`
+from its GPIOs).
+
+**Sampler.** `c <ms>` runs a 997 µs timer whose interrupt is allocated on the
+app task's core. It reads the interrupted program counter and return address
+from the frame the interrupt entry saved in the task's TCB and tags them with
+the running stage. The dump lists every distinct `(stage, pc, return address)`
+with its count. Time spent in a critical section (the IDF heap) shows as one
+ROM address called from `vPortExitCritical`.
+
+**Host tool.** With the ESP-IDF Python environment:
+
+```sh
+# capture, with console steps: "5s" waits, "@name" starts a section
+python tools/profile.py run <port> run.log --reset @idle 5s @swipe "w 380 233 80 233 12" 3s "c 3000" 6s
+python tools/profile.py table run.log            # stage averages and peaks per section, ms
+python tools/profile.py symbols run.log programs/<board>/build-aot/<project>.elf --stage raster
+```
+
+`run` opens the port without resetting the chip unless `--reset` is given.
 
 ## Validation
 

@@ -19,6 +19,7 @@ mod device {
         pub fn pocket_host_free(pointer: *mut u8, size: usize, align: usize);
         pub fn pocket_host_panic(message: *const u8, length: usize) -> !;
         pub fn pocket_host_log(level: i32, message: *const u8, length: usize);
+        pub fn m5_pocket_profile_stage(stage: u32);
     }
 
     struct IdfHeap;
@@ -72,4 +73,26 @@ pub fn log(message: &str) {
     }
     #[cfg(not(target_os = "none"))]
     let _ = message;
+}
+
+/// Frame profiler stages (`m5_pocket_app` src/profile.h) the library enters.
+pub mod stage {
+    pub const BRIDGE: u32 = 2;
+    pub const TRANSLATE: u32 = 3;
+    pub const APP_INPUT: u32 = 4;
+    pub const MODEL: u32 = 5;
+    pub const VIEW: u32 = 6;
+    pub const REQUESTS: u32 = 7;
+    pub const DRAW: u32 = 8;
+}
+
+/// Enter a frame profiler stage: `m5_pocket_profile_stage`, a no-op without
+/// `CONFIG_M5_POCKET_APP_PROFILE`.
+pub fn enter(stage: u32) {
+    #[cfg(target_os = "none")]
+    unsafe {
+        device::m5_pocket_profile_stage(stage)
+    }
+    #[cfg(not(target_os = "none"))]
+    let _ = stage;
 }

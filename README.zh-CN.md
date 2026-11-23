@@ -121,7 +121,7 @@ README 列出了它复刻的出厂界面，以及与出厂固件的全部已知�
 
 **源码约束。** 为了让两种模式都能构建，应用源码限定在 MicroTS 的准入子集内：
 模型是 TypeScript 状态模块，包含带类型的顶层字段和同步函数；视图是符合
-[MicroTS Solid 子集](https://github.com/pocket-nexus/pocketjs/blob/2c9fcf3096ada195e71bfe43da87fe29c38567e2/site/content/docs/microts-solid.md)
+[MicroTS Solid 子集](https://github.com/pocket-nexus/pocketjs/blob/418e902b21d0926ed951a85b9aa232c64ff0b11b/site/content/docs/microts-solid.md)
 的 Solid TSX。拖动、滑动等手势由模型代码实现，读取 host 发布的 `pointerX`、
 `pointerY` 和 `pointerDown` 字段，因此在两种模式下行为一致。无需构建固件即可
 检查改动是否在子集之内：
@@ -263,13 +263,13 @@ platforms/esp-idf/        板级支持组件和共享的应用 host
 platforms/rust/           AOT 模式共享的 Rust crate
 third_party/pocketjs/     PocketJS（git 子模块）
 tests/                    aot-smoke 程序（两种模式、两种 target）、字体检查
-tools/                    Pocket CLI 封装、字体烘焙、格式化、截图
+tools/                    Pocket CLI 启动脚本、格式化、截图、帧剖析工具
 docs/                     参考文档
 ```
 
 `third_party/pocketjs` 固定在
 [pocket-nexus/pocketjs](https://github.com/pocket-nexus/pocketjs) 的提交
-`2c9fcf30`，位于 `v0.17.0` 发布之后。
+`418e902b`，位于 `v0.17.0` 发布之后。
 
 ## 已知限制
 

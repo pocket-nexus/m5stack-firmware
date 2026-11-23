@@ -37,6 +37,9 @@ let longPressArmed: boolean = false;
 export let rotation: f64 = 0.0;
 let filterX: f64 = 0.0;
 let filterY: f64 = -1.0;
+const TURN_START: f64 = 3.0;
+const TURN_STOP: f64 = 1.0;
+let turning: boolean = false;
 let swipeAngle: f64 = 0.0;
 
 /** Displayed time, refreshed when more than a second has passed. */
@@ -96,6 +99,7 @@ export function open(): void {
   face = FACE_CLASSIC;
   filterX = 0.0;
   filterY = -1.0;
+  turning = false;
   createFace();
 }
 
@@ -156,8 +160,20 @@ function updateRotation(): void {
   while (delta < -180.0) {
     delta = delta + 360.0;
   }
-  if (abs(delta) < 0.25) {
+  // The panel follows gravity while it turns. A turn starts once the panel
+  // is TURN_START degrees off and ends within TURN_STOP: a hand that holds
+  // the watch still moves the reading by a degree or two, and following
+  // that would repaint the whole face in every frame.
+  const error = abs(delta);
+  if (turning) {
+    if (error < TURN_STOP) {
+      turning = false;
+      return;
+    }
+  } else if (error < TURN_START) {
     return;
+  } else {
+    turning = true;
   }
   rotation = rotation + delta;
   if (rotation > 180.0) {

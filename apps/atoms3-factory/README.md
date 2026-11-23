@@ -19,7 +19,7 @@ in the AtomS3's internal RAM).
 | `img/*.png` | The factory artwork, extracted byte-for-byte from `src/img_res.c` (128×128 RGB PNG; MIT, Copyright (c) 2023 M5Stack); `not_found.png` and `top5_list.png` are the factory's efont 24 and efont 14 text rendered from the efont bitmaps |
 | `images.json` | Bakes every artwork as RGB565 (`psm: 0`), 32 KiB per image |
 | `fonts.json` | Bakes printable ASCII (U+0020–U+007E) so SSIDs and bytes render |
-| `pocket.fonts.json`, `fonts/` | The factory's efont faces as pixel-outline TrueType: regular = efont 16, bold = efont 16 bold, mono = efont 12 ([Fonts](#fonts)) |
+| `pocket.host.config.ts` (`app.fonts`), `fonts/` | The factory's efont faces as pixel-outline TrueType: regular = efont 16, bold = efont 16 bold, mono = efont 12 ([Fonts](#fonts)) |
 
 The sources stay inside the MicroTS admission subset:
 `bun run pocket compile --config apps/atoms3-factory/pocket.host.config.ts --aot --out <dir>`

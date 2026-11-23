@@ -7,11 +7,13 @@
  * Vibration motor on IOE1 PWM channel 0 (pin IO9). The strength to duty
  * mapping is Vibrator::get_duty_cycle from the factory firmware
  * (M5StopWatch-UserDemo main/hal/hal_ioe.cpp); a one-shot esp_timer replaces
- * the factory vibrator task to stop the motor.
+ * the factory vibrator task to stop the motor. The timer callback stops the
+ * motor when the stop time of the latest vibrate call has passed.
  */
 #include "board.h"
 
 #include "esp_check.h"
+#include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -21,6 +23,8 @@ static const char *TAG = "m5sw_vibrate";
 
 static esp_timer_handle_t s_timer;
 static SemaphoreHandle_t s_lock;
+/* esp_timer time at which the motor stops; written under s_lock. */
+static int64_t s_stop_at;
 
 /* strength 1..100 -> duty 25..100 %, 0 -> off. */
 static uint8_t duty_for(uint8_t strength) {
@@ -42,9 +46,14 @@ static esp_err_t set_duty(uint8_t duty) {
 static void stop_cb(void *arg) {
   (void)arg;
   xSemaphoreTake(s_lock, portMAX_DELAY);
-  /* A vibrate call that re-armed the timer owns the motor now. */
-  if (!esp_timer_is_active(s_timer)) {
-    (void)set_duty(0);
+  /* A vibrate call that re-armed the timer moved the stop time and owns the
+   * motor now. esp_timer_is_active() cannot tell: it is true for a timer
+   * whose callback is running (ESP-IDF 6.x). */
+  if (esp_timer_get_time() >= s_stop_at) {
+    const esp_err_t err = set_duty(0);
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "motor stop failed: %s", esp_err_to_name(err));
+    }
   }
   xSemaphoreGive(s_lock);
 }
@@ -73,6 +82,7 @@ esp_err_t m5_stopwatch_vibrate(uint16_t duration_ms, uint8_t strength) {
   (void)esp_timer_stop(s_timer);
   esp_err_t err = set_duty(duty_for(strength));
   if (err == ESP_OK) {
+    s_stop_at = esp_timer_get_time() + (int64_t)duration_ms * 1000;
     err = esp_timer_start_once(s_timer, (uint64_t)duration_ms * 1000);
   }
   if (err != ESP_OK) {

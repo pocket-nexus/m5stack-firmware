@@ -45,3 +45,7 @@ typedef struct {
  * `pixels` with heap_caps_free. Returns true with pixels == NULL when there
  * is no decodable active image, false when nothing changed. */
 bool stopwatch_badge_take_image(stopwatch_badge_image *out);
+
+/* True when stopwatch_badge_take_image would return a picture state: the
+ * active slot or its image changed since the last take. Reads no file. */
+bool stopwatch_badge_image_pending(void);

@@ -54,7 +54,6 @@ import {
   imuTextX,
   imuTextY,
   imuTextZ,
-  ringTime,
   ringing,
   rollerRows,
   rollerShift,
@@ -81,20 +80,28 @@ import {
   wifiOn,
   wifiStatus,
   appIndex,
+  clockIds,
+  clockPen,
+  watchTimeIds,
+  watchTimeXs,
+  plainIds,
+  plainXs,
+  swTimeIds,
+  swTimeXs,
+  swEmptyIds,
+  swEmptyXs,
+  levelIds,
+  levelXs,
+  sadIds,
+  sadXs,
+  ringIds,
+  ringXs,
   appTitle,
   batteryLevel,
   bigDigits,
   batteryText,
   bridged,
   charging,
-  clockPens,
-  clockText,
-  glyphIds,
-  largeCentred,
-  largeFrom,
-  m28Centred,
-  m48Centred,
-  numberText,
   classicMode,
   dotX,
   dotY,
@@ -111,7 +118,6 @@ import {
   minuteAngle,
   openCurrentApp,
   page,
-  plainTime,
   run,
   secondAngle,
   simpleDot,
@@ -126,7 +132,6 @@ import {
   swLeftOffset,
   swRightOffset,
   swState,
-  swTime,
   themeIndex,
   ticks,
   titleOpacity,
@@ -136,7 +141,6 @@ import {
   watchMM,
   watchSS,
   watchTap,
-  watchTime,
   watchWeekday,
 } from "./app";
 
@@ -176,7 +180,7 @@ export default function App() {
             onPrevious={launcherPrevious}
             onNext={launcherNext}
           />
-          <TopClock ids={glyphIds(clockText())} pens={clockPens("0")} tint={false} />
+          <TopClock ids={clockIds()} pens={clockPen()} tint={false} />
           <Show when={statusShown()}>
             <StatusBar y={statusY()} level={batteryLevel()} text={batteryText()} charging={charging()} onTap={statusTap} />
           </Show>
@@ -189,10 +193,10 @@ export default function App() {
             hourAngle={hourAngle()}
             minuteAngle={minuteAngle()}
             secondAngle={secondAngle()}
-            timeIds={glyphIds(watchTime())}
-            timeXs={m28Centred(watchTime(), 233)}
-            plainIds={glyphIds(plainTime())}
-            plainXs={largeCentred(plainTime(), 233)}
+            timeIds={watchTimeIds()}
+            timeXs={watchTimeXs()}
+            plainIds={plainIds()}
+            plainXs={plainXs()}
             weekday={watchWeekday()}
             day={watchDay()}
             date={watchDate()}
@@ -217,10 +221,10 @@ export default function App() {
         <Match when={page() === "stopwatch"}>
           <Stopwatch
             state={swState()}
-            timeIds={glyphIds(swTime())}
-            timeXs={m48Centred(swTime(), 233)}
-            emptyIds={glyphIds("-.-")}
-            emptyXs={m28Centred("-.-", 233)}
+            timeIds={swTimeIds()}
+            timeXs={swTimeXs()}
+            emptyIds={swEmptyIds()}
+            emptyXs={swEmptyXs()}
             laps={swLaps()}
             scroll={swLapScroll()}
             leftOffset={swLeftOffset()}
@@ -228,7 +232,7 @@ export default function App() {
             onLeft={stopwatchLeft}
             onRight={stopwatchRight}
           />
-          <TopClock ids={glyphIds(clockText())} pens={clockPens("0")} tint={true} />
+          <TopClock ids={clockIds()} pens={clockPen()} tint={true} />
         </Match>
         <Match when={page() === "alarm"}>
           <AlarmClock
@@ -251,10 +255,10 @@ export default function App() {
             screen={setupScreen()}
             scroll={setupScroll()}
             level={setupLevel()}
-            levelIds={glyphIds(numberText(setupLevel()))}
-            levelXs={largeCentred(numberText(setupLevel()), 233)}
-            sadIds={glyphIds(":(")}
-            sadXs={largeFrom(":(", 80)}
+            levelIds={levelIds()}
+            levelXs={levelXs()}
+            sadIds={sadIds()}
+            sadXs={sadXs()}
             summary={setupSummary()}
             dateStage={setupDateStage()}
             sfx={sfxOn()}
@@ -313,7 +317,7 @@ export default function App() {
         <View class="absolute left-0 top-0 w-[466] h-[466] bg-black">
           <Image class="absolute left-[169] top-[90] w-[128] h-[32]" src="images/alarm_icon.png" />
           <View class="absolute left-0 top-[136] w-[466] h-[98]">
-            <GlyphsLarge0 ids={glyphIds(ringTime())} base={0} xs={largeCentred(ringTime(), 233)} />
+            <GlyphsLarge0 ids={ringIds()} base={0} xs={ringXs()} />
           </View>
           <View class="absolute left-[67] top-[283] w-[333] h-[103] rounded-[52] bg-[#4AD78C] items-center justify-center" focusable onPress={alarmDismiss}>
             <Text class="text-2xl text-[#0F5831]">OK</Text>

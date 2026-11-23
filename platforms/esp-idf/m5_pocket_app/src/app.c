@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/idf_additions.h"
+#include "profile.h"
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -179,15 +180,19 @@ static void update_stack(m5_pocket_app *app) {
 static void run(void *argument) {
   m5_pocket_app *app = argument;
   const m5_pocket_app_config *config = &app->config;
+  const int64_t boot_started = esp_timer_get_time();
   app->start_result = m5_pocket_backend_boot(app);
+  m5_pocket_profile_boot((uint32_t)(esp_timer_get_time() - boot_started));
   update_stack(app);
   xSemaphoreGive(app->started);
   if (app->start_result == ESP_OK) {
     const int64_t period = 1000000 / (app->cadence_hz ? app->cadence_hz : 30);
     int64_t next = esp_timer_get_time();
     while (!atomic_load(&app->stop)) {
+      m5_pocket_profile_hook_begin();
       if (config->before_frame)
         config->before_frame(config->hook_context);
+      m5_pocket_profile_tick_begin();
       const int64_t started = esp_timer_get_time();
       const int32_t status = m5_pocket_backend_tick(app);
       const int64_t now = esp_timer_get_time();
@@ -196,6 +201,7 @@ static void run(void *argument) {
       app->stats.last_frame_us = spent;
       if (spent > app->stats.max_frame_us)
         app->stats.max_frame_us = spent;
+      m5_pocket_profile_tick_end(app);
       if (status != POCKET_STATUS_OK) {
         /* A failed guest stays failed; log the first and every 256th. */
         if ((app->stats.frame_errors++ & 0xFF) == 0)
@@ -236,6 +242,7 @@ static void release(m5_pocket_app *app) {
   if (app->stopped)
     vSemaphoreDelete(app->stopped);
   m5_pocket_bridge_set_request_handler(NULL, NULL);
+  m5_pocket_internal_stop();
   for (int i = 0; i < M5_POCKET_APP_TEXTURES_MAX; i++)
     free(app->textures[i].name);
   free(app);
@@ -269,9 +276,13 @@ esp_err_t m5_pocket_app_start(const m5_pocket_app_config *config,
   atomic_init(&app->stop, false);
   esp_err_t err = create_display(app);
   if (err == ESP_OK)
+    m5_pocket_profile_wrap_display(&app->devices);
+  if (err == ESP_OK)
     err = create_renderer(app);
   if (err == ESP_OK)
     err = create_inputs(app);
+  if (err == ESP_OK && (own->task_stack_caps & MALLOC_CAP_SPIRAM))
+    err = m5_pocket_internal_start(own);
   if (err == ESP_OK) {
     app->started = xSemaphoreCreateBinary();
     app->stopped = xSemaphoreCreateBinary();
@@ -330,6 +341,7 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app,
   if (!app || !out)
     return ESP_ERR_INVALID_ARG;
   *out = app->stats;
+  out->internal_stack_free_min = m5_pocket_internal_stack_free_min();
   return ESP_OK;
 }
 

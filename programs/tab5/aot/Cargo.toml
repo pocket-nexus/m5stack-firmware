@@ -33,9 +33,20 @@ debug = false
 lto = false
 overflow-checks = false
 
-# The rasterizer and the retained core run every frame.
+# The rasterizer, the retained core, the damage tracker and draw-list
+# decoder (pocket-render), the presenter (pocket-runtime) and the driver
+# adapters (pocket-drivers) run every frame.
 [profile.release.package.pocket-raster]
 opt-level = 3
 
 [profile.release.package.pocketjs-core]
+opt-level = 3
+
+[profile.release.package.pocket-render]
+opt-level = 3
+
+[profile.release.package.pocket-runtime]
+opt-level = 3
+
+[profile.release.package.pocket-drivers]
 opt-level = 3

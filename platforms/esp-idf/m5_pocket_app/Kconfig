@@ -29,6 +29,16 @@ menu "M5 PocketJS application host"
         int "App task priority"
         default 5
 
+    config M5_POCKET_APP_INTERNAL_STACK
+        int "Internal-stack helper task stack bytes"
+        default 8192
+        help
+            Stack of the helper task the host starts when the app task's
+            stack is in PSRAM (m5_pocket_app_config.task_stack_caps). It
+            runs the program's request handler and the calls made through
+            m5_pocket_app_run_internal: flash operations such as NVS, FAT
+            and Wi-Fi start, which a task with a PSRAM stack cannot make.
+
     config M5_POCKET_BRIDGE_SLOTS
         int "Bridge value slots"
         default 48
@@ -47,5 +57,26 @@ menu "M5 PocketJS application host"
     config M5_POCKET_BRIDGE_ARRAY_MAX
         int "Longest array value in elements"
         default 256
+
+    config M5_POCKET_APP_PROFILE
+        bool "Frame profiler"
+        default n
+        select HEAP_USE_HOOKS
+        help
+            Times the stages of every frame on the app task (input poll,
+            bridge, model, view update, draw list, damage plan, raster,
+            flush, transfer wait) and counts the strips, rows and heap
+            allocations of the frame. A task on core 0 logs one line per
+            period and one line per slow frame with the tag m5_prof.
+
+    config M5_POCKET_APP_PROFILE_PERIOD_MS
+        int "Profiler report period in milliseconds"
+        depends on M5_POCKET_APP_PROFILE
+        default 1000
+
+    config M5_POCKET_APP_PROFILE_SLOW_MS
+        int "Report a frame that takes at least this many milliseconds"
+        depends on M5_POCKET_APP_PROFILE
+        default 100
 
 endmenu
