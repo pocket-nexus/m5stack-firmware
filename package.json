@@ -1,6 +1,6 @@
 {
   "name": "m5stack-firmware",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "PocketJS firmware recreating the M5Stack factory demos of Tab5, StopWatch, StickS3 and AtomS3",
