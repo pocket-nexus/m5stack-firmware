@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 M5Stack-sample contributors
+ * SPDX-FileCopyrightText: 2026 m5stack-firmware contributors
  *
  * SPDX-License-Identifier: MIT
  */

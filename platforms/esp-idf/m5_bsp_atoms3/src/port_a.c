@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 M5Stack-sample contributors
+// SPDX-FileCopyrightText: 2026 m5stack-firmware contributors
 // SPDX-License-Identifier: MIT
 //
 // ESP-IDF versions of the Arduino calls in M5AtomS3-UserDemo src/main.cpp:

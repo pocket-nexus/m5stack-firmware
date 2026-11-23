@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "m5stack-sample",
+      "name": "m5stack-firmware",
       "dependencies": {
         "@pocketjs/framework": "workspace:*",
         "solid-js": "1.9.14",

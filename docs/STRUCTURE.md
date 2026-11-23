@@ -1,7 +1,7 @@
 # Repository structure
 
 ```text
-M5Stack-sample/
+m5stack-firmware/
 ├─ third_party/pocketjs/      PocketJS checkout pinned to 2c9fcf30, after v0.17.0 (submodule)
 ├─ platforms/esp-idf/         ESP-IDF components owned by this repository
 │  ├─ m5_bsp_<board>/         board support taken from M5Stack sources

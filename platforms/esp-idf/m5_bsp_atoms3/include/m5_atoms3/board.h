@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 M5Stack-sample contributors
+// SPDX-FileCopyrightText: 2026 m5stack-firmware contributors
 // SPDX-License-Identifier: MIT
 //
 // M5Stack AtomS3 (SKU C123) pin map. Values from M5GFX 0.2.19

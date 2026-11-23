@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 M5Stack-sample contributors
+// SPDX-FileCopyrightText: 2026 m5stack-firmware contributors
 // SPDX-License-Identifier: MIT
 //
 // Port A (Grove, G1 = GPIO1, G2 = GPIO2) functions of the AtomS3 factory

@@ -1,9 +1,9 @@
-# m5stack-sample
+# m5stack-firmware
 
 English | [简体中文](README.zh-CN.md)
 
-[![Firmware](https://github.com/pocket-nexus/m5stack-sample/actions/workflows/firmware.yml/badge.svg)](https://github.com/pocket-nexus/m5stack-sample/actions/workflows/firmware.yml)
-[![Release](https://img.shields.io/github/v/release/pocket-nexus/m5stack-sample)](https://github.com/pocket-nexus/m5stack-sample/releases)
+[![Firmware](https://github.com/pocket-nexus/m5stack-firmware/actions/workflows/firmware.yml/badge.svg)](https://github.com/pocket-nexus/m5stack-firmware/actions/workflows/firmware.yml)
+[![Release](https://img.shields.io/github/v/release/pocket-nexus/m5stack-firmware)](https://github.com/pocket-nexus/m5stack-firmware/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Firmware for four M5Stack boards whose user interface is a TypeScript
@@ -146,17 +146,17 @@ and how a program's AOT crate is built.
 
 ## Flash a release image
 
-Each [release](https://github.com/pocket-nexus/m5stack-sample/releases) has
+Each [release](https://github.com/pocket-nexus/m5stack-firmware/releases) has
 one merged flash image per board and mode,
-`m5stack-sample-<board>-<js|aot>-<version>.bin`, holding the bootloader, the
+`m5stack-firmware-<board>-<js|aot>-<version>.bin`, holding the bootloader, the
 partition table and the application. Write it at offset 0x0 with
 [esptool](https://github.com/espressif/esptool):
 
 ```sh
-esptool --chip esp32p4 write-flash 0x0 m5stack-sample-tab5-js-v0.1.0.bin       # Tab5
-esptool --chip esp32s3 write-flash 0x0 m5stack-sample-stopwatch-js-v0.1.0.bin  # StopWatch
-esptool --chip esp32s3 write-flash 0x0 m5stack-sample-sticks3-js-v0.1.0.bin    # StickS3
-esptool --chip esp32s3 write-flash 0x0 m5stack-sample-atoms3-aot-v0.1.0.bin    # AtomS3
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.0.bin       # Tab5
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-js-v0.1.0.bin  # StopWatch
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.0.bin    # StickS3
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.0.bin    # AtomS3
 ```
 
 [CHANGELOG.md](CHANGELOG.md) lists the images and the changes of each
@@ -186,8 +186,8 @@ espup install --toolchain-version 1.97.0.0     # ESP32-S3 boards
 ### Clone and install
 
 ```sh
-git clone --recurse-submodules https://github.com/pocket-nexus/m5stack-sample.git
-cd m5stack-sample
+git clone --recurse-submodules https://github.com/pocket-nexus/m5stack-firmware.git
+cd m5stack-firmware
 bun install                 # JavaScript dependencies and git hooks
 . $IDF_PATH/export.sh
 ```

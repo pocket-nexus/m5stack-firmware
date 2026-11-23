@@ -127,11 +127,11 @@ jobs:
           /usr/bin/time -f "peak RSS of the build: %M KB, wall %E" idf.py "${args[@]}" set-target ${{ matrix.target }} build
           cd build
           python -m esptool --chip ${{ matrix.target }} merge-bin \
-            -o "$GITHUB_WORKSPACE/m5stack-sample-${{ matrix.name }}.bin" @flash_args
+            -o "$GITHUB_WORKSPACE/m5stack-firmware-${{ matrix.name }}.bin" @flash_args
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
-          path: m5stack-sample-${{ matrix.name }}.bin
+          path: m5stack-firmware-${{ matrix.name }}.bin
           if-no-files-found: error
           retention-days: 30
 
@@ -155,6 +155,6 @@ jobs:
           awk -v v="$version" '$0 ~ "^## " v "( |$)" { found = 1; next } /^## / && found { exit } found' \
             CHANGELOG.md > notes.md
           if [ ! -s notes.md ]; then echo "CHANGELOG.md has no section for $version" >&2; exit 1; fi
-          rm -f images/m5stack-sample-aot-smoke-*.bin
+          rm -f images/m5stack-firmware-aot-smoke-*.bin
           for f in images/*.bin; do mv "$f" "${f%.bin}-${GITHUB_REF_NAME}.bin"; done
           gh release create "$GITHUB_REF_NAME" images/*.bin --title "$GITHUB_REF_NAME" --notes-file notes.md
