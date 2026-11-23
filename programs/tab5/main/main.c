@@ -136,10 +136,13 @@ void app_main(void) {
 
   m5_pocket_app_config config;
   m5_pocket_app_config_defaults(&config);
-  /* The picture in raster pixels: the logical viewport times the raster
-   * density. The image's physical size is the portrait panel. */
-  const uint32_t density =
-      config.image->physical_height / config.image->logical_width;
+  /* The picture in raster pixels: the logical viewport times the host
+   * contract's raster density, the density the host renders at. The
+   * image's physical size follows the bundle's orientation (1280x720 for
+   * this landscape bundle), so it does not give the density. */
+  assert(config.image->facts && config.image->facts->display);
+  const uint32_t density = config.image->facts->display->raster_density;
+  assert(density >= 1U);
   board.unit = 1.0f / (float)density;
   display_config(&config.display, config.image->logical_width * density,
                  config.image->logical_height * density);
