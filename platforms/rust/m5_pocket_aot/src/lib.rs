@@ -78,44 +78,16 @@ pub fn load_font_in_place(ui: &mut Ui, bytes: &'static [u8]) -> bool {
         .load_font_atlas_shared(storage, 0..bytes.len())
 }
 
-/// Where an image's pixels live after [`upload_image`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ImageStorage {
-    /// Copied into the heap at mount (`upload_texture_flags`), as the
-    /// generated `load_images` does: the pixel bytes are paid twice, in flash
-    /// and in the heap.
-    Heap,
-    /// Read in place from flash (`upload_texture_from`): copied into the heap
-    /// when a frame first draws the texture and released again under the
-    /// core's texture budget (`ui.core_mut().set_texture_budget(bytes)`;
-    /// zero, the default, keeps every drawn texture).
-    Flash,
-}
-
-/// Upload one picture `m5_pocket_aot_build::emit_images` embedded and
-/// register it under `name`, the name the generated view draws. `psm` and
-/// `flags` follow the DrawList texture contract (`spec::psm`, `spec::img`).
-#[allow(clippy::too_many_arguments)]
-pub fn upload_image(
-    ui: &mut Ui,
-    name: &str,
-    pixels: &'static [u8],
-    width: u32,
-    height: u32,
-    psm: u32,
-    flags: u8,
-    storage: ImageStorage,
-) {
-    let id = match storage {
-        ImageStorage::Heap => ui
-            .core_mut()
-            .upload_texture_flags(pixels, width, height, psm, flags),
-        ImageStorage::Flash => {
-            let bytes: Rc<dyn AsRef<[u8]>> = Rc::new(pixels);
-            ui.core_mut()
-                .upload_texture_from(bytes, 0..pixels.len(), width, height, psm, flags)
-        }
-    };
+/// Register the IMG pak entry `entry` (a generated `images/image-<n>.img`)
+/// under `name`, the name the generated view draws, with its pixels in place:
+/// the texture reads them from flash (`upload_img_entry_from`) and is decoded
+/// into the heap when a frame first draws it, then released again under the
+/// core's texture budget (`ui.core_mut().set_texture_budget(bytes)`; zero,
+/// the default, keeps every drawn texture). The generated `load_images`
+/// copies every entry into the heap at mount (`upload_img_entry`).
+pub fn load_image_in_place(ui: &mut Ui, name: &str, entry: &'static [u8]) {
+    let storage: Rc<dyn AsRef<[u8]>> = Rc::new(entry);
+    let id = ui.core_mut().upload_img_entry_from(storage, 0..entry.len());
     assert!(id >= 0, "image upload failed");
     ui.register_image(name, id);
 }

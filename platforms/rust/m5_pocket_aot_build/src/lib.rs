@@ -7,9 +7,10 @@
 //! `m5_pocket_aot::load_font_in_place`, so their coverage stays in flash
 //! instead of the heap copies the generated `load_fonts` makes.
 //!
-//! [`emit_images`] (opt-in) writes `OUT_DIR/m5_images.rs`: the application's
-//! pictures at the host's raster density, in the formats `images.json`
-//! declares.
+//! [`emit_images`] (opt-in) writes `OUT_DIR/m5_images.rs`: a
+//! `load_images_in_place(ui)` that registers the IMG entries the generated
+//! `include.rs` names through `m5_pocket_aot::load_image_in_place`, so their
+//! pixels stay in flash until a frame draws them.
 use std::{env, fs, path::PathBuf};
 
 mod images;

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 publish = false
-description = "build.rs support for m5_pocket_app AOT crates: exported profile and in-place font loader"
+description = "build.rs support for m5_pocket_app AOT crates: exported profile, in-place font and image loaders"
 
 [lib]
 name = "m5_pocket_aot_build"
@@ -13,5 +13,3 @@ bench = false
 
 [dependencies]
 pocket-profile-build = { path = "../../../third_party/pocketjs/engine/profile-build" }
-# Decodes the application pictures for emit_images.
-png = "0.17.16"
