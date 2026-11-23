@@ -33,9 +33,9 @@ embeds `apps/stopwatch-factory` with `m5_pocket_app()`.
   contact as `touch`, KEYA/KEYB as `BTN.LTRIGGER`/`BTN.RTRIGGER`, a 6 MiB
   QuickJS heap in PSRAM and the app task on core 1. In JS mode its stack is
   64 KiB of internal RAM (the request hook writes NVS). In AOT mode it is
-  256 KiB of PSRAM: the compiled application used 68,048 bytes while it
-  mounted, 64 KiB overflowed, and internal RAM has no free block of 80 KiB
-  when the task is created. The host then runs the request hook on its
+  256 KiB of PSRAM: the compiled application uses 69,360 bytes of stack, and
+  internal RAM has no free block of that size when the task is created. The
+  host then runs the request hook on its
   helper task (12 KiB of internal RAM,
   `CONFIG_M5_POCKET_APP_INTERNAL_STACK`), and `badge_texture_update` passes
   the badge decode, which reads FAT, to it with `m5_pocket_app_run_internal`
@@ -168,9 +168,8 @@ python ../../tools/profile.py run <port> run.log --reset @idle 5s
 ```
 
 **Code and read-only data run from flash.** `CONFIG_SPIRAM_XIP_FROM_PSRAM`
-copies both into PSRAM and aborts at boot when they do not fit: the AOT
-image has 8,126,464 bytes of read-only data (the pictures) and 2,424,832
-bytes of code for 8 MiB of PSRAM.
+stays off: the AOT image has 8,131,156 bytes of read-only data (the
+pictures) and 2,416,484 bytes of code, which do not fit the 8 MiB of PSRAM.
 
 The two modes need different managed components (AOT links no QuickJS), so
 JS mode keeps `dependencies.lock` and AOT mode `dependencies.aot.lock`
@@ -226,7 +225,7 @@ bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --a
 | Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM | Validated by |
 | --- | --- | --- | --- | --- |
 | JS | 11,398,480 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,745 of 341,760 bytes | firmware build |
-| AOT | 10,667,584 bytes | 15 % | 151,561 of 341,760 bytes | device run |
+| AOT | 10,668,784 bytes | 15 % | 151,561 of 341,760 bytes | device run |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
 budget when drawn, so the 8 MiB PSRAM holds only the textures on screen
@@ -235,43 +234,23 @@ four big-number tiles) plus the runtime heap: 6.5 MB of PSRAM stay free on
 the launcher.
 
 **Device run (AOT).** M5Stack StopWatch, ESP32-S3 revision v0.2, ESP-IDF
-v6.1-dev-8142, PocketJS `418e902b`. The firmware without the profiler boots
-to the launcher and runs. The numbers below are from the profiler build
-(`sdkconfig.profile`), with input scripted through its console
-(`tools/profile.py run`): a 100 s tour of the launcher, FluidBox, the four
-watch faces, the stopwatch and Audio.FFT, without a reset and without a
-failed tick. The app task used 69,360 of 262,144 stack bytes and the helper
-task 1,472 of 12,288.
+v6.1-dev-8142, PocketJS `418e902b`. The firmware boots to the launcher and
+runs. The frame rates are from the profiler build (`sdkconfig.profile`) with
+input scripted through its console (`tools/profile.py run`): a 100 s tour of
+the launcher, FluidBox, the four watch faces, the stopwatch and Audio.FFT,
+without a reset and without a failed tick.
 
-"Before" is the first image that started: PocketJS `2c9fcf30` with
-`CONFIG_SPIRAM_XIP_FROM_PSRAM` off and a PSRAM app stack, and the
-application as it was. "After" is this tree. The display-path changes are
-in PocketJS: disjoint flush rows (#758), RGB565 byte exchange per word
-(#759), the unchanged damage snapshot (#760) and rasterizer row spans
-(#761).
-
-| Screen | Before: fps, tick | After: fps, tick |
+| Screen | Frames per second | Tick |
 | --- | --- | --- |
-| Launcher, still | 30.0, 10.4 ms | 30.0, 6.9 ms |
-| Launcher, four swipes | 9.9, 79.9 ms | 19.9, 25.5 ms |
-| FluidBox | 7.4, 121.8 ms | 14.9, 45.4 ms |
-| Watch face, classic, watch lying flat | 24.7, 31.3 ms | 29.0, 19.3 ms |
-| Stopwatch, stopped | 14.9, 38.7 ms | 30.0, 17.9 ms |
-| Stopwatch, running | 7.3, 106.2 ms | 15.0, 52.3 ms |
+| Launcher, still | 30.0 | 6.9 ms |
+| Launcher, swipes | 19.9 | 25.5 ms |
+| FluidBox | 14.9 | 45.4 ms |
+| Watch face, classic, watch lying flat | 29.0 | 19.3 ms |
+| Stopwatch, stopped | 30.0 | 17.9 ms |
+| Stopwatch, running | 15.0 | 52.3 ms |
 
-| Stage | Before | After |
-| --- | --- | --- |
-| Raster per flushed row, launcher swipe | 0.276 ms | 0.095 ms |
-| Flush per flushed row | 0.038 ms | 0.016 ms |
-| View update, stopwatch page | 20.2 ms | 3.7 ms |
-| Model, FluidBox | 21.9 ms | 3.4 ms |
-| Flushes the display refused | about 15 in 24 s | 0 in 100 s |
-
-The picture was not captured on the device: no pixel comparison ran there.
-
-What remains per frame, measured: the draw list is built again in every
-frame (2.6 ms on the launcher, 10 ms on the stopwatch page and the classic
-face, whose rounded boxes become one rectangle per row and edge pixel), the
-touch controller is read over I2C (1.06 ms), the `before_frame` hook, which
-reads the IMU, takes 1.07 ms, and a watch face that turns repaints its
-whole panel.
+A screen that repaints the whole panel in every frame (FluidBox, the running
+stopwatch, a watch face while it turns) runs at 15 frames per second. The
+app task used 69,360 of 262,144 stack bytes and the helper task 1,472 of
+12,288. The picture was not captured on the device, and JS mode was not run
+on it.

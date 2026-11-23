@@ -86,22 +86,17 @@ advances its own clock from the frame count and takes key clicks from
 - The watch face turns with the accelerometer as one 466 px panel about the
   screen centre, as the factory turns its panel (`watch_face_manager.cpp`).
   Ticks, hands, time digits, date pill, big-number digits, the simple-face
-  dot and the text baselines turn with it. Differences:
+  dot and the Montserrat text (classic weekday and date pill, number-flow
+  and simple date, simple tips) turn with it. Differences:
   - The panel follows gravity in turns (`watch.ts`): a turn starts when the
-    panel is 3° off and ends within 1°. The reading of a hand that holds
-    the watch still moves by a degree or two; following it repainted the
-    whole face in every frame.
+    panel is 3° off and ends within 1°, so the face stays still in a hand
+    that holds the watch.
   - The number-flow tiles and digit windows are not in the panel. A digit
     window is `overflow-hidden`, and PocketJS clips a turned subtree to the
     axis-aligned bounds of the turned window, which shows the neighbouring
     rows of the rolling strip. The tiles stay upright with their windows and
     the model moves them by the turned offsets of their centres; the date
     below them turns with the panel and is drawn above them.
-  - Montserrat text (classic weekday and date pill, number-flow and simple
-    date, simple tips) turns with the panel since PocketJS `5d5c020b`
-    (#750): a glyph run under a turned transform is drawn as one textured
-    quad per glyph cell. Before, the glyphs stayed upright along the turned
-    baseline (pocketjs issue #728). The time digits are images and turn.
   - The face backgrounds and the classic dial are drawn outside the panel;
     they look the same at every angle. A turned rounded box is drawn as a
     polygon with four segments per quarter circle (pocketjs #322); the
@@ -109,10 +104,8 @@ advances its own clock from the frame count and takes key clicks from
     (radius 42), not on the 34 px date pill or the 14 px second dot, which
     turn.
 - Lucky wheel sectors are drawn as rotated half-planes clipped to the two
-  screen halves; the factory draws LVGL arcs. The sector labels turn with
-  their sectors since PocketJS `5d5c020b` (#750); before, their glyphs stayed
-  upright along the turned baseline. Bar spectrum wedges are rectangles
-  12 px wide instead of triangles.
+  screen halves; the factory draws LVGL arcs. Bar spectrum wedges are
+  rectangles 12 px wide instead of triangles.
 - The rollers are 164 px tall everywhere (the factory day roller is 220 px)
   and glide for a fixed 300 ms of the release velocity.
 - Settings sub-pages are left with A+B (as in the factory) and the menu
@@ -177,12 +170,9 @@ the trigger, slider value and ":("). 408 images, 1,812,480 bytes. Run
 
 The root model publishes the codepoints and pen positions of every
 glyph-image text as array signals (`clockIds`, `swTimeIds`, `swTimeXs`, …
-in `app.ts`) and lays a text out when it changes. A glyph view reads its
-`ids` and `xs` in every `<Show>`; a compiled view reads a signal in place
-and evaluates a call again at each use, so `ids={glyphIds(text())}` laid
-the text out once per glyph and slot: 2,083 heap allocations and 20 ms per
-frame on the stopwatch page, 70 allocations and 3.7 ms with the signals
-(StopWatch, AOT).
+in `app.ts`) and lays a text out when it changes. The glyph views read
+these signals: a compiled view reads a signal in place and evaluates a call
+in a binding again at every use.
 
 ## FluidBox limit
 

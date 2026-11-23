@@ -149,17 +149,15 @@ I2S0 master, standard Philips format, 16-bit stereo slots, MCLK on, at
 16 bits, input gain 30 dB. `m5_stopwatch_audio_write` and
 `m5_stopwatch_audio_read` block until the samples are transferred. The
 transmit channel clears each DMA buffer after it was sent
-(`auto_clear_after_cb`): without new samples it sends zeros. The I2S default
-replays the DMA ring, 6 buffers of 240 frames (32.7 ms at 44.1 kHz).
+(`auto_clear_after_cb`), so the speaker is silent while no samples are
+written.
 
 ## Vibration
 
 Strength 1..100 maps to a duty of `25 + strength * 75 / 100` percent on IOE1
 PWM channel 0; strength 0 or duration 0 stops the motor. A one-shot
 `esp_timer` writes duty 0 after the duration; a new call replaces a running
-vibration. The timer callback writes duty 0 when the stop time of the latest
-call has passed. It does not ask `esp_timer_is_active`, which reports a timer
-as active while its own callback runs (ESP-IDF 6.x).
+vibration.
 
 ## Provenance
 

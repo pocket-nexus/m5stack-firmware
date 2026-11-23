@@ -7,9 +7,7 @@ those of the slot table of the pinned PocketJS (10, 12, 14, 16, 18, 20, 24,
 36 and 54 logical px); other sizes are drawn as images.**
 
 Without `app.fonts` PocketJS bakes Inter Regular, Inter Bold and JetBrains
-Mono Regular (`third_party/pocketjs/assets/fonts/`). `app.fonts` is part of
-PocketJS since `1b5bd030` (#749); before, this repository injected the faces
-of a `pocket.fonts.json` through a wrapper around the Pocket CLI.
+Mono Regular (`third_party/pocketjs/assets/fonts/`).
 
 ## Declare the faces
 
@@ -233,7 +231,5 @@ budgets the atlases against internal RAM (about 270 KB free while the
 `bun tests/fonts/check.ts` compiles `apps/sticks3-demos` (which declares
 `app.fonts`) and `tests/aot-smoke/app` (which does not) with `tools/pocket`
 in both modes and compares every atlas with a bake from the declared and from
-the default faces; see `tests/fonts/README.md`. At the bump to `418e902b`
-the AOT output of the four applications with `app.fonts` equalled, file by
-file, the output of the former wrapper at the same PocketJS commit. These
-are host-side checks and firmware builds, not device validation.
+the default faces; see `tests/fonts/README.md`. These are host-side checks,
+not device validation.

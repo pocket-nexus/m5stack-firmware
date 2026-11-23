@@ -198,9 +198,8 @@ app task's priority and core:
   task and returns when it finished. On a task with an internal stack it
   calls `fn` directly, so the same program code serves both stack kinds.
 
-One round trip costs about 0.4 ms on an ESP32-S3 at 240 MHz (measured:
-`before_frame` took 1.07 ms without and 1.45 ms with one call per frame), so
-a hook asks first whether there is work. The StopWatch program checks
+One round trip costs about 0.4 ms on an ESP32-S3 at 240 MHz, so a hook asks
+first whether there is work: the StopWatch program checks
 `stopwatch_badge_image_pending()` before it decodes a badge picture from FAT.
 
 ### Program textures
@@ -524,10 +523,8 @@ opt-level = 3
 opt-level = 3
 ```
 
-The generated application code stays at `opt-level = "s"`. The overrides
-matter: at `"s"` rustc does not inline the iterator chains of
-`pocket-render`, and the damage tracker's comparison of two unchanged draw
-lists took milliseconds per frame on the StopWatch.
+The generated application code stays at `opt-level = "s"`; the crates that
+run in every frame build for speed.
 
 `build.rs` calls `m5_pocket_aot_build::emit()`, which copies the exported
 profile to `OUT_DIR/pocket_profile.rs`. The generated `include.rs` defines
@@ -638,10 +635,8 @@ logical viewport wider than 1024 pixels cannot be touched beyond x = 1023.
 - **The app task's stack** defaults to 64 KiB (`CONFIG_M5_POCKET_APP_TASK_STACK`).
   The smoke app used at most 19,528 B of it under QEMU (see below); a larger
   view tree needs more for layout. `m5_pocket_app_get_stats` reports
-  `stack_free_min`. The StopWatch application used 68,048 B while it mounted
-  (device measurement): the generated code has stack frames of up to
-  26,880 B (`update_at`), 17,536 B (`AppApp::new`) and 17,456 B (`mount`).
-  Its app task has a 256 KiB stack in PSRAM
+  `stack_free_min`. The StopWatch application uses 69,360 B (device
+  measurement); its app task has a 256 KiB stack in PSRAM
   ([Flash operations](#flash-operations-from-the-hooks)).
 
 Measured under QEMU (esp32s3, no PSRAM, AOT smoke, 240×135, two 16-row
@@ -673,9 +668,7 @@ ui.core_mut().set_texture_budget(bytes);
 
 It uploads each entry with `upload_img_entry_from`: the texture reads its
 pixels from the `include_bytes!` data in flash and is decoded into the heap
-when a frame first draws it. PocketJS generates both loaders since
-`ed8b0c71` (#748); before, `m5_pocket_aot_build` wrote the in-place ones
-from the lines of `include.rs`.
+when a frame first draws it.
 
 | Loader | Flash | Heap |
 | --- | --- | --- |
@@ -728,9 +721,8 @@ profiler wraps, and at the input poll. Log lines:
 | `N <text>` | An event: `contact down x y`, `contact up`, `buttons <mask>`, `request <text>`, `flush <status> rows <y>+<height> …` for a flush the display refused |
 
 **Console.** The profiler reads lines from the USB Serial/JTAG port. It
-polls the receive FIFO every 10 ms and does not use the USB Serial/JTAG
-driver: that component links a connection monitor into every build that
-includes it, and the monitor does not start under QEMU.
+polls the receive FIFO every 10 ms and does not install the USB Serial/JTAG
+driver.
 
 | Line | Effect |
 | --- | --- |
