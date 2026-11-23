@@ -228,7 +228,7 @@ bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --a
 
 | Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM | Validated by |
 | --- | --- | --- | --- | --- |
-| JS | 11,401,616 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,901 of 341,760 bytes | firmware build |
+| JS | 11,401,616 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,901 of 341,760 bytes | firmware build; does not start on the board |
 | AOT | 10,672,160 bytes | 15 % | 151,889 of 341,760 bytes | device run |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
@@ -261,3 +261,14 @@ The presenter sent the 582 frames of the tour behind a TE-timed scan
 the longest time from a frame's flush to its last transfer was 39.9 ms. No
 tear was seen on the panel; the picture was not captured. The app task used
 69,528 of 262,144 stack bytes and the helper task 1,460 of 12,288.
+
+**JS mode does not start on the board.** The firmware restarts in a loop:
+
+- The runtime refuses a package larger than its `heap_limit`
+  (`boot failed: Package(TooLarge)`): the bundle has 8,968,680 bytes and
+  `main/main.c` sets the limit to 4 MiB.
+- With a limit of 12 MiB the package loads and QuickJS stops after about
+  6.5 s with `SyntaxError: invalid assignment left-hand side`.
+
+The JS bundle runs in the PocketJS simulator (`tools/screenshots.ts`). On
+the board, use AOT mode.

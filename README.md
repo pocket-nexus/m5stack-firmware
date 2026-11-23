@@ -156,7 +156,7 @@ partition table and the application. Write it at offset 0x0 with
 
 ```sh
 esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.1.bin       # Tab5
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-js-v0.1.1.bin  # StopWatch
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.1.bin # StopWatch
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.1.bin    # StickS3
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.1.bin    # AtomS3, AtomS3R
 ```
@@ -302,7 +302,9 @@ docs/                     reference documentation
   point (the window shows the factory text) or USB-A host.
 - StopWatch: no Wi-Fi station or Wi-Fi setup access point (the badge
   editor runs its own access point); FluidBox simulates 48 particles instead
-  of the factory's 450.
+  of the factory's 450. The JS image does not start on the board
+  ([programs/stopwatch](programs/stopwatch/README.md#validation)): flash the
+  AOT image.
 - PocketJS bakes fonts at a fixed set of sizes (10 to 54 px), so factory text
   at other sizes uses the nearest size or is drawn from the factory's glyph
   bitmaps ([docs/FONTS.md](docs/FONTS.md)).
