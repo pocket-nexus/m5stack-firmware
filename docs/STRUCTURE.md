@@ -18,8 +18,10 @@ M5Stack-sample/
 ├─ apps/sticks3-demos/        StickS3 application: demos of the board in place
 │                             of a factory recreation, same layout
 ├─ tests/                     aot-smoke (both modes, both targets) and tool tests
-├─ tools/                     Pocket CLI wrapper (per-app fonts), formatter
+├─ tools/                     Pocket CLI wrapper (per-app fonts), formatter,
+│                             simulator screenshots (screenshots.ts)
 └─ docs/                      reference documentation (APP-HOST.md: the host)
+   └─ images/                 README screenshots, written by tools/screenshots.ts
 ```
 
 ## Ownership
