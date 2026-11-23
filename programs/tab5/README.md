@@ -174,7 +174,19 @@ and turns 20 ms capture chunks into the chart columns.
 `idf.py build` succeeds in JS mode and in AOT mode for esp32p4. The program's
 `main` and `m5_bsp_tab5` compile with `m5_strict_warnings` (the warnings IDF
 relaxes restored as errors); the AOT build, MicroTS-generated Rust included,
-has no warnings. No M5Stack hardware was connected: no device
-run, flash or measurement happened. The application was checked with
-`pocket compile` (JS bundle and `--aot` admission) and simulator screenshots
+has no warnings. The application was checked with `pocket compile` (JS bundle
+and `--aot` admission) and simulator screenshots
 (`apps/tab5-factory/tools/preview.ts`).
+
+Device run: a Tab5 with an ESP32-P4 revision v1.3 and the ST7121 panel (ST7123
+touch firmware 1.80.1.16), ESP-IDF v6.1-dev-8142, read from the serial log
+(the `tab5:` statistics every 5 s, 30 s after reset):
+
+| Mode | App started | Frame rate | Longest frame | Internal RAM free |
+| --- | --- | --- | --- | --- |
+| JS | 6.8 s after reset | 20 fps during the startup animation, then 3 to 9 fps on the launcher | 606 ms | 161,139 bytes |
+| AOT | 3.8 s after reset | 30 fps | 67.5 ms | 162,359 bytes |
+
+Both modes render through the same display and PPA path; on the launcher a
+JS-mode frame takes about 250 ms. The log does not show what the panel
+displays, and touch, audio and the board services were not exercised.
