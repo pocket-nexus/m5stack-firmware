@@ -1,0 +1,20 @@
+{
+  "assets/startup.png": {
+    "psm": 0
+  },
+  "assets/info.png": {
+    "psm": 0
+  },
+  "assets/function.png": {
+    "psm": 0
+  },
+  "assets/touch-canvas.png": {
+    "psm": 0
+  },
+  "assets/imu-canvas.png": {
+    "psm": 0
+  },
+  "assets/rec-canvas.png": {
+    "psm": 0
+  }
+}
