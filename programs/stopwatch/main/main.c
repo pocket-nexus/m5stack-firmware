@@ -126,7 +126,7 @@ void app_main(void) {
       .io = board.lcd_io,
       .width = M5_STOPWATCH_LCD_H_RES,
       .height = M5_STOPWATCH_LCD_V_RES,
-      /* Two frames in PSRAM. The presenter sends the rows a frame changed
+      /* Two frames in PSRAM. The presenter sends the windows a frame changed
        * behind the panel's scan, so a refresh shows one frame. */
       .strip_rows = M5_STOPWATCH_LCD_V_RES,
       .buffer_count = 2,
@@ -137,6 +137,8 @@ void app_main(void) {
       .buffer_caps = MALLOC_CAP_SPIRAM,
       .wait_refresh = wait_refresh,
       .presenter_core = 0,
+      /* The CO5300 takes a window whose first column and width are even. */
+      .column_alignment = 2,
   };
   config.input.buttons = buttons;
   config.input.touch = touch;
