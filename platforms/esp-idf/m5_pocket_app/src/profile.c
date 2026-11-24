@@ -265,12 +265,18 @@ static void reporter(void *argument) {
   for (;;) {
     if (xQueueReceive(P.queue, &r, portMAX_DELAY) != pdTRUE)
       continue;
-    if (r.note[0])
+    if (r.note[0]) {
       ESP_LOGI(TAG, "N %s", r.note);
-    else if (r.frames)
+    } else if (r.frames) {
+      /* The kernel scans the unused bytes of the app task's stack: on this
+       * task, outside the frame. */
+      if (P.app_task)
+        r.stack_free = (uint32_t)(uxTaskGetStackHighWaterMark(P.app_task) *
+                                  sizeof(StackType_t));
       print_period(&r);
-    else
+    } else {
       print_frame(&r);
+    }
   }
 }
 
@@ -392,7 +398,6 @@ void m5_pocket_profile_tick_end(const m5_pocket_app *app) {
   if (now - P.period_started >= PERIOD_US) {
     r->span_us = (uint32_t)(now - P.period_started);
     r->skipped = app->stats.frames_skipped - P.skipped_before;
-    r->stack_free = app->stats.stack_free_min;
     r->internal_free = m5_pocket_internal_stack_free_min();
     (void)xQueueSend(P.queue, r, 0);
     memset(r, 0, sizeof(*r));
