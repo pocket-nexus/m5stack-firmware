@@ -1,0 +1,15 @@
+version: "0.1.0"
+description: "M5Stack CoreP4X (C157) board support taken from M5CoreP4X-UserDemo"
+license: "Apache-2.0 AND MIT"
+targets:
+  - esp32p4
+dependencies:
+  idf: ">=6.0,<6.3"
+  espressif/esp_lcd_touch:
+    version: "1.2.1"
+    public: true
+  # ES8311 and ES7210 (the factory's otool_audio uses esp_codec_dev).
+  espressif/esp_codec_dev: "1.5.11"
+  # IP101 PHY driver (moved out of esp_eth in ESP-IDF 6.0).
+  espressif/ip101:
+    version: "1.1.0"
