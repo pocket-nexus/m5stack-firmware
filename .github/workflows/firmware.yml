@@ -66,6 +66,8 @@ jobs:
           - { name: sticks3-js, dir: programs/sticks3, target: esp32s3, defaults: "" }
           - { name: sticks3-aot, dir: programs/sticks3, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot" }
           - { name: atoms3-aot, dir: programs/atoms3, target: esp32s3, defaults: "" }
+          - { name: corep4x-js, dir: programs/corep4x, target: esp32p4, defaults: "" }
+          - { name: corep4x-aot, dir: programs/corep4x, target: esp32p4, defaults: "sdkconfig.defaults;sdkconfig.aot" }
           - { name: aot-smoke-js-s3, dir: tests/aot-smoke, target: esp32s3, defaults: "" }
           - { name: aot-smoke-js-p4, dir: tests/aot-smoke, target: esp32p4, defaults: "" }
           - { name: aot-smoke-aot-s3, dir: tests/aot-smoke, target: esp32s3, defaults: "sdkconfig.defaults;sdkconfig.aot;sdkconfig.nopsram" }
