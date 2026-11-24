@@ -171,19 +171,12 @@ static void destroy_devices(m5_pocket_app *app) {
   app->display_object = NULL;
 }
 
-static void update_stack(m5_pocket_app *app) {
-  uint32_t free_bytes = uxTaskGetStackHighWaterMark(NULL) * sizeof(StackType_t);
-  if (!app->stats.stack_free_min || free_bytes < app->stats.stack_free_min)
-    app->stats.stack_free_min = free_bytes;
-}
-
 static void run(void *argument) {
   m5_pocket_app *app = argument;
   const m5_pocket_app_config *config = &app->config;
   const int64_t boot_started = esp_timer_get_time();
   app->start_result = m5_pocket_backend_boot(app);
   m5_pocket_profile_boot((uint32_t)(esp_timer_get_time() - boot_started));
-  update_stack(app);
   xSemaphoreGive(app->started);
   if (app->start_result == ESP_OK) {
     const int64_t period = 1000000 / (app->cadence_hz ? app->cadence_hz : 30);
@@ -208,8 +201,6 @@ static void run(void *argument) {
           ESP_LOGE(TAG, "frame %" PRIu32 " status %d", app->stats.frames,
                    (int)status);
       }
-      if ((app->stats.frames & 0x1F) == 1)
-        update_stack(app);
       if (config->after_frame)
         config->after_frame(config->hook_context, status);
       next += period;
@@ -341,6 +332,10 @@ esp_err_t m5_pocket_app_get_stats(m5_pocket_app *app,
   if (!app || !out)
     return ESP_ERR_INVALID_ARG;
   *out = app->stats;
+  /* FreeRTOS keeps no count: the kernel scans the unused bytes of the stack
+   * on this call, on the caller's task. */
+  out->stack_free_min =
+      (uint32_t)(uxTaskGetStackHighWaterMark(app->task) * sizeof(StackType_t));
   out->internal_stack_free_min = m5_pocket_internal_stack_free_min();
   return ESP_OK;
 }

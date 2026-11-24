@@ -124,7 +124,9 @@ typedef struct {
   uint32_t frames_skipped;
   uint32_t max_frame_us;
   uint32_t last_frame_us;
-  uint32_t stack_free_min; /* bytes of the app task stack never used */
+  /* Bytes of the app task stack never used. m5_pocket_app_get_stats reads
+   * them from the kernel, which scans the unused part of the stack. */
+  uint32_t stack_free_min;
   /* The same for the internal-stack helper task; 0 before its first call
    * and without that task. */
   uint32_t internal_stack_free_min;
