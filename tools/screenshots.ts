@@ -24,8 +24,10 @@ const root = resolve(import.meta.dir, "..");
 const wasm = join(root, "third_party/pocketjs/platforms/web/pocketjs.wasm");
 const images = join(root, "docs/images");
 
-// The bundles run 30 core ticks per second (each pocket.host.config.ts
-// tickHz). sim.ts reads the tick rate when it is first imported.
+// Every bundle is stepped 30 core ticks per second. That is the tickHz of
+// three applications; the StopWatch application (tickHz 60) advances its
+// clock by 33.333 ms per frame without a board, so its tour counts 30 Hz
+// frames as well. sim.ts reads the tick rate when it is first imported.
 (globalThis as { __POCKET_TICK_HZ__?: number }).__POCKET_TICK_HZ__ = 30;
 const { bootBundle } = await import("../third_party/pocketjs/programs/sim/sim.ts");
 
