@@ -8,7 +8,7 @@ TSX/TS sources build in JS mode (QuickJS bundle) and in AOT mode (MicroTS);
 
 The host config lives here because the Pocket CLI resolves the entry
 relative to the config and rejects `..`; it names the program's host
-contract, `../../programs/stopwatch/pocket.host.json` (466 × 466, 30 Hz,
+contract, `../../programs/stopwatch/pocket.host.json` (466 × 466, 60 Hz,
 `input.buttons`, `input.touch`, `text.glyphs.baked`).
 
 ## Files
@@ -180,13 +180,13 @@ The factory simulates 450 particles with a 3D double-density SPH at 80 Hz
 in C on its own task (neighbour grid, up to 14,400 pairs) and paints them
 directly into the framebuffer at 25 Hz from the other core. Here the
 simulation is model code (QuickJS in JS mode) on the app task, which also
-lays out and rasterises the frame at 30 Hz, and every particle is a UI node.
+lays out and rasterises the frame, and every particle is a UI node.
 Estimate, not measured on a device: 48 particles cost about 4,500 pair
 evaluations per frame (two passes, two sub-steps); 450 particles with the
 factory's grid cost about 13 times more, and each frame would also update
 about 1,350 node properties and repaint the full 466 × 466 frame. At the
-interpreter speeds of QuickJS on a 240 MHz S3 that is several times the
-33 ms frame budget, so the JS-mode app keeps 48 particles. AOT mode runs the
+interpreter speeds of QuickJS on a 240 MHz S3 that is several times a
+33 ms frame, so the JS-mode app keeps 48 particles. AOT mode runs the
 same model as compiled Rust; a larger count there still pays the per-node
 drawing cost.
 - The 1-column offset between the factory 468-column frame and the

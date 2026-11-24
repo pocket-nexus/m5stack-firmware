@@ -3,7 +3,7 @@
   "id": "m5stack-stopwatch",
   "platform": "esp-idf",
   "form": "takeover",
-  "cadences": [30],
+  "cadences": [60],
   "display": {
     "logicalViewports": [[466, 466]],
     "presentations": ["native"],

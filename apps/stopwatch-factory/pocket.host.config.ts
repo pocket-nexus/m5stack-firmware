@@ -16,7 +16,7 @@ export default defineHostConfig({
       regular: "fonts/Montserrat-Medium.ttf",
       bold: "fonts/Montserrat-SemiBold.ttf",
     },
-    tickHz: 30,
+    tickHz: 60,
     aot: true,
     model: "compiled",
   },
