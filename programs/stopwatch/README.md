@@ -177,11 +177,11 @@ python ../../tools/profile.py run <port> run.log --reset @idle 5s
 
 **In AOT mode the code runs from PSRAM; read-only data stays in flash.**
 `sdkconfig.aot` sets `CONFIG_SPIRAM_FETCH_INSTRUCTIONS`: the boot copies the
-2,419,988 bytes of code into PSRAM and maps them there, which takes
+2,424,580 bytes of code into PSRAM and maps them there, which takes
 2,368 KiB of the 8 MiB (37 pages of 64 KiB). A frame of the compiled
 application runs through more code than the 32 KiB instruction cache holds,
 and a cache miss then reads the octal PSRAM (eight data lines at 80 MHz)
-instead of the QIO flash (four). The 8,132,420 bytes of read-only data (the
+instead of the QIO flash (four). The 8,132,468 bytes of read-only data (the
 pictures) stay in flash: `CONFIG_SPIRAM_RODATA` is off. JS mode keeps its
 code in flash and the PSRAM for the QuickJS heap.
 
@@ -238,17 +238,18 @@ bun run pocket compile --config apps/stopwatch-factory/pocket.host.config.ts --a
 
 | Mode | `m5stack_stopwatch.bin` | Free in the 12 MiB app partition | Static DIRAM | Validated by |
 | --- | --- | --- | --- | --- |
-| JS | 11,401,616 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,901 of 341,760 bytes | firmware build; does not start on the board |
-| AOT | 10,674,384 bytes | 15 % | 152,461 of 341,760 bytes | device run |
+| JS | 11,406,464 bytes (bundle about 8.9 MB: 3.7 MB big-number artwork, 1.8 MB factory glyph images) | 9 % | 153,901 of 341,760 bytes | firmware build; does not start on the board |
+| AOT | 10,679,024 bytes | 15 % | 152,461 of 341,760 bytes | device run |
 
 AOT pictures stay in flash and are decoded under the runtime's texture
 budget when drawn, so the 8 MiB PSRAM holds only the textures on screen
 (at most about 1 MB for the launcher's three icon textures, the guide or
-four big-number tiles) plus the code, the runtime heap and the two display
-frames: 3.2 MB of PSRAM stay free on the launcher.
+four big-number tiles) and up to eight 64 KB discs for corner radii of 33
+to 64 px, plus the code, the runtime heap and the two display frames:
+3.2 MB of PSRAM stay free on the launcher.
 
 **Device run (AOT).** M5Stack StopWatch, ESP32-S3 revision v0.2, ESP-IDF
-v6.1-dev-8142, PocketJS `98ead939`. The firmware boots to the launcher and
+v6.1-dev-8142, PocketJS `484a3100`. The firmware boots to the launcher and
 runs. The numbers are from the profiler build (`sdkconfig.profile`) with
 input scripted through its console (`tools/profile.py run`): a 100 s tour of
 the launcher, FluidBox, the four watch faces, the stopwatch and Audio.FFT,
@@ -257,26 +258,26 @@ without a reset and without a failed tick.
 | Screen | Frames per second | Tick |
 | --- | --- | --- |
 | Launcher, still | 30.0 | 3.9 ms |
-| Launcher, swipes | 19.7 | 27.1 ms |
-| FluidBox | 14.9 | 43.7 ms |
-| Watch face, classic, watch lying flat | 29.0 | 16.0 ms |
-| Stopwatch, stopped | 30.0 | 13.8 ms |
-| Stopwatch, running | 14.9 | 38.9 ms |
+| Launcher, swipes | 21.2 | 19.8 ms |
+| FluidBox | 15.1 | 34.2 ms |
+| Watch face, classic, watch lying flat | 28.9 | 11.6 ms |
+| Stopwatch, stopped | 30.0 | 5.6 ms |
+| Stopwatch, running | 30.0 | 23.2 ms |
 
-A screen that repaints the whole panel in every frame (FluidBox, the running
-stopwatch, a watch face while it turns) runs at 15 frames per second.
+FluidBox and the Audio.FFT page, which repaint most of the panel in every
+frame, run at 15 frames per second.
 
-The presenter sent the 613 frames of the tour behind a TE-timed scan
-(`unsynced=0`), and no transfer started late for the next scan (`late=0`);
-the longest time from a frame's flush to its last transfer was 41.9 ms. The
-device's owner saw no tear on the panel with this presentation; the picture
-was not captured. The app task used 69,528 of 262,144 stack bytes and the
-helper task 1,460 of 12,288.
+The presenter sent the 691 frames of the tour behind a TE-timed scan
+(`unsynced=0`); one of them had a transfer that started late for the next
+scan (`late=1`), and the longest time from a frame's flush to its last
+transfer was 50.8 ms. The device's owner saw no tear on the panel with this
+presentation; the picture was not captured. The app task used 69,548 of
+262,144 stack bytes and the helper task 1,508 of 12,288.
 
 **JS mode does not start on the board.** The firmware restarts in a loop:
 
 - The runtime refuses a package larger than its `heap_limit`
-  (`boot failed: Package(TooLarge)`): the bundle has 8,968,680 bytes and
+  (`boot failed: Package(TooLarge)`): the bundle has 8,968,712 bytes and
   `main/main.c` sets the limit to 4 MiB.
 - With a limit of 12 MiB the package loads and QuickJS stops after about
   6.5 s with `SyntaxError: invalid assignment left-hand side`.
