@@ -29,11 +29,13 @@ embeds `apps/stopwatch-factory` with `m5_pocket_app()`.
 - `main/main.c` initialises NVS and the board (`m5_stopwatch_init`), starts
   the services and calls `m5_pocket_app_start` with the CO5300 panel
   (`M5_POCKET_DISPLAY_ESP_LCD` with staged presentation: two RGB565 frames
-  of 466 × 466 px in PSRAM, 434,312 bytes each; the display driver's
-  presenter task on core 0 sends the rows a frame changed, 32 at a time
-  (29,824 bytes, under the ESP32-S3 SPI DMA limit, byte-swapped), behind the
-  panel's scan as timed by the TE signal, so that one refresh of the panel
-  shows one frame), the CST820
+  of 466 × 466 px in PSRAM, 434,312 bytes each; the renderer repaints and
+  the display driver's presenter task on core 0 sends the windows a frame
+  changed, on even columns (`column_alignment = 2`, what the CO5300 takes)
+  and at most 32 rows at a time (29,824 bytes at the full width, under the
+  ESP32-S3 SPI DMA limit, byte-swapped), behind the panel's scan as timed by
+  the TE signal, so that one refresh of the panel shows one frame), the
+  CST820
   contact as `touch` (a task of core 0 reads it over I2C every 16 ms, and
   the app task's input poll takes the latest sample),
   KEYA/KEYB as `BTN.LTRIGGER`/`BTN.RTRIGGER`, a 6 MiB
@@ -177,7 +179,7 @@ python ../../tools/profile.py run <port> run.log --reset @idle 5s
 
 **In AOT mode the code runs from PSRAM; read-only data stays in flash.**
 `sdkconfig.aot` sets `CONFIG_SPIRAM_FETCH_INSTRUCTIONS`: the boot copies the
-2,424,580 bytes of code into PSRAM and maps them there, which takes
+2,424,576 bytes of code into PSRAM and maps them there, which takes
 2,368 KiB of the 8 MiB (37 pages of 64 KiB). A frame of the compiled
 application runs through more code than the 32 KiB instruction cache holds,
 and a cache miss then reads the octal PSRAM (eight data lines at 80 MHz)
@@ -257,22 +259,22 @@ without a reset and without a failed tick.
 
 | Screen | Frames per second | Tick |
 | --- | --- | --- |
-| Launcher, still | 30.0 | 3.9 ms |
-| Launcher, swipes | 21.2 | 19.8 ms |
-| FluidBox | 15.1 | 34.2 ms |
-| Watch face, classic, watch lying flat | 28.9 | 11.6 ms |
+| Launcher, still | 30.0 | 3.8 ms |
+| Launcher, swipes | 24.0 | 17.3 ms |
+| FluidBox | 18.4 | 32.9 ms |
+| Watch face, classic, watch lying flat | 29.2 | 11.4 ms |
 | Stopwatch, stopped | 30.0 | 5.6 ms |
-| Stopwatch, running | 30.0 | 23.2 ms |
+| Stopwatch, running | 29.9 | 13.3 ms |
 
 FluidBox and the Audio.FFT page, which repaint most of the panel in every
-frame, run at 15 frames per second.
+frame, run at 18 to 19 frames per second.
 
-The presenter sent the 691 frames of the tour behind a TE-timed scan
+The presenter sent the 750 frames of the tour behind a TE-timed scan
 (`unsynced=0`); one of them had a transfer that started late for the next
 scan (`late=1`), and the longest time from a frame's flush to its last
-transfer was 50.8 ms. The device's owner saw no tear on the panel with this
+transfer was 37.2 ms. The device's owner saw no tear on the panel with this
 presentation; the picture was not captured. The app task used 69,548 of
-262,144 stack bytes and the helper task 1,508 of 12,288.
+262,144 stack bytes and the helper task 1,476 of 12,288.
 
 **JS mode does not start on the board.** The firmware restarts in a loop:
 
