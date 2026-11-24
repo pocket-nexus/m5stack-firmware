@@ -278,7 +278,44 @@ static void clock_from_rtc(void) {
 
 /* ------------------------------ publication ------------------------------ */
 
+/* The IMU and the battery are read on a task of core 0, a sample per frame
+ * at 60 Hz: an I2C transaction blocks its caller, and the app task's frame
+ * does not wait for one. */
+#define SENSOR_PERIOD_MS 16
+
 static int64_t last_battery_us = -2000000;
+
+/* The I2C reads: the IMU, and the battery once per second. */
+static void publish_sensors(void) {
+  const int64_t now_us = esp_timer_get_time();
+  if (now_us - last_battery_us >= 1000000) {
+    last_battery_us = now_us;
+    m5_stopwatch_battery_t battery;
+    if (m5_stopwatch_battery_read(&battery) == ESP_OK) {
+      m5_pocket_bridge_set_number("batteryLevel", battery.level);
+      m5_pocket_bridge_set_bool("charging", battery.external_power);
+    }
+  }
+
+  m5_stopwatch_imu_sample_t imu;
+  if (m5_stopwatch_imu_read(&imu) == ESP_OK) {
+    m5_pocket_bridge_set_number("accelX", imu.accel_x);
+    m5_pocket_bridge_set_number("accelY", imu.accel_y);
+    m5_pocket_bridge_set_number("accelZ", imu.accel_z);
+    m5_pocket_bridge_set_number("gyroX", imu.gyro_x);
+    m5_pocket_bridge_set_number("gyroY", imu.gyro_y);
+    m5_pocket_bridge_set_number("gyroZ", imu.gyro_z);
+  }
+}
+
+static void sensors_task(void *arg) {
+  (void)arg;
+  TickType_t wake = xTaskGetTickCount();
+  for (;;) {
+    vTaskDelayUntil(&wake, pdMS_TO_TICKS(SENSOR_PERIOD_MS));
+    publish_sensors();
+  }
+}
 
 esp_err_t stopwatch_services_start(void) {
   settings_load();
@@ -312,6 +349,12 @@ esp_err_t stopwatch_services_start(void) {
     ESP_LOGW(TAG, "badge storage unavailable");
   }
   stopwatch_services_before_frame();
+  /* The first frame has a sample of each sensor. */
+  publish_sensors();
+  if (xTaskCreatePinnedToCore(sensors_task, "sensors", 4096, NULL, 4, NULL,
+                              0) != pdPASS) {
+    return ESP_ERR_NO_MEM;
+  }
   return ESP_OK;
 }
 
@@ -388,25 +431,6 @@ void stopwatch_services_before_frame(void) {
   const uint32_t keys = stopwatch_services_buttons();
   m5_pocket_bridge_set_bool("keyA", keys & BUTTON_A_BIT);
   m5_pocket_bridge_set_bool("keyB", keys & BUTTON_B_BIT);
-
-  if (now_us - last_battery_us >= 1000000) {
-    last_battery_us = now_us;
-    m5_stopwatch_battery_t battery;
-    if (m5_stopwatch_battery_read(&battery) == ESP_OK) {
-      m5_pocket_bridge_set_number("batteryLevel", battery.level);
-      m5_pocket_bridge_set_bool("charging", battery.external_power);
-    }
-  }
-
-  m5_stopwatch_imu_sample_t imu;
-  if (m5_stopwatch_imu_read(&imu) == ESP_OK) {
-    m5_pocket_bridge_set_number("accelX", imu.accel_x);
-    m5_pocket_bridge_set_number("accelY", imu.accel_y);
-    m5_pocket_bridge_set_number("accelZ", imu.accel_z);
-    m5_pocket_bridge_set_number("gyroX", imu.gyro_x);
-    m5_pocket_bridge_set_number("gyroY", imu.gyro_y);
-    m5_pocket_bridge_set_number("gyroZ", imu.gyro_z);
-  }
 }
 
 /* -------------------------------- requests ------------------------------- */
