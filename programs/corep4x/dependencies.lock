@@ -1,0 +1,65 @@
+dependencies:
+  espressif/esp_codec_dev:
+    component_hash: df70f10af8d7b922add7b9d07372c9c97ab356e58d72b7a892050227c2d44348
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.5.11
+  espressif/esp_lcd_touch:
+    component_hash: 3f85a7d95af876f1a6ecca8eb90a81614890d0f03a038390804e5a77e2caf862
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.4.2'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.2.1
+  espressif/ip101:
+    component_hash: ca74de570dda7c2e79ce501b935638b2957fd9ac42424ed30d854f1962970471
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=6.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32
+    - esp32p4
+    - esp32s31
+    version: 1.1.0
+  espressif/quickjs-ng:
+    component_hash: 51ead31abca34af01a44df24128e9ea10331cf35beb976a18fae62a03d36d6e2
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.4'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.14.0
+  idf:
+    source:
+      type: idf
+    version: 6.2.0
+  pocket_runtime:
+    dependencies: []
+    source:
+      path: ../../third_party/pocketjs/platforms/esp-idf/pocket_runtime
+      type: local
+    version: 0.1.0
+direct_dependencies:
+- espressif/esp_codec_dev
+- espressif/esp_lcd_touch
+- espressif/ip101
+- espressif/quickjs-ng
+- idf
+- pocket-nexus/pocket_runtime
+manifest_hash: b450c0769345217562f7a8613c90c330398142ce9a2f6f882ee96d627c1057b5
+target: esp32p4
+version: 3.0.0

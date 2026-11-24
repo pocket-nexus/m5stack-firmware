@@ -1,0 +1,21 @@
+{
+  "format": "pocket-host/2",
+  "id": "m5stack-corep4x-factory",
+  "platform": "esp-idf",
+  "form": "takeover",
+  "cadences": [30],
+  "display": {
+    "logicalViewports": [[480, 480]],
+    "presentations": ["native"],
+    "rasterDensity": 1,
+    "animation": "repaint"
+  },
+  "panel": {
+    "primary": [480, 480]
+  },
+  "capabilities": ["input.touch", "text.glyphs.baked"],
+  "input": {
+    "touchContacts": 1,
+    "coordinateBits": 10
+  }
+}
