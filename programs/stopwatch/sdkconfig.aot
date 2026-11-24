@@ -1,2 +1,8 @@
 # AOT mode: add after sdkconfig.defaults (see README.md).
 CONFIG_M5_POCKET_APP_MODE_AOT=y
+# The boot copies the code into PSRAM and maps it there: an instruction cache
+# miss reads eight data lines at 80 MHz instead of the flash's four. The
+# compiled application's frame runs through more code than the 32 KiB cache
+# holds (README.md, "Validation"). JS mode keeps the PSRAM for the QuickJS
+# heap.
+CONFIG_SPIRAM_FETCH_INSTRUCTIONS=y
