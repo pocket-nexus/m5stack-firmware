@@ -155,10 +155,10 @@ partition table and the application. Write it at offset 0x0 with
 [esptool](https://github.com/espressif/esptool):
 
 ```sh
-esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.2.bin       # Tab5
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.2.bin # StopWatch
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.2.bin    # StickS3
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.2.bin    # AtomS3, AtomS3R
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.3.bin       # Tab5
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.3.bin # StopWatch
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.3.bin    # StickS3
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.3.bin    # AtomS3, AtomS3R
 ```
 
 [CHANGELOG.md](CHANGELOG.md) lists the images and the changes of each
