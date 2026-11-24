@@ -41,7 +41,7 @@ extensions, `..` segments); its own tests cover those errors.
 
 ## Results
 
-Bun 1.4.2, PocketJS `98ead939`, macOS arm64: `all checks passed` (52 checks,
+Bun 1.4.2, PocketJS `484a3100`, macOS arm64: `all checks passed` (52 checks,
 about 13 s).
 
 These are host-side checks, not device validation.
