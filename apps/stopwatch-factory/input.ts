@@ -4,7 +4,7 @@
 // is a release before the 500 ms hold time; holding A and B together is
 // GoHome, latched until both keys are released. Every key press plays the
 // key tone and vibrates when the button settings allow it.
-import { abs, f64, type i32 } from "@pocketjs/framework/solid/std";
+import { abs, f64, pow, type i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 
 export const KEY_NONE: i32 = 0;
@@ -151,11 +151,13 @@ export function updatePointer(): void {
     }
     const dt = now - lastMs;
     if (dt > 0.0) {
-      // Exponential average with LVGL's sample decay (about 99 ms).
+      // Exponential average with LVGL's sample decay: the average keeps 0.6
+      // of its value per 33 ms, whatever the time between two frames.
       const vx = f64(pointerX - lastX) / dt;
       const vy = f64(pointerY - lastY) / dt;
-      velocityX = velocityX * 0.6 + vx * 0.4;
-      velocityY = velocityY * 0.6 + vy * 0.4;
+      const keep = pow(f64(0.6), dt / 33.333);
+      velocityX = velocityX * keep + vx * (1.0 - keep);
+      velocityY = velocityY * keep + vy * (1.0 - keep);
     }
     lastX = pointerX;
     lastY = pointerY;
