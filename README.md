@@ -6,9 +6,10 @@ English | [简体中文](README.zh-CN.md)
 [![Release](https://img.shields.io/github/v/release/pocket-nexus/m5stack-firmware)](https://github.com/pocket-nexus/m5stack-firmware/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Firmware for four M5Stack boards whose user interface is a TypeScript
+Firmware for five M5Stack boards whose user interface is a TypeScript
 application built with [PocketJS](https://github.com/pocket-nexus/pocketjs).
-The Tab5, StopWatch and AtomS3 programs recreate the board's factory demo;
+The Tab5, StopWatch, CoreP4X and AtomS3 programs recreate the board's
+factory demo;
 the StickS3 program runs seven demos of the board's sensors, keys and audio.
 Each application is one set of Solid TSX views and TypeScript models that
 builds in two modes:
@@ -43,6 +44,7 @@ builds in two modes:
 | [Tab5](programs/tab5/README.md) | ESP32-P4 (+ ESP32-C6 radio), 32 MB PSRAM, 16 MB flash | 5" 720×1280 MIPI-DSI, touch; UI in landscape | [Factory demo](apps/tab5-factory/README.md): startup animation, launcher, 15 panel windows | JS, AOT |
 | [StopWatch](programs/stopwatch/README.md) (C152) | ESP32-S3, 8 MB PSRAM, 16 MB flash | 1.75" 466×466 round AMOLED, touch | [Factory demo](apps/stopwatch-factory/README.md): launcher and the nine applications it opens | JS, AOT |
 | [StickS3](programs/sticks3/README.md) (K150) | ESP32-S3, 8 MB PSRAM, 8 MB flash | 1.14" 135×240 IPS | [Board demos](apps/sticks3-demos/README.md): marble maze, dice, reaction timer, snake, spirit level, sound meter, metronome | JS, AOT |
+| [CoreP4X](programs/corep4x/README.md) (C157) | ESP32-P4 (chip revision 3), 32 MB PSRAM, 16 MB flash | 2.64" 480×480 MIPI-DSI, touch | [Factory demo](apps/corep4x-factory/README.md): startup, info and function screens, 14 function windows | JS, AOT |
 | [AtomS3, AtomS3R](programs/atoms3/README.md) | ESP32-S3, no PSRAM, 8 MB flash (AtomS3R: 8 MB PSRAM, not used) | 0.85" 128×128 IPS | [Factory demo](apps/atoms3-factory/README.md): Wi-Fi, I2C, UART, PWM, ADC, IR and IMU functions | AOT only |
 
 JS mode is the default for every board except the AtomS3. With 512 KB of
@@ -55,7 +57,8 @@ panel are not supported.
 
 The factory demos are recreated from M5Stack's sources:
 [M5Tab5-UserDemo](https://github.com/m5stack/M5Tab5-UserDemo),
-[M5StopWatch-UserDemo](https://github.com/m5stack/M5StopWatch-UserDemo) and
+[M5StopWatch-UserDemo](https://github.com/m5stack/M5StopWatch-UserDemo),
+[M5CoreP4X-UserDemo](https://github.com/m5stack/M5CoreP4X-UserDemo) and
 [M5AtomS3-UserDemo](https://github.com/m5stack/M5AtomS3-UserDemo). Each
 application README lists the factory screens it reproduces and every known
 difference from the factory firmware.
@@ -87,6 +90,12 @@ board](#preview-without-a-board)).
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/images/sticks3-home.png" alt="StickS3 home carousel" width="110"> | <img src="docs/images/sticks3-maze.png" alt="Marble maze" width="110"> | <img src="docs/images/sticks3-dice.png" alt="Dice" width="110"> | <img src="docs/images/sticks3-snake.png" alt="Snake" width="110"> | <img src="docs/images/sticks3-level.png" alt="Spirit level" width="110"> | <img src="docs/images/sticks3-sound.png" alt="Sound meter" width="110"> | <img src="docs/images/sticks3-metronome.png" alt="Metronome" width="110"> |
 
+### CoreP4X
+
+| Function screen | POWER | TIMER | MUSIC | IR TX/RX |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/images/corep4x-function.png" alt="CoreP4X function screen" width="200"> | <img src="docs/images/corep4x-power.png" alt="POWER window" width="200"> | <img src="docs/images/corep4x-timer.png" alt="TIMER window" width="200"> | <img src="docs/images/corep4x-music.png" alt="MUSIC window" width="200"> | <img src="docs/images/corep4x-ir.png" alt="IR TX/RX window" width="200"> |
+
 ### AtomS3
 
 | Menu | Wi-Fi scan | I2C scan | UART monitor | PWM | IMU |
@@ -107,7 +116,7 @@ PocketJS Rust core and use the same board code. Kconfig selects the mode:
 | Board values and requests (`device.ts`) | `main.tsx` connects `globalThis.m5`, which calls the `device.ts` host functions every frame | The program's AOT crate writes the `device.ts` fields through generated accessors |
 | Touch | The framework's tap recognizer | The host turns a contact into a press of the focusable view under it; no gesture or scroll events |
 | Images | In the bundle's asset pack | Baked into flash; decoded on first draw or copied to the heap at start, per program |
-| Memory | QuickJS heap, from PSRAM on the boards that have it (StickS3 4 MiB, StopWatch 6 MiB, Tab5 24 MiB limits) | No QuickJS heap; runs without PSRAM |
+| Memory | QuickJS heap, from PSRAM on the boards that have it (StickS3 4 MiB, StopWatch 6 MiB, CoreP4X 16 MiB, Tab5 24 MiB limits) | No QuickJS heap; runs without PSRAM |
 | Build | `pocket compile` writes the bundle; the PocketJS runtime archive is built from source | `pocket compile --aot` generates Rust; Cargo builds the program's `aot/` crate |
 | Runs in the PocketJS simulator and browser host | Yes, the same bundle | No; preview the JS build of the same sources |
 
@@ -118,11 +127,13 @@ Application image size (ESP-IDF 6.2, from the program READMEs):
 | Tab5 | 7,429,296 B | 6,411,168 B | −14 % |
 | StopWatch | 11,342,848 B | 10,621,248 B | −6 % |
 | StickS3 | 2,893,952 B | 1,860,944 B | −36 % |
+| CoreP4X | 11,189,680 B | 10,264,272 B | −8 % |
 | AtomS3 | does not boot (internal RAM) | 2,092,432 B | — |
 
 Pictures take a large part of the Tab5 and StopWatch images in both modes
-(about 3.5 MB and 7 MB), so the share AOT mode saves is smaller there than on
-the StickS3, which draws everything with views.
+(about 3.5 MB and 7 MB), and the CoreP4X image carries 4.2 MB of factory
+audio, so the share AOT mode saves is smaller there than on the StickS3,
+which draws everything with views.
 
 **Choosing a mode.** The JS bundle runs unchanged in the PocketJS simulator
 and browser host, which suits iterating on the interface. AOT mode gives
@@ -159,7 +170,10 @@ esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.3.bin      
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.3.bin # StopWatch
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.3.bin    # StickS3
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.3.bin    # AtomS3, AtomS3R
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-corep4x-js-<version>.bin  # CoreP4X
 ```
+
+Releases after 0.1.3 also carry the CoreP4X images.
 
 [CHANGELOG.md](CHANGELOG.md) lists the images and the changes of each
 version.
@@ -201,6 +215,7 @@ bun install                 # JavaScript dependencies and git hooks
 | Tab5 | `programs/tab5` | `esp32p4` | JS, AOT |
 | StopWatch | `programs/stopwatch` | `esp32s3` | JS, AOT |
 | StickS3 | `programs/sticks3` | `esp32s3` | JS, AOT |
+| CoreP4X | `programs/corep4x` | `esp32p4` | JS, AOT |
 | AtomS3 | `programs/atoms3` | `esp32s3` | AOT (the default of its `sdkconfig.defaults`) |
 
 JS mode, build directory `build/`:
@@ -243,7 +258,7 @@ the screenshots above:
 
 ```sh
 (cd third_party/pocketjs && bun tools/wasm.ts)   # once: builds the wasm core
-bun tools/screenshots.ts                         # all boards, or: tab5 stopwatch sticks3 atoms3
+bun tools/screenshots.ts                         # all boards, or: tab5 stopwatch sticks3 atoms3 corep4x
 ```
 
 The tool compiles each application into `.pocket-build/screenshots/`, drives
@@ -282,7 +297,7 @@ platforms/esp-idf/m5_bsp_<board>   board support taken from M5Stack sources
 ## Repository layout
 
 ```text
-apps/                     the four applications (TSX/TS sources, fonts, images)
+apps/                     the five applications (TSX/TS sources, fonts, images)
 programs/<board>/         ESP-IDF projects: main, sdkconfig.defaults, partitions, AOT crate
 platforms/esp-idf/        board support components and the shared application host
 platforms/rust/           shared Rust crates of the AOT mode
@@ -305,6 +320,10 @@ docs/                     reference documentation
   of the factory's 450. The JS image does not start on the board
   ([programs/stopwatch](programs/stopwatch/README.md#validation)): flash the
   AOT image.
+- CoreP4X: no Wi-Fi (the optional ESP32-C6 module is not driven; the window
+  says so) and no USB host (the USB window reports it). The CoreP4X firmware
+  is built and checked in the simulator only; it has not run on a board
+  ([programs/corep4x](programs/corep4x/README.md#validation)).
 - PocketJS bakes fonts at a fixed set of sizes (10 to 54 px), so factory text
   at other sizes uses the nearest size or is drawn from the factory's glyph
   bitmaps ([docs/FONTS.md](docs/FONTS.md)).
