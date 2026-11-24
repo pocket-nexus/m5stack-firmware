@@ -232,7 +232,7 @@ in AOT mode, where the application crate owns the `Ui`.
 | `display.kind` | Use | Object |
 | --- | --- | --- |
 | `M5_POCKET_DISPLAY_ESP_LCD` | SPI/QSPI/I80 panel with GRAM (CO5300 466×466, ST7789V2 135×240, GC9107 128×128) | upstream `pocket_display_esp_lcd`, config in `display.lcd`: RGB565 strips sent as they are rendered, or with `transfer_rows` whole frames (PSRAM with `buffer_caps`) that a presenter task sends behind the panel's scan (`wait_refresh`); with `column_alignment` a frame is repainted and sent as the windows it changed instead of full-width rows |
-| `M5_POCKET_DISPLAY_ESP_DPI` | ESP32-P4 MIPI-DSI framebuffer (Tab5) | upstream `pocket_display_esp_dpi`, config in `display.dpi` |
+| `M5_POCKET_DISPLAY_ESP_DPI` | ESP32-P4 MIPI-DSI framebuffer (Tab5 turned a quarter, CoreP4X turned a half: `turned`, `half_turn`) | upstream `pocket_display_esp_dpi`, config in `display.dpi` |
 | `M5_POCKET_DISPLAY_CUSTOM` | Any `pocket_display_output_v1` the program owns | `display.custom`, `custom_context`, `custom_buffer_bytes` |
 
 On ESP32-P4, `display.ppa = true` registers the PPA renderer

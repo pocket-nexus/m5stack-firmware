@@ -6,9 +6,9 @@
 [![Release](https://img.shields.io/github/v/release/pocket-nexus/m5stack-firmware)](https://github.com/pocket-nexus/m5stack-firmware/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-这是四块 M5Stack 开发板的固件，界面是用
+这是五块 M5Stack 开发板的固件，界面是用
 [PocketJS](https://github.com/pocket-nexus/pocketjs) 编写的 TypeScript 应用。
-Tab5、StopWatch 和 AtomS3 的程序复刻了各自的出厂演示；StickS3 的程序是七个演示，
+Tab5、StopWatch、CoreP4X 和 AtomS3 的程序复刻了各自的出厂演示；StickS3 的程序是七个演示，
 用到板上的传感器、按键和音频。每个应用都是一套 Solid TSX 视图加 TypeScript
 模型，可以用两种模式构建：
 
@@ -40,6 +40,7 @@ Tab5、StopWatch 和 AtomS3 的程序复刻了各自的出厂演示；StickS3 �
 | [Tab5](programs/tab5/README.md) | ESP32-P4（+ ESP32-C6 无线），32 MB PSRAM，16 MB flash | 5 英寸 720×1280 MIPI-DSI，触摸；界面横屏 | [出厂演示](apps/tab5-factory/README.md)：启动动画、启动器、15 个面板窗口 | JS、AOT |
 | [StopWatch](programs/stopwatch/README.md)（C152） | ESP32-S3，8 MB PSRAM，16 MB flash | 1.75 英寸 466×466 圆形 AMOLED，触摸 | [出厂演示](apps/stopwatch-factory/README.md)：启动器及其打开的九个应用 | JS、AOT |
 | [StickS3](programs/sticks3/README.md)（K150） | ESP32-S3，8 MB PSRAM，8 MB flash | 1.14 英寸 135×240 IPS | [板载功能演示](apps/sticks3-demos/README.md)：弹珠迷宫、骰子、反应计时、贪吃蛇、水平仪、声音计、节拍器 | JS、AOT |
+| [CoreP4X](programs/corep4x/README.md)（C157） | ESP32-P4（芯片版本 3），32 MB PSRAM，16 MB flash | 2.64 英寸 480×480 MIPI-DSI，触摸 | [出厂演示](apps/corep4x-factory/README.md)：启动、信息和功能三屏，14 个功能窗口 | JS、AOT |
 | [AtomS3、AtomS3R](programs/atoms3/README.md) | ESP32-S3，无 PSRAM，8 MB flash（AtomS3R：8 MB PSRAM，未使用） | 0.85 英寸 128×128 IPS | [出厂演示](apps/atoms3-factory/README.md)：Wi-Fi、I2C、UART、PWM、ADC、红外和 IMU 功能 | 仅 AOT |
 
 除 AtomS3 外，所有开发板默认使用 JS 模式。AtomS3 只有 512 KB SRAM、没有
@@ -50,7 +51,8 @@ ST7735S 屏幕的 AtomS3R 不在支持范围内。
 
 出厂演示依据 M5Stack 的源码复刻：
 [M5Tab5-UserDemo](https://github.com/m5stack/M5Tab5-UserDemo)、
-[M5StopWatch-UserDemo](https://github.com/m5stack/M5StopWatch-UserDemo) 和
+[M5StopWatch-UserDemo](https://github.com/m5stack/M5StopWatch-UserDemo)、
+[M5CoreP4X-UserDemo](https://github.com/m5stack/M5CoreP4X-UserDemo) 和
 [M5AtomS3-UserDemo](https://github.com/m5stack/M5AtomS3-UserDemo)。每个应用的
 README 列出了它复刻的出厂界面，以及与出厂固件的全部已知差异。
 
@@ -80,6 +82,12 @@ README 列出了它复刻的出厂界面，以及与出厂固件的全部已知�
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/images/sticks3-home.png" alt="StickS3 主页轮播" width="110"> | <img src="docs/images/sticks3-maze.png" alt="弹珠迷宫" width="110"> | <img src="docs/images/sticks3-dice.png" alt="骰子" width="110"> | <img src="docs/images/sticks3-snake.png" alt="贪吃蛇" width="110"> | <img src="docs/images/sticks3-level.png" alt="水平仪" width="110"> | <img src="docs/images/sticks3-sound.png" alt="声音计" width="110"> | <img src="docs/images/sticks3-metronome.png" alt="节拍器" width="110"> |
 
+### CoreP4X
+
+| 功能屏 | POWER | TIMER | MUSIC | IR TX/RX |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/images/corep4x-function.png" alt="CoreP4X 功能屏" width="200"> | <img src="docs/images/corep4x-power.png" alt="POWER 窗口" width="200"> | <img src="docs/images/corep4x-timer.png" alt="TIMER 窗口" width="200"> | <img src="docs/images/corep4x-music.png" alt="MUSIC 窗口" width="200"> | <img src="docs/images/corep4x-ir.png" alt="IR TX/RX 窗口" width="200"> |
+
 ### AtomS3
 
 | 菜单 | Wi-Fi 扫描 | I2C 扫描 | UART 监视 | PWM | IMU |
@@ -99,7 +107,7 @@ README 列出了它复刻的出厂界面，以及与出厂固件的全部已知�
 | 板级数值与请求（`device.ts`） | `main.tsx` 接入 `globalThis.m5`，每帧调用 `device.ts` 的 host 函数 | 程序的 AOT crate 通过生成的访问器写入 `device.ts` 字段 |
 | 触摸 | 由框架的点击识别器处理 | host 把一次接触转换为对其下方可聚焦视图的按压；没有手势和滚动事件 |
 | 图片 | 位于 bundle 的资源包中 | 烘焙进 flash；按程序不同，在首次绘制时解码，或在启动时复制到堆中 |
-| 内存 | QuickJS 堆，有 PSRAM 的开发板从 PSRAM 分配（上限：StickS3 4 MiB、StopWatch 6 MiB、Tab5 24 MiB） | 没有 QuickJS 堆；无需 PSRAM |
+| 内存 | QuickJS 堆，有 PSRAM 的开发板从 PSRAM 分配（上限：StickS3 4 MiB、StopWatch 6 MiB、CoreP4X 16 MiB、Tab5 24 MiB） | 没有 QuickJS 堆；无需 PSRAM |
 | 构建 | `pocket compile` 生成 bundle；PocketJS 运行时归档从源码构建 | `pocket compile --aot` 生成 Rust；Cargo 构建程序的 `aot/` crate |
 | 能否在 PocketJS 模拟器和浏览器 host 中运行 | 能，使用同一个 bundle | 不能；可预览同一份源码的 JS 构建 |
 
@@ -110,10 +118,12 @@ README 列出了它复刻的出厂界面，以及与出厂固件的全部已知�
 | Tab5 | 7,429,296 B | 6,411,168 B | −14 % |
 | StopWatch | 11,342,848 B | 10,621,248 B | −6 % |
 | StickS3 | 2,893,952 B | 1,860,944 B | −36 % |
+| CoreP4X | 11,189,680 B | 10,264,272 B | −8 % |
 | AtomS3 | 无法启动（内部 RAM 不足） | 2,092,432 B | — |
 
 在 Tab5 和 StopWatch 的镜像中，两种模式下图片都占了很大一部分（约 3.5 MB 和
-7 MB），因此 AOT 模式节省的比例小于 StickS3；StickS3 的界面全部由视图绘制。
+7 MB），CoreP4X 的镜像带有 4.2 MB 出厂音频，因此 AOT 模式节省的比例小于
+StickS3；StickS3 的界面全部由视图绘制。
 
 **如何选择模式。** JS bundle 可以不经修改地在 PocketJS 模拟器和浏览器 host 中运行，
 适合迭代界面。AOT 模式的镜像更小，不需要 JavaScript 堆，也是 AtomS3 唯一能
@@ -145,7 +155,10 @@ esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.3.bin      
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.3.bin # StopWatch
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.3.bin    # StickS3
 esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.3.bin    # AtomS3, AtomS3R
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-corep4x-js-<version>.bin  # CoreP4X
 ```
+
+0.1.3 之后的版本也包含 CoreP4X 镜像。
 
 [CHANGELOG.md](CHANGELOG.md) 列出了每个版本的镜像和变更。
 
@@ -185,6 +198,7 @@ bun install                 # JavaScript 依赖和 git hooks
 | Tab5 | `programs/tab5` | `esp32p4` | JS、AOT |
 | StopWatch | `programs/stopwatch` | `esp32s3` | JS、AOT |
 | StickS3 | `programs/sticks3` | `esp32s3` | JS、AOT |
+| CoreP4X | `programs/corep4x` | `esp32p4` | JS、AOT |
 | AtomS3 | `programs/atoms3` | `esp32s3` | AOT（其 `sdkconfig.defaults` 的默认值） |
 
 JS 模式，构建目录 `build/`：
@@ -223,7 +237,7 @@ JS bundle 可以在 PocketJS 模拟器（wasm 核心）中运行，上面的截�
 
 ```sh
 (cd third_party/pocketjs && bun tools/wasm.ts)   # 只需一次：构建 wasm 核心
-bun tools/screenshots.ts                         # 全部开发板，或指定：tab5 stopwatch sticks3 atoms3
+bun tools/screenshots.ts                         # 全部开发板，或指定：tab5 stopwatch sticks3 atoms3 corep4x
 ```
 
 该工具把每个应用编译到 `.pocket-build/screenshots/`，按预设流程操作界面，
@@ -257,7 +271,7 @@ platforms/esp-idf/m5_bsp_<board>   取自 M5Stack 源码的板级支持
 ## 仓库结构
 
 ```text
-apps/                     四个应用（TSX/TS 源码、字体、图片）
+apps/                     五个应用（TSX/TS 源码、字体、图片）
 programs/<board>/         ESP-IDF 工程：main、sdkconfig.defaults、分区表、AOT crate
 platforms/esp-idf/        板级支持组件和共享的应用 host
 platforms/rust/           AOT 模式共享的 Rust crate
@@ -279,6 +293,9 @@ docs/                     参考文档
   FluidBox 模拟 48 个粒子，出厂固件为 450 个。JS 镜像在开发板上无法启动
   （见 [programs/stopwatch](programs/stopwatch/README.md#validation)），请烧录
   AOT 镜像。
+- CoreP4X：不驱动 Wi-Fi（可选的 ESP32-C6 模块，窗口中会说明）和 USB host（USB
+  窗口会提示）。CoreP4X 固件只做过构建和模拟器检查，没有在开发板上运行过
+  （见 [programs/corep4x](programs/corep4x/README.md#validation)）。
 - PocketJS 只在一组固定字号（10 到 54 px）上烘焙字体，因此出厂固件中其他字号的
   文字改用最接近的字号，或用出厂固件的字形位图绘制（[docs/FONTS.md](docs/FONTS.md)）。
 

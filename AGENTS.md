@@ -29,9 +29,10 @@ Architecture and implementation notes belong in `docs/`, not here.
   `commitlint.config.mjs`.
 - The scope names the directory the change touches: a component
   (`m5-bsp-tab5`, `m5-bsp-stopwatch`, `m5-bsp-sticks3`, `m5-bsp-atoms3`,
-  `m5-pocket-app`), a program (`tab5`, `stopwatch`, `sticks3`, `atoms3`), an
-  app (`tab5-factory`, `stopwatch-factory`, `sticks3-demos`,
-  `atoms3-factory`), `tools`, `docs` or `deps`. Omit the scope only for
+  `m5-bsp-corep4x`, `m5-pocket-app`), a program (`tab5`, `stopwatch`,
+  `sticks3`, `atoms3`, `corep4x`), an app (`tab5-factory`,
+  `stopwatch-factory`, `sticks3-demos`, `atoms3-factory`,
+  `corep4x-factory`), `tools`, `docs` or `deps`. Omit the scope only for
   repository-wide changes.
 - The header is at most 72 characters; the summary is imperative, lower case,
   without a trailing period.
@@ -113,7 +114,8 @@ Architecture and implementation notes belong in `docs/`, not here.
   or `targets` in `idf_component.yml`).
 - Public headers live under `include/<namespace>/`; private headers stay in
   `src/`. Public symbols carry the component prefix (`m5_tab5_`,
-  `m5_stopwatch_`, `m5_sticks3_`, `m5_atoms3_`, `m5_pocket_`).
+  `m5_stopwatch_`, `m5_sticks3_`, `m5_atoms3_`, `m5_corep4x_`,
+  `m5_pocket_`).
 - PocketJS ABI records: set `struct_size` on every record written, validate
   `struct_size` on every record read, and advance record arrays by each
   element's `struct_size`.
