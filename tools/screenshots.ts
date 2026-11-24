@@ -4,7 +4,7 @@
 // and the tool writes one PNG per stop. The images show layout and artwork as
 // the simulator draws them; they are not photographs of a device.
 //
-//   bun tools/screenshots.ts [tab5|stopwatch|sticks3|atoms3]...
+//   bun tools/screenshots.ts [tab5|stopwatch|sticks3|atoms3|corep4x]...
 //
 // Needs the wasm core third_party/pocketjs/platforms/web/pocketjs.wasm
 // (`bun tools/wasm.ts` inside the submodule). Bundles are compiled with
@@ -355,6 +355,55 @@ const tours: Record<string, Tour> = {
       click();
       click();
       visit("imu", 60);
+    },
+  },
+  corep4x: {
+    app: "corep4x-factory",
+    viewport: { width: 480, height: 480, rasterDensity: 1 },
+    scale: 1,
+    round: false,
+    run(t) {
+      // The screens follow the board's pointerX/pointerY/pointerDown
+      // values (the swipes); the hotspots and buttons take the contacts.
+      const touch = (x: number, y: number) => {
+        t.set("pointerX", Math.round(x));
+        t.set("pointerY", Math.round(y));
+        t.set("pointerDown", 1);
+        t.run(1, 0, [{ x, y }]);
+      };
+      const release = () => {
+        t.set("pointerDown", 0);
+        t.run(1);
+      };
+      const tap = (x: number, y: number) => {
+        touch(x, y);
+        touch(x, y);
+        release();
+      };
+      const swipe = (x0: number, x1: number) => {
+        for (let i = 0; i <= 6; i++) touch(x0 + ((x1 - x0) * i) / 6, 240);
+        release();
+        t.run(20);
+      };
+      // A function window from its hotspot; Exit closes it.
+      const visit = (name: string, x: number, y: number) => {
+        tap(x, y);
+        t.run(15);
+        t.shot(name);
+        tap(426, 28);
+        t.run(15);
+      };
+      t.run(10);
+      t.shot("startup");
+      swipe(240, 400);
+      t.shot("info");
+      swipe(400, 240);
+      swipe(400, 100);
+      t.shot("function");
+      visit("power", 65, 110);
+      visit("timer", 410, 245);
+      visit("music", 410, 380);
+      visit("ir", 295, 380);
     },
   },
 };
