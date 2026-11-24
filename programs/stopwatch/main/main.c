@@ -12,6 +12,8 @@
  */
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "m5_pocket/app.h"
 #include "m5_stopwatch/bsp.h"
 #include "nvs_flash.h"
@@ -38,8 +40,8 @@ static uint32_t buttons(void *context) {
   return stopwatch_services_buttons();
 }
 
-static bool touch(void *context, float *x, float *y) {
-  (void)context;
+/* One read of the CST820: an I2C transaction at 100 kHz, about 1 ms. */
+static bool touch_read(float *x, float *y) {
   if (!board.touch || esp_lcd_touch_read_data(board.touch) != ESP_OK) {
     return false;
   }
@@ -52,6 +54,42 @@ static bool touch(void *context, float *x, float *y) {
   *x = point.x;
   *y = point.y;
   return true;
+}
+
+/* The contact is read on a task of core 0, a sample per frame at 60 Hz, so
+ * that the app task's input poll does not wait for the I2C transaction. The
+ * poll takes the latest sample. */
+#define TOUCH_PERIOD_MS 16
+
+static portMUX_TYPE touch_lock = portMUX_INITIALIZER_UNLOCKED;
+static struct {
+  bool down;
+  float x, y;
+} touch_latest;
+
+static void touch_task(void *arg) {
+  (void)arg;
+  TickType_t wake = xTaskGetTickCount();
+  for (;;) {
+    float x = 0, y = 0;
+    const bool down = touch_read(&x, &y);
+    portENTER_CRITICAL(&touch_lock);
+    touch_latest.down = down;
+    touch_latest.x = x;
+    touch_latest.y = y;
+    portEXIT_CRITICAL(&touch_lock);
+    vTaskDelayUntil(&wake, pdMS_TO_TICKS(TOUCH_PERIOD_MS));
+  }
+}
+
+static bool touch(void *context, float *x, float *y) {
+  (void)context;
+  portENTER_CRITICAL(&touch_lock);
+  const bool down = touch_latest.down;
+  *x = touch_latest.x;
+  *y = touch_latest.y;
+  portEXIT_CRITICAL(&touch_lock);
+  return down;
 }
 
 static void before_frame(void *context) {
@@ -121,6 +159,10 @@ void app_main(void) {
 #endif
   config.task_core = 1;
 
+  ESP_ERROR_CHECK(xTaskCreatePinnedToCore(touch_task, "touch", 4096, NULL, 4,
+                                          NULL, 0) == pdPASS
+                      ? ESP_OK
+                      : ESP_ERR_NO_MEM);
   m5_pocket_app *app = NULL;
   ESP_ERROR_CHECK(m5_pocket_app_start(&config, &app));
   stopwatch_services_set_app(app);
