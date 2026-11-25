@@ -121,6 +121,8 @@ typedef struct {
 typedef struct {
   uint32_t frames;
   uint32_t frame_errors;
+  /* Cadence slots without a presented frame; frames_caught_up of them ran
+   * the application's frame without presenting it. */
   uint32_t frames_skipped;
   uint32_t max_frame_us;
   uint32_t last_frame_us;
@@ -130,6 +132,7 @@ typedef struct {
   /* The same for the internal-stack helper task; 0 before its first call
    * and without that task. */
   uint32_t internal_stack_free_min;
+  uint32_t frames_caught_up;
 } m5_pocket_app_stats;
 
 typedef struct m5_pocket_app m5_pocket_app;
@@ -167,6 +170,11 @@ typedef struct {
   /* Called on the app task after every frame with its PocketJS status. */
   void (*after_frame)(void *context, int32_t status);
   void *hook_context;
+  /* AOT mode: for each cadence slot a frame overran, up to this many, the
+   * application's frame runs once more without presentation (before_frame,
+   * input, guest turn, requests, core ticks; no after_frame), so its frame
+   * count keeps the cadence. 0 skips the slots; JS mode always skips. */
+  uint32_t catch_up_frames;
 } m5_pocket_app_config;
 
 /* The mode this firmware was built in. */

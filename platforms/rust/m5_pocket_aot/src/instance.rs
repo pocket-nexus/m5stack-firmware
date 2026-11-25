@@ -226,6 +226,31 @@ pub unsafe fn tick<D: DeviceApp>(app: *mut c_void) -> i32 {
     }
 }
 
+/// `m5_pocket_aot_skip`: one frame without presentation (bridge values in,
+/// input, guest turn, requests out, core ticks). The next presented frame
+/// paints what it changed. The first failure is logged.
+///
+/// # Safety
+/// `app` came from [`create`] for the same `D`; calls are not concurrent.
+pub unsafe fn skip<D: DeviceApp>(app: *mut c_void) -> i32 {
+    if app.is_null() {
+        return STATUS_INVALID;
+    }
+    let instance = unsafe { &mut *app.cast::<Instance<D>>() };
+    let advanced = instance.runtime.advance();
+    let skipped = advanced.and_then(|()| instance.runtime.skip_presentation());
+    match skipped {
+        Ok(()) => STATUS_OK,
+        Err(error) => {
+            if !instance.failed {
+                instance.failed = true;
+                log(&format!("m5_pocket_aot: skip: {error:?}"));
+            }
+            STATUS_FAILED
+        }
+    }
+}
+
 /// `m5_pocket_aot_destroy`: completes presentation, shuts the app down and
 /// releases the runtime.
 ///

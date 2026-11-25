@@ -205,10 +205,23 @@ static void run(void *argument) {
         config->after_frame(config->hook_context, status);
       next += period;
       if (now >= next) {
-        /* Behind schedule: skip the slots already missed. */
+        /* Behind schedule: the slots already missed get no presented frame.
+         * Up to catch_up_frames of them still run the application's frame
+         * without presentation, so its frame count, and every animation it
+         * counts in frames, keeps the cadence; the rest are dropped. */
         const int64_t missed = (now - next) / period + 1;
         app->stats.frames_skipped += (uint32_t)missed;
         next += missed * period;
+        const int64_t catch_up =
+            m5_pocket_backend_can_skip() ? config->catch_up_frames : 0;
+        for (int64_t i = 0; i < missed && i < catch_up; i++) {
+          if (config->before_frame)
+            config->before_frame(config->hook_context);
+          const int32_t skip = m5_pocket_backend_skip(app);
+          if (skip != POCKET_STATUS_OK)
+            break;
+          app->stats.frames_caught_up++;
+        }
       }
       const int64_t wait_us = next - esp_timer_get_time();
       if (wait_us > 0)

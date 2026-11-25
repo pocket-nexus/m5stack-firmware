@@ -181,6 +181,14 @@ program's. `m5_pocket_app_get_stats` reports frames, errors, skipped slots,
 the longest frame and the smallest unused stack seen, of the app task and of
 the internal-stack helper task.
 
+A frame that overruns its slot skips the slots it ran into; the
+application's frame count is its clock, so its animations slow down. With
+`catch_up_frames` set, AOT mode runs the application's frame once more
+without presentation for each skipped slot, up to that many
+(`before_frame`, input, guest turn, requests, core ticks; no
+`after_frame`): the frame count keeps the cadence while the panel shows
+fewer frames. JS mode always skips.
+
 ### Flash operations from the hooks
 
 **A task whose stack is in PSRAM cannot make a flash operation**: NVS, FAT,

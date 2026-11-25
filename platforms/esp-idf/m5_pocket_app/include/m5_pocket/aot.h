@@ -42,6 +42,9 @@ uint32_t m5_pocket_aot_cadence_hz(const m5_pocket_aot *app);
 /* One frame: bridge values in, input, guest turn, requests out, present.
  * Returns a POCKET_STATUS_* code. */
 int32_t m5_pocket_aot_tick(m5_pocket_aot *app);
+/* One frame without presentation: as m5_pocket_aot_tick up to the core
+ * ticks; the next presented frame paints what it changed. */
+int32_t m5_pocket_aot_skip(m5_pocket_aot *app);
 void m5_pocket_aot_destroy(m5_pocket_aot *app);
 /* m5_pocket_app_set_texture, between frames on the app task: upload
  * width x height texels of format `psm` into the app's Ui (a handle or -1),
