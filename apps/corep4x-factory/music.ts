@@ -7,6 +7,7 @@
 // output volume. Closing the window does not stop the music.
 import { copy, f32, i32, imod, len, push, round, type Color } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
+import { TICK_HZ } from "./ease";
 
 /** device.musicState */
 export const READY: i32 = 0;
@@ -30,7 +31,8 @@ let shown: i32[] = [];
 /** Counts the changes of `shown`: the view takes new bars only then. */
 export let revision: i32 = 0;
 let fresh: boolean = true;
-let tickFrames: i32 = 0;
+/** Elapsed time towards the next bar update, in 1/TICK_HZ ms. */
+let tickTime: i32 = 0;
 
 // Volume slider: 176x18 at (251,412) on the screen.
 const SLIDER_LEFT: i32 = 251;
@@ -48,7 +50,7 @@ export function open(): void {
   }
   revision = revision + 1;
   fresh = true;
-  tickFrames = 0;
+  tickTime = 0;
   device.request("music 1");
 }
 
@@ -65,11 +67,11 @@ export function press(): void {
   }
 }
 
-/** One frame: the bars every 50 ms (three frames in two), the slider. */
+/** One frame: the bars every 50 ms, the slider. */
 export function step(x: i32, y: i32, down: boolean): void {
-  tickFrames = tickFrames + 2;
-  if (tickFrames >= 3) {
-    tickFrames = tickFrames - 3;
+  tickTime = tickTime + 1000;
+  if (tickTime >= 50 * TICK_HZ) {
+    tickTime = tickTime - 50 * TICK_HZ;
     let changed: boolean = false;
     for (let i: i32 = 0; i < 24; i++) {
       const playing = device.musicState === PLAYING;

@@ -6,20 +6,22 @@
 // recentres it. Until the first pose the panel shows "Initializing IMU..."
 // then "Keep sensor still / Calibrating IMU..."; a failed start shows the
 // error and closes the window after 5 s.
-import { i32, type f64 } from "@pocketjs/framework/solid/std";
+import { idiv, type i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
+import { framesIn, TICK_HZ } from "./ease";
 
 export const STARTING: i32 = 0;
 export const CALIBRATING: i32 = 1;
 export const READY: i32 = 2;
 export const FAILED: i32 = 3;
 
-let closeMs: f64 = -1.0;
+/** Frames until a failed start closes the window, -1 before it failed. */
+let closeFrames: i32 = -1;
 /** Exit hides the content before the close animation. */
 export let hidden: boolean = false;
 
 export function open(): void {
-  closeMs = -1.0;
+  closeFrames = -1;
   hidden = false;
   device.request("imu 1");
 }
@@ -40,14 +42,14 @@ export function exit(): void {
  *  deleted without its close animation). */
 export function step(): boolean {
   if (device.imuState !== FAILED) {
-    closeMs = -1.0;
+    closeFrames = -1;
     return false;
   }
-  if (closeMs < 0) {
-    closeMs = 5000.0;
+  if (closeFrames < 0) {
+    closeFrames = framesIn(5000);
   }
-  closeMs = closeMs - 33.333332;
-  return closeMs <= 0;
+  closeFrames = closeFrames - 1;
+  return closeFrames <= 0;
 }
 
 export function overlayShown(): boolean {
@@ -56,7 +58,7 @@ export function overlayShown(): boolean {
 
 export function overlayText(): string {
   if (device.imuState === FAILED) {
-    const seconds = closeMs < 0 ? 5 : i32((closeMs + 999.0) / 1000.0);
+    const seconds: i32 = closeFrames < 0 ? 5 : idiv(closeFrames + TICK_HZ - 1, TICK_HZ);
     return `IMU unavailable\nInit failed: ${device.imuError}\nReturning in ${seconds < 0 ? 0 : seconds}s`;
   }
   if (device.imuState === CALIBRATING) {

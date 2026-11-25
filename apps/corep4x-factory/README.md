@@ -77,7 +77,8 @@ defaults in `device.ts`; there is no simulation.
 Gestures are model code on `pointerX`, `pointerY` and `pointerDown`: the
 screen swipes (50 px with a minimum speed, as LVGL's gesture detection), the
 POWER slider, the MUSIC volume slider, the SD list drag, the IR byte tiles
-(one step per 12 px).
+(one step per 12 px). The application runs at 60 Hz; the factory's durations
+are counted in frames (`ease.ts`).
 
 ## Screens reproduced
 
@@ -117,9 +118,8 @@ POWER slider, the MUSIC volume slider, the SD list drag, the IR byte tiles
 - **TOUCH**: the CST3530 firmware upgrade card is not shown (the updater is
   not implemented). The status line reads "Panel: CST3XX OK" once the
   controller answers; the factory always prints "--" because its
-  initialised flag is never set. The canvas follows the contacts once per
-  frame (30 Hz) instead of every 16 ms, and the visited cells' rounded
-  corners are not anti-aliased.
+  initialised flag is never set. The visited cells' rounded corners are not
+  anti-aliased.
 - **IMU**: the view is rendered at up to 30 Hz (the factory: 40 Hz).
 - **SD CARD**: card insertion and removal are noticed within about 1.3 s
   (the detect pin is read every second, 300 ms debounce); the factory polls

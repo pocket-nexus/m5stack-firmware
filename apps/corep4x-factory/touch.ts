@@ -6,6 +6,7 @@
 // window. Info shows the controller page with the touch indicator switch.
 import type { i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
+import { framesIn } from "./ease";
 
 export let canvasShown: boolean = false;
 let visitedSeen: i32 = -1;
@@ -33,7 +34,7 @@ export function showCanvas(): void {
   device.request("touchCanvasPause 0");
 }
 
-/** One frame of the idle timeout: 10 s (300 frames) without a contact
+/** One frame of the idle timeout: 10 s without a contact
  *  while the canvas is shown closes the window; true then. */
 export function idle(down: boolean): boolean {
   if (!canvasShown || down) {
@@ -41,7 +42,7 @@ export function idle(down: boolean): boolean {
     return false;
   }
   idleFrames = idleFrames + 1;
-  return idleFrames >= 300;
+  return idleFrames >= framesIn(10000);
 }
 
 export function clean(): void {

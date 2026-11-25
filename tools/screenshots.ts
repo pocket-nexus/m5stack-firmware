@@ -27,7 +27,9 @@ const images = join(root, "docs/images");
 // Every bundle is stepped 30 core ticks per second. That is the tickHz of
 // three applications; the StopWatch application (tickHz 60) advances its
 // clock by 33.333 ms per frame without a board, so its tour counts 30 Hz
-// frames as well. sim.ts reads the tick rate when it is first imported.
+// frames as well. The CoreP4X application (tickHz 60) counts its durations
+// in frames, so its tour waits in 60 Hz frames. sim.ts reads the tick rate
+// when it is first imported.
 (globalThis as { __POCKET_TICK_HZ__?: number }).__POCKET_TICK_HZ__ = 30;
 const { bootBundle } = await import("../third_party/pocketjs/programs/sim/sim.ts");
 
@@ -383,15 +385,15 @@ const tours: Record<string, Tour> = {
       const swipe = (x0: number, x1: number) => {
         for (let i = 0; i <= 6; i++) touch(x0 + ((x1 - x0) * i) / 6, 240);
         release();
-        t.run(20);
+        t.run(40);
       };
       // A function window from its hotspot; Exit closes it.
       const visit = (name: string, x: number, y: number) => {
         tap(x, y);
-        t.run(15);
+        t.run(30);
         t.shot(name);
         tap(426, 28);
-        t.run(15);
+        t.run(30);
       };
       t.run(10);
       t.shot("startup");

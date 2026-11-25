@@ -5,9 +5,11 @@
 // lv_screen_load_anim MOVE_LEFT/MOVE_RIGHT over 500 ms on the linear path:
 // both screens slide by the screen width. LVGL fires the gesture while the
 // finger moves, once the movement since the press (summed over reads that
-// move at least 3 px) exceeds 50 px, then waits for the release.
+// move at least 3 px) exceeds 50 px, then waits for the release. LVGL reads
+// the touch controller every LV_DEF_REFR_PERIOD (33 ms); the recogniser
+// samples the contact at that period, whatever the frame rate.
 import { abs, f32, type i32 } from "@pocketjs/framework/solid/std";
-import { progress } from "./ease";
+import { framesIn, progress } from "./ease";
 
 export const STARTUP: i32 = 0;
 export const INFO: i32 = 1;
@@ -17,6 +19,7 @@ const WIDTH: f32 = 480;
 const MOVE_MS: f32 = 500;
 const GESTURE_LIMIT: i32 = 50;
 const GESTURE_MIN_VELOCITY: i32 = 3;
+const READ_MS: i32 = 33;
 
 /** The loaded screen, and during a move the screen that is leaving. */
 export let current: i32 = STARTUP;
@@ -28,6 +31,8 @@ let moveFrames: i32 = 0;
 let wasDown: boolean = false;
 let lastX: i32 = 0;
 let lastY: i32 = 0;
+/** Frames since the last sample of the contact. */
+let readFrames: i32 = 0;
 let sumX: i32 = 0;
 let sumY: i32 = 0;
 /** A gesture fired during this contact: no further gesture, no taps. */
@@ -100,7 +105,12 @@ export function step(x: i32, y: i32, down: boolean, blocked: boolean): void {
     sumY = 0;
     lastX = x;
     lastY = y;
+    readFrames = 0;
   } else if (down) {
+    readFrames = readFrames + 1;
+  }
+  if (down && wasDown && readFrames >= framesIn(READ_MS)) {
+    readFrames = 0;
     const vx: i32 = x - lastX;
     const vy: i32 = y - lastY;
     lastX = x;

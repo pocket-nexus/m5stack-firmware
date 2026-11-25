@@ -5,6 +5,7 @@
 // command, or restarts.
 import { idiv, type i32 } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
+import { framesIn } from "./ease";
 
 export const IDLE: i32 = 0;
 export const POWER_OFF: i32 = 1;
@@ -74,13 +75,13 @@ export function pressRestart(): void {
   }
 }
 
-/** One frame: a countdown step every third frame (100 ms at 30 Hz). */
+/** One frame: a countdown step every 100 ms. */
 export function step(): void {
   if (!running || pending === IDLE) {
     return;
   }
   stepFrames = stepFrames + 1;
-  if (stepFrames < 3) {
+  if (stepFrames < framesIn(100)) {
     return;
   }
   stepFrames = 0;

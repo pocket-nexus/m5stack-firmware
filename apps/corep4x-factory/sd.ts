@@ -7,6 +7,7 @@
 import { codePoints, fromCodePoint, i32, len, push, type Color } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 import * as dialog from "./dialog";
+import { framesIn } from "./ease";
 import { dots } from "./wrap";
 
 export const OWNER: i32 = 2;
@@ -129,7 +130,7 @@ export function tapRow(index: i32): void {
   if (dragged || testRunning || !ready() || index >= len(entries)) {
     return;
   }
-  if (index === lastTap && frame - lastTapFrame <= 12) {
+  if (index === lastTap && frame - lastTapFrame <= framesIn(400)) {
     lastTap = -1;
     const entry = entries[index];
     if (entry.dir) {
