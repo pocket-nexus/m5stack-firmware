@@ -25,6 +25,10 @@ uint8_t m5_corep4x_ioe1_address(void);
 /* Output without pulls, push-pull or open drain; disables PWM on
  * PWM-capable pins. */
 esp_err_t m5_corep4x_ioe1_output(uint8_t pin, bool open_drain);
+/* Drive mode alone, push-pull or open drain (M5IOE1::setDriveMode); a PWM
+ * output keeps running. The mode is the expander's state, kept until it
+ * loses power. */
+esp_err_t m5_corep4x_ioe1_drive(uint8_t pin, bool open_drain);
 /* Input with the pull-up on or off and the pull-down off. */
 esp_err_t m5_corep4x_ioe1_input(uint8_t pin, bool pull_up);
 /* Writes the output bit and verifies it by reading GPIO_OUT back. */
