@@ -137,14 +137,12 @@ AOT crate 如何构建。
 应用。用 [esptool](https://github.com/espressif/esptool) 写入偏移 0x0：
 
 ```sh
-esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.3.bin       # Tab5
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.3.bin # StopWatch
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.3.bin    # StickS3
-esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.3.bin    # AtomS3, AtomS3R
-esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-corep4x-js-<version>.bin  # CoreP4X
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-tab5-js-v0.1.4.bin       # Tab5
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.4.bin # StopWatch
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-sticks3-js-v0.1.4.bin    # StickS3
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-atoms3-aot-v0.1.4.bin    # AtomS3, AtomS3R
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-corep4x-aot-v0.1.4.bin   # CoreP4X
 ```
-
-0.1.3 之后的版本也包含 CoreP4X 镜像。
 
 [CHANGELOG.md](CHANGELOG.md) 列出了每个版本的镜像和变更。
 
