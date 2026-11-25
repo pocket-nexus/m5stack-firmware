@@ -4,6 +4,66 @@ Each version is a git tag `v<version>`. The Firmware workflow publishes the
 section of that version as the release notes, with one merged flash image per
 board and mode.
 
+## 0.1.4 - 2026-11-25
+
+CoreP4X: the M5Stack CoreP4X (C157) with its factory demo, in JS and AOT
+mode. PocketJS `4f0dabf5`; ESP-IDF 6.2, as in 0.1.3.
+
+| Image | Board | Application | Mode |
+| --- | --- | --- | --- |
+| `m5stack-firmware-tab5-js-v0.1.4.bin` | Tab5 (ESP32-P4) | Tab5 factory demo | JS |
+| `m5stack-firmware-tab5-aot-v0.1.4.bin` | Tab5 (ESP32-P4) | Tab5 factory demo | AOT |
+| `m5stack-firmware-stopwatch-js-v0.1.4.bin` | StopWatch C152 (ESP32-S3) | StopWatch factory demo | JS |
+| `m5stack-firmware-stopwatch-aot-v0.1.4.bin` | StopWatch C152 (ESP32-S3) | StopWatch factory demo | AOT |
+| `m5stack-firmware-sticks3-js-v0.1.4.bin` | StickS3 (ESP32-S3) | Seven board demos | JS |
+| `m5stack-firmware-sticks3-aot-v0.1.4.bin` | StickS3 (ESP32-S3) | Seven board demos | AOT |
+| `m5stack-firmware-atoms3-aot-v0.1.4.bin` | AtomS3 and AtomS3R (ESP32-S3) | AtomS3 factory demo | AOT |
+| `m5stack-firmware-corep4x-js-v0.1.4.bin` | CoreP4X C157 (ESP32-P4 rev 3.x) | CoreP4X factory demo | JS |
+| `m5stack-firmware-corep4x-aot-v0.1.4.bin` | CoreP4X C157 (ESP32-P4 rev 3.x) | CoreP4X factory demo | AOT |
+
+Each image holds the bootloader, the partition table and the application and
+is written at offset 0x0:
+
+```sh
+esptool --chip esp32p4 write-flash 0x0 m5stack-firmware-corep4x-aot-v0.1.4.bin
+esptool --chip esp32s3 write-flash 0x0 m5stack-firmware-stopwatch-aot-v0.1.4.bin
+```
+
+- **CoreP4X** (new): the factory demo's startup, info and function screens
+  and its 14 windows at 60 Hz, on the 480x480 MIPI-DSI panel with touch:
+  - power rails, backlight, charging, battery voltage, M5-Bus GPIO levels
+    and configuration, power off and restart;
+  - the touch canvas, microSD listing and speed test, I2C scans of the
+    internal bus and Port A;
+  - the IMU with a 3D view of the board, the RTC with NTP;
+  - music playback with a spectrum, microphone recording and playback with
+    waveforms and spectrograms, the startup sound;
+  - Ethernet ping, IR send and receive (NEC);
+  - deep sleep, woken by the power button, an RTC timer, touch or motion.
+
+  Not driven: Wi-Fi (the ESP32-C6 module), the USB-A host and the touch
+  controller's firmware update; the WiFi and USB windows say so.
+- **All boards**: PocketJS `4f0dabf5`. `pocket_display_esp_dpi` can present
+  a picture turned 180 degrees, and the runtime's C API can run a frame
+  without presenting it. The app host's `catch_up_frames` runs the frames of
+  skipped cadence slots without presenting them, so animations counted in
+  frames keep their durations; the CoreP4X uses it, the other boards keep
+  the 0.1.3 behaviour.
+- **Tab5, StopWatch, StickS3, AtomS3**: the applications and the board
+  support are those of 0.1.3. The README screenshots are byte for byte
+  those of 0.1.3.
+
+**Known issues**: in the CoreP4X JS image a window takes up to about 1 s
+to open; the AOT image opens it within its animation. The StopWatch JS
+image does not start on the board, as in 0.1.3; flash the AOT image.
+
+**Validation**: firmware builds in CI. A CoreP4X (ESP32-P4 v3.2) ran local
+builds of the same sources in both modes: every screen and window opened
+from scripted touches and by hand, and the IMU calibrated. The picture as
+seen, audio, IR, microSD, the Ethernet link and deep sleep were not checked
+on the board. Tab5, StopWatch, StickS3, AtomS3 and AtomS3R were built and
+not run for this release.
+
 ## 0.1.3 - 2026-11-24
 
 StopWatch: the AOT image runs at a 60 Hz cadence, 56 to 60 frames per second
