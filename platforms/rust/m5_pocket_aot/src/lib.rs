@@ -36,8 +36,8 @@ mod sys;
 pub use fields::Field;
 pub use host::M5Host;
 pub use instance::{
-    cadence_hz, create, destroy, free_texture, register_image, tick, upload_texture, AotConfig,
-    AppFacts, Hosted,
+    cadence_hz, create, destroy, free_texture, register_image, skip, tick, upload_texture,
+    AotConfig, AppFacts, Hosted,
 };
 pub use sys::log;
 
@@ -99,6 +99,10 @@ macro_rules! export_app {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn m5_pocket_aot_tick(app: *mut ::core::ffi::c_void) -> i32 {
             unsafe { $crate::tick::<$app>(app) }
+        }
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn m5_pocket_aot_skip(app: *mut ::core::ffi::c_void) -> i32 {
+            unsafe { $crate::skip::<$app>(app) }
         }
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn m5_pocket_aot_destroy(app: *mut ::core::ffi::c_void) {

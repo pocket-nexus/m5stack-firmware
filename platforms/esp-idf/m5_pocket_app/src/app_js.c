@@ -262,6 +262,14 @@ int32_t m5_pocket_backend_tick(m5_pocket_app *app) {
   return status;
 }
 
+/* The runtime's C API presents every frame it runs. */
+bool m5_pocket_backend_can_skip(void) { return false; }
+
+int32_t m5_pocket_backend_skip(m5_pocket_app *app) {
+  (void)app;
+  return POCKET_STATUS_UNSUPPORTED;
+}
+
 pocket_runtime *m5_pocket_backend_runtime(m5_pocket_app *app) {
   js_backend *js = app->backend;
   return js ? js->runtime : NULL;
