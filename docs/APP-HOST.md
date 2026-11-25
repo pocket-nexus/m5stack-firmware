@@ -191,6 +191,18 @@ without presentation for each skipped slot, up to that many
 mode): the frame count keeps the cadence while the panel shows fewer
 frames. A frame whose guest turn takes most of the slot gains little.
 
+With `wait_refresh` the slots are the refreshes of the display instead of
+the host's timer: after every frame the host calls it, the program blocks
+until the display's next refresh and returns the refreshes since its last
+return. The next frame starts at that refresh, and a frame that took several
+refreshes skipped all but one of them. It is for a display that shows a
+frame at a refresh (the CoreP4X's two frame buffers): a frame that ends
+before a refresh is on the panel from that refresh on, and the frame after
+it starts when the frame buffer it writes is free. The application counts
+`tickHz` frames a second, so on a display of another rate (the CoreP4X:
+61.7 Hz) its frame-counted durations scale with it. A return of 0 (no
+refresh in 100 ms on the CoreP4X) leaves that frame to the timer.
+
 ### Flash operations from the hooks
 
 **A task whose stack is in PSRAM cannot make a flash operation**: NVS, FAT,
@@ -302,6 +314,8 @@ register further `pocket_input_source_v1` objects, such as
 | `task_stack_bytes` | `CONFIG_M5_POCKET_APP_TASK_STACK` | App task stack |
 | `task_stack_caps` | 0 (internal RAM) | `MALLOC_CAP_SPIRAM` puts the stack in PSRAM; see [Flash operations](#flash-operations-from-the-hooks) |
 | `task_priority`, `task_core` | Kconfig, -1 | `-1` = no affinity |
+| `catch_up_frames` | 0 | Skipped slots that still run the application's frame |
+| `wait_refresh` | NULL (the host's timer) | The display's refresh as the cadence |
 
 Runtime allocations go through `pocket_host_alloc` (`pocket_runtime/src/hooks.c`):
 PSRAM first, internal RAM when there is no PSRAM or it is full.
