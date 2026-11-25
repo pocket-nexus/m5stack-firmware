@@ -102,7 +102,7 @@ shot("function");
 window("power", 65, 110, [
   () => { tap(175, 446); run(6); shot("power-system"); },
   () => { tap(285, 446); run(6); shot("power-m5bus"); },
-  () => { tap(122, 134); run(6); shot("power-gpio"); tap(325, 302); run(6); },
+  () => { tap(122, 134); run(6); shot("power-gpio"); tap(335, 378); run(6); },
   () => { tap(175, 446); run(6); tap(340, 160); run(20); shot("power-lcd-warning"); tap(140, 342); run(6); },
 ]);
 if (!only.size || only.has("touch")) {
