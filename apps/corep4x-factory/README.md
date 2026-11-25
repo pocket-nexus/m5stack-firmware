@@ -84,7 +84,7 @@ factory's durations are counted in frames (`ease.ts`).
 
 | Factory | Here |
 | --- | --- |
-| `ui_startup`, `ui_info`, `ui_function` | The three pictures; a swipe moves between them in 500 ms (linear), startup → info on a right swipe, → function on a left swipe |
+| `ui_startup`, `ui_info`, `ui_function` | The three pictures; a swipe moves between them in 300 ms (linear), startup → info on a right swipe, → function on a left swipe |
 | Function screen hotspots | 14 areas open the windows; the sleep and power icons open SLEEP and OFF |
 | `ui_function_window` | 170x48 header (action button, Exit), 460x418 content panel, dashed outline and tabs; opens from the touched area over 220 ms (ease-out) and closes into Exit over 180 ms (ease-in) |
 | `corep4_ui_dialog` | Small, medium and large dialogs with their footers |
@@ -106,6 +106,8 @@ factory's durations are counted in frames (`ease.ts`).
 
 ## Differences from the factory firmware
 
+- **Screen change**: the slide between the startup, info and function
+  screens takes 300 ms; the factory's takes 500 ms.
 - **Frame rate**: the board runs one frame of the application at each
   refresh of the panel, 61.7 a second, so a duration counted in frames is
   2.8 % shorter than the factory's.
