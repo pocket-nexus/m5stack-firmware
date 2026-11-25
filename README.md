@@ -120,21 +120,6 @@ PocketJS Rust core and use the same board code. Kconfig selects the mode:
 | Build | `pocket compile` writes the bundle; the PocketJS runtime archive is built from source | `pocket compile --aot` generates Rust; Cargo builds the program's `aot/` crate |
 | Runs in the PocketJS simulator and browser host | Yes, the same bundle | No; preview the JS build of the same sources |
 
-Application image size (ESP-IDF 6.2, from the program READMEs):
-
-| Board | JS mode | AOT mode | Difference |
-| --- | ---: | ---: | ---: |
-| Tab5 | 7,429,296 B | 6,411,168 B | −14 % |
-| StopWatch | 11,342,848 B | 10,621,248 B | −6 % |
-| StickS3 | 2,893,952 B | 1,860,944 B | −36 % |
-| CoreP4X | 11,189,680 B | 10,264,272 B | −8 % |
-| AtomS3 | does not boot (internal RAM) | 2,092,432 B | — |
-
-Pictures take a large part of the Tab5 and StopWatch images in both modes
-(about 3.5 MB and 7 MB), and the CoreP4X image carries 4.2 MB of factory
-audio, so the share AOT mode saves is smaller there than on the StickS3,
-which draws everything with views.
-
 **Choosing a mode.** The JS bundle runs unchanged in the PocketJS simulator
 and browser host, which suits iterating on the interface. AOT mode gives
 smaller images, needs no JavaScript heap and is the only mode that fits the
@@ -321,9 +306,7 @@ docs/                     reference documentation
   ([programs/stopwatch](programs/stopwatch/README.md#validation)): flash the
   AOT image.
 - CoreP4X: no Wi-Fi (the optional ESP32-C6 module is not driven; the window
-  says so) and no USB host (the USB window reports it). The CoreP4X firmware
-  is built and checked in the simulator only; it has not run on a board
-  ([programs/corep4x](programs/corep4x/README.md#validation)).
+  says so) and no USB host (the USB window reports it).
 - PocketJS bakes fonts at a fixed set of sizes (10 to 54 px), so factory text
   at other sizes uses the nearest size or is drawn from the factory's glyph
   bitmaps ([docs/FONTS.md](docs/FONTS.md)).

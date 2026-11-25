@@ -111,20 +111,6 @@ README 列出了它复刻的出厂界面，以及与出厂固件的全部已知�
 | 构建 | `pocket compile` 生成 bundle；PocketJS 运行时归档从源码构建 | `pocket compile --aot` 生成 Rust；Cargo 构建程序的 `aot/` crate |
 | 能否在 PocketJS 模拟器和浏览器 host 中运行 | 能，使用同一个 bundle | 不能；可预览同一份源码的 JS 构建 |
 
-应用镜像大小（ESP-IDF 6.2，数据来自各程序的 README）：
-
-| 开发板 | JS 模式 | AOT 模式 | 差异 |
-| --- | ---: | ---: | ---: |
-| Tab5 | 7,429,296 B | 6,411,168 B | −14 % |
-| StopWatch | 11,342,848 B | 10,621,248 B | −6 % |
-| StickS3 | 2,893,952 B | 1,860,944 B | −36 % |
-| CoreP4X | 11,189,680 B | 10,264,272 B | −8 % |
-| AtomS3 | 无法启动（内部 RAM 不足） | 2,092,432 B | — |
-
-在 Tab5 和 StopWatch 的镜像中，两种模式下图片都占了很大一部分（约 3.5 MB 和
-7 MB），CoreP4X 的镜像带有 4.2 MB 出厂音频，因此 AOT 模式节省的比例小于
-StickS3；StickS3 的界面全部由视图绘制。
-
 **如何选择模式。** JS bundle 可以不经修改地在 PocketJS 模拟器和浏览器 host 中运行，
 适合迭代界面。AOT 模式的镜像更小，不需要 JavaScript 堆，也是 AtomS3 唯一能
 容纳的模式。
@@ -294,8 +280,7 @@ docs/                     参考文档
   （见 [programs/stopwatch](programs/stopwatch/README.md#validation)），请烧录
   AOT 镜像。
 - CoreP4X：不驱动 Wi-Fi（可选的 ESP32-C6 模块，窗口中会说明）和 USB host（USB
-  窗口会提示）。CoreP4X 固件只做过构建和模拟器检查，没有在开发板上运行过
-  （见 [programs/corep4x](programs/corep4x/README.md#validation)）。
+  窗口会提示）。
 - PocketJS 只在一组固定字号（10 到 54 px）上烘焙字体，因此出厂固件中其他字号的
   文字改用最接近的字号，或用出厂固件的字形位图绘制（[docs/FONTS.md](docs/FONTS.md)）。
 
