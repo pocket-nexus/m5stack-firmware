@@ -64,9 +64,6 @@ bakes them in JS and AOT mode (`docs/FONTS.md`).
 | 28 | POWER rail toggles, MUSIC title | `text-2xl` 24 | nearest |
 | 44 | TIMER values | `text-4xl` 36 | nearest |
 
-Baked atlases (98 glyphs each, @1x): 10 px 14,814 B, 12 px 22,752 B, 14 px
-29,024 B, 16 px 36,080 B, 20 px 54,700 B, 24 px 80,180 B, 36 px 177,200 B.
-
 ## Device bridge
 
 `device.ts` holds every board value and every request; `programs/corep4x`
@@ -137,9 +134,9 @@ POWER slider, the MUSIC volume slider, the SD list drag, the IR byte tiles
   releases the RMII pins, turning it on reinstalls it. Losing the DHCP lease
   shows "Link Up".
 - **IR**: Repeat x2 sends the frame twice; the factory passes a loop count
-  of 1, which ESP-IDF 6 transmits once. A send reports its result after the
-  frame went out (about 0.12 s later than the factory, which reports when it
-  is queued).
+  of 1, which ESP-IDF 6 transmits once (m5stack/M5CoreP4X-UserDemo#1). A
+  send reports its result after the frame went out (about 0.12 s later than
+  the factory, which reports when it is queued).
 - **REC and MUSIC**:
   - Stopping playback or a recording runs on a task, so the UI does not
     freeze for about 1 s; meanwhile MUSIC still shows Playing and REC shows
@@ -148,8 +145,6 @@ POWER slider, the MUSIC volume slider, the SD list drag, the IR byte tiles
   - Playback fades change the codec volume only, so the volume label does
     not flash 10 % or 0 %.
   - The factory's "Embedded track unavailable" state is not modelled.
-  - The spectrum transform runs in single precision (no level differed from
-    the double-precision result in a host test).
   - Chart lines are anti-aliased approximations of LVGL's line drawing.
   - Switching AudioIC off stops audio and releases the codecs cleanly; the
     factory keeps writing to the unpowered codecs (the warning dialog still
@@ -164,13 +159,11 @@ bun run pocket compile --config apps/corep4x-factory/pocket.host.config.ts \
   --outdir .pocket-build/js --output .pocket-build/js/app.pkb
 bun run pocket compile --config apps/corep4x-factory/pocket.host.config.ts \
   --aot --out ../../.pocket-build/aot
-bun apps/corep4x-factory/tools/preview.ts .pocket-build/js \
+bun apps/corep4x-factory/tools/preview.ts apps/corep4x-factory/.pocket-build/js \
   third_party/pocketjs/platforms/web/pocketjs.wasm .pocket-build/validation/preview
 ```
 
-`programs/corep4x` builds the AOT output into firmware
-(`programs/corep4x/README.md`). `--aot` needs the wasm core at
+`--outdir` is relative to the config. `--aot` needs the wasm core
 `third_party/pocketjs/platforms/web/pocketjs.wasm` (`bun tools/wasm.ts`
-inside the submodule; ignored output). The preview tool runs the JS bundle in
-PocketJS's deterministic simulator and writes one PNG per step of a tour
-through every window; it checks layout and artwork, not device behaviour.
+inside the submodule). The preview tool runs the JS bundle in PocketJS's
+simulator and writes one picture per step of a tour through every window.
