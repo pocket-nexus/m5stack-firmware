@@ -7,10 +7,13 @@ ESP-IDF program for the M5Stack CoreP4X (C157). It runs the factory demo
 
 ## Features
 
-- The factory UI in JS or AOT mode at 60 Hz: the startup, info and function
-  screens and the 14 function windows (`apps/corep4x-factory/README.md`).
+- The factory UI in JS or AOT mode, one frame at each refresh of the panel
+  (61.7 Hz): the startup, info and function screens and the 14 function
+  windows (`apps/corep4x-factory/README.md`).
 - Display and touch: the 480x480 ST7102 MIPI-DSI panel, mounted upside down
-  and drawn turned 180 degrees, and the CST3530 touch controller.
+  and drawn turned 180 degrees, and the CST3530 touch controller. A frame is
+  written to the frame buffer the panel does not read and shown at the
+  panel's next refresh, so a refresh shows the rows of one frame.
 - Power: battery voltage, charging current, eight switchable power rails,
   backlight, the power button, power off and restart; M5-Bus GPIO levels and
   configuration.
@@ -55,7 +58,7 @@ the `device.ts` fields of the application; the two lists change together.
 | Part | Detail |
 | --- | --- |
 | SoC | Stamp-P4X: ESP32-P4NRW32X, chip revision 3.x, 32 MiB PSRAM at 200 MHz, 16 MiB flash |
-| Panel | 2.64" 480x480 ST7102, MIPI-DSI 2 lanes at 700 Mbps, DPI 24 MHz, RGB565 framebuffer in PSRAM; mounted upside down |
+| Panel | 2.64" 480x480 ST7102, MIPI-DSI 2 lanes at 700 Mbps, DPI 24 MHz (61.7 Hz), two RGB565 frame buffers in PSRAM; mounted upside down |
 | Touch | CST3530 at 0x58, interrupt GPIO1, up to 5 contacts |
 | Backlight | M5IOE1 IO9, PWM channel 0 at 50 kHz |
 | Power | M5PM1 at 0x6E (battery, charger, M5-Bus 5 V boost, power button, wake sources, IRQ to GPIO0); M5IOE1 expander (rails, resets, microSD detect, charger status) |
