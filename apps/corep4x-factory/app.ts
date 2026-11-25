@@ -1037,7 +1037,7 @@ export async function start(): Promise<void> {
   setMusicBars(music.bars());
   setPowerPins(power.pins());
   publishScreens();
-  // Bounded loop: over two years of frames at 30 Hz, one step each.
+  // Bounded loop: over a year of frames at 60 Hz, one step each.
   for (let i: i32 = 0; i < 2147483647; i++) {
     await frames(1);
     step();

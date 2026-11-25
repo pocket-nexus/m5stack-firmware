@@ -7,6 +7,7 @@
 // Ethernet worked and copies the system clock (UTC+8) to the RTC.
 import { i32, idiv, imod } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
+import { framesIn } from "./ease";
 
 export const YEAR: i32 = 0;
 export const MONTH: i32 = 1;
@@ -102,7 +103,8 @@ export function step(x: i32, y: i32, down: boolean, enabled: boolean): void {
   } else if (down && held >= 0) {
     heldFrames = heldFrames + 1;
     // LONG_PRESSED at 400 ms, LONG_PRESSED_REPEAT every 100 ms.
-    if (heldFrames === 12 || (heldFrames > 12 && imod(heldFrames - 12, 3) === 0)) {
+    const longPress: i32 = framesIn(400);
+    if (heldFrames === longPress || (heldFrames > longPress && imod(heldFrames - longPress, framesIn(100)) === 0)) {
       apply(held);
     }
   } else if (!down && wasDown && held >= 0) {

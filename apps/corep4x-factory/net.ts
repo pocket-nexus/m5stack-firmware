@@ -16,6 +16,7 @@
 // reports that.
 import { codePoints, fromCodePoint, i32, len, push, type Color } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
+import { framesIn } from "./ease";
 
 export const MUTED: i32 = 0;
 export const SUCCESS: i32 = 1;
@@ -189,7 +190,7 @@ export function check(): void {
 /** The factory checks 1000 ms after the window opens. */
 export function stepUsb(): void {
   usbFrames = usbFrames + 1;
-  if (usbFrames === 30) {
+  if (usbFrames === framesIn(1000)) {
     check();
   }
 }

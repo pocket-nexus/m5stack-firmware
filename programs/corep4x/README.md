@@ -7,7 +7,7 @@ ESP-IDF program for the M5Stack CoreP4X (C157). It runs the factory demo
 
 ## Features
 
-- The factory UI in JS or AOT mode at 30 Hz: the startup, info and function
+- The factory UI in JS or AOT mode at 60 Hz: the startup, info and function
   screens and the 14 function windows (`apps/corep4x-factory/README.md`).
 - Display and touch: the 480x480 ST7102 MIPI-DSI panel, mounted upside down
   and drawn turned 180 degrees, and the CST3530 touch controller.

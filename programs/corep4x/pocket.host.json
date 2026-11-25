@@ -3,7 +3,7 @@
   "id": "m5stack-corep4x-factory",
   "platform": "esp-idf",
   "form": "takeover",
-  "cadences": [30],
+  "cadences": [60],
   "display": {
     "logicalViewports": [[480, 480]],
     "presentations": ["native"],

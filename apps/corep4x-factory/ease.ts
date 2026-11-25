@@ -1,10 +1,17 @@
 // LVGL 9 animation paths (lv_anim.c): linear, and the cubic Béziers of
 // lv_anim_path_ease_in (0.42, 0, 1, 1) and lv_anim_path_ease_out
 // (0, 0, 0.58, 1), which lv_cubic_bezier evaluates for x = elapsed/duration.
-import { abs, clamp, f32, type i32 } from "@pocketjs/framework/solid/std";
+// The model counts frames; durations are converted at the host's cadence.
+import { abs, clamp, f32, idiv, type i32 } from "@pocketjs/framework/solid/std";
 
-/** Milliseconds per frame at the host's 30 Hz cadence. */
-export const FRAME_MS: f32 = 33.333332;
+/** Frames per second: `tickHz` of pocket.host.config.ts. */
+export const TICK_HZ: i32 = 60;
+
+/** The whole number of frames nearest to `ms` milliseconds, at least one. */
+export function framesIn(ms: i32): i32 {
+  const frames: i32 = idiv(ms * TICK_HZ + 500, 1000);
+  return frames < 1 ? 1 : frames;
+}
 
 function bezier(t: f32, p1: f32, p2: f32): f32 {
   const u: f32 = f32(1) - t;
@@ -41,7 +48,7 @@ export function easeIn(x: f32): f32 {
 
 /** Progress 0..1 of an animation that started `frames` frames ago. */
 export function progress(frames: i32, durationMs: f32): f32 {
-  return clamp((f32(frames) * FRAME_MS) / durationMs, 0, 1);
+  return clamp(f32(frames * 1000) / (durationMs * f32(TICK_HZ)), 0, 1);
 }
 
 export function lerp(from: f32, to: f32, t: f32): f32 {

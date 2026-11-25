@@ -15,8 +15,8 @@ import { join, resolve } from "node:path";
 import type { SimContact } from "../../../third_party/pocketjs/programs/sim/sim.ts";
 import { encodePng } from "./png.ts";
 
-// One core tick per 30 Hz frame, as on the device (pocket.host.config.ts).
-(globalThis as { __POCKET_TICK_HZ__?: number }).__POCKET_TICK_HZ__ = 30;
+// One core tick per 60 Hz frame, as on the device (pocket.host.config.ts).
+(globalThis as { __POCKET_TICK_HZ__?: number }).__POCKET_TICK_HZ__ = 60;
 const { bootBundle } = await import("../../../third_party/pocketjs/programs/sim/sim.ts");
 
 // A stand-in for the C host's globalThis.m5
@@ -44,7 +44,7 @@ mkdirSync(outDir, { recursive: true });
 const world = await bootBundle({
   js: join(bundleDir, "corep4x-factory.js"),
   pak: join(bundleDir, "corep4x-factory.pak"),
-  hz: 30,
+  hz: 60,
   wasm,
   viewport: { width: 480, height: 480, rasterDensity: 1 },
 });
@@ -82,45 +82,45 @@ function swipe(x0: number, x1: number, y: number, frames = 6): void {
 function window(name: string, x: number, y: number, steps: (() => void)[] = []): void {
   if (only.size && !only.has(name)) return;
   tap(x, y);
-  run(15);
+  run(30);
   shot(name);
   steps.forEach(step => step());
   tap(426, 28);
-  run(15);
+  run(30);
 }
 
 run(10);
 shot("startup");
 swipe(240, 400, 240);
-run(20);
+run(40);
 shot("info");
 swipe(400, 240, 240);
-run(20);
+run(40);
 swipe(400, 100, 240);
-run(20);
+run(40);
 shot("function");
 window("power", 65, 110, [
-  () => { tap(175, 446); run(3); shot("power-system"); },
-  () => { tap(285, 446); run(3); shot("power-m5bus"); },
-  () => { tap(122, 134); run(3); shot("power-gpio"); tap(325, 302); run(3); },
-  () => { tap(175, 446); run(3); tap(340, 160); run(10); shot("power-lcd-warning"); tap(140, 342); run(3); },
+  () => { tap(175, 446); run(6); shot("power-system"); },
+  () => { tap(285, 446); run(6); shot("power-m5bus"); },
+  () => { tap(122, 134); run(6); shot("power-gpio"); tap(325, 302); run(6); },
+  () => { tap(175, 446); run(6); tap(340, 160); run(20); shot("power-lcd-warning"); tap(140, 342); run(6); },
 ]);
 if (!only.size || only.has("touch")) {
   // The canvas closes the window after 10 s without a touch.
   tap(180, 110);
-  run(15);
+  run(30);
   shot("touch");
-  run(310);
+  run(610);
 }
 window("imu", 65, 245);
-window("rec", 180, 245, [() => { tap(338, 28); run(3); shot("rec-set"); tap(380, 340); run(3); }]);
+window("rec", 180, 245, [() => { tap(338, 28); run(6); shot("rec-set"); tap(380, 340); run(6); }]);
 window("music", 410, 380);
 window("ping", 295, 245);
 window("wifi", 65, 380);
-window("usb", 180, 380, [() => { run(40); shot("usb-checked"); }]);
+window("usb", 180, 380, [() => { run(70); shot("usb-checked"); }]);
 window("ir", 295, 380);
 window("sd", 295, 110);
-window("i2c", 410, 110, [() => { tap(134, 109); run(3); shot("i2c-internal"); }]);
+window("i2c", 410, 110, [() => { tap(134, 109); run(6); shot("i2c-internal"); }]);
 window("timer", 410, 245);
 window("sleep", 330, 30);
 window("off", 438, 30);

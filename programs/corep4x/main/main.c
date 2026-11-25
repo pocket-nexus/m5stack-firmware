@@ -136,6 +136,10 @@ void app_main(void) {
   config.input.context = &board;
   config.input.touch = read_touch;
   config.heap_limit = COREP4X_GUEST_HEAP;
+  /* A swipe or a window's motion repaints most of the panel in more than a
+   * 60 Hz slot; in AOT mode the skipped slots still advance the
+   * application. */
+  config.catch_up_frames = 4;
   config.js_heap_limit = COREP4X_GUEST_HEAP;
   config.js_stack_limit = COREP4X_GUEST_STACK_LIMIT;
   config.js_prefer_psram = true;

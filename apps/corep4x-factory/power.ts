@@ -10,6 +10,7 @@
 import { f32, i32, idiv, len, push, type Color } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 import * as dialog from "./dialog";
+import { framesIn } from "./ease";
 
 /** Rail indices, the board's names. */
 export const L3B: i32 = 0;
@@ -102,7 +103,7 @@ export function dialogButton(index: i32): void {
       dialog.setHidden(0, true);
       dialog.setHidden(1, true);
       dialog.setText("Applying the power change...");
-      restartCountdown = 60;
+      restartCountdown = framesIn(2000);
     }
   } else {
     // esp_restart at once (the OFF window's restart dims the backlight

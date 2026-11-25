@@ -4,6 +4,7 @@
  * gestures and the finger markers (ui_function_imu_window.cpp). */
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "imu_view.h"
@@ -22,6 +23,9 @@ static const char *TAG = "svc_imu";
 #define CANVAS_Y 52
 #define MARKER_HALF 14
 #define SAMPLE_MS 10
+/* The view is rendered at up to 30 Hz (the factory: 40 Hz) whatever the
+ * frame rate: a render keeps a core busy for most of a 60 Hz frame. */
+#define RENDER_PERIOD_US 33333
 
 enum { STARTING = 0, CALIBRATING = 1, READY = 2, FAILED = 3 };
 
@@ -58,6 +62,7 @@ static imu_quat_t s_view;
 static uint32_t s_view_sequence;
 static uint32_t s_drawn_pose = UINT32_MAX;
 static uint32_t s_drawn_view = UINT32_MAX;
+static int64_t s_render_requested_us;
 static imu_gesture_t s_gesture;
 static int s_state = -1;
 
@@ -254,8 +259,11 @@ void imu_svc_frame(void) {
     return;
   }
   update_gesture();
+  const int64_t now = esp_timer_get_time();
   if ((sequence != s_drawn_pose || s_view_sequence != s_drawn_view) &&
-      atomic_load(&s_render_state) == RENDER_IDLE && s_render) {
+      atomic_load(&s_render_state) == RENDER_IDLE && s_render &&
+      now - s_render_requested_us >= RENDER_PERIOD_US) {
+    s_render_requested_us = now;
     s_drawn_pose = sequence;
     s_drawn_view = s_view_sequence;
     s_render_pose = imu_quat_normalize(imu_quat_multiply(s_view, relative));
@@ -341,8 +349,9 @@ void imu_svc_sleep(void) {
 
 void imu_svc_start(void) {
   set_state(STARTING);
-  if (xTaskCreate(render_task, "imu_render", 4096 + 8192, NULL, 3, &s_render) !=
-      pdPASS) {
+  /* Core 1: the app task runs on core 0. */
+  if (xTaskCreatePinnedToCore(render_task, "imu_render", 4096 + 8192, NULL, 3,
+                              &s_render, 1) != pdPASS) {
     s_render = NULL;
     ESP_LOGE(TAG, "no render task");
   }
