@@ -10,13 +10,17 @@
  * constants of m5_corep4_component.h. */
 #include "board.h"
 #include "cst3530.h"
+#include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_ldo_regulator.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "ioe1.h"
 #include "panel_init_st7102.h"
 #include "st7102.h"
+#include <stdatomic.h>
 
 static const char *TAG = "m5p4x_lcd";
 
@@ -29,6 +33,27 @@ static const char *TAG = "m5p4x_lcd";
 #define BACKLIGHT_PWM_HZ 50000
 
 static esp_ldo_channel_handle_t s_phy_power;
+
+/* Refresh timing. The DSI host reads a framebuffer with one DMA transfer
+ * per refresh; the interrupt that ends a transfer starts the next one on
+ * the framebuffer the last draw_bitmap named, then calls
+ * on_frame_buf_complete (esp_lcd_panel_dpi.c, mipi_dsi_dma_trans_done_cb). */
+static atomic_uint_fast32_t s_refreshes;
+static SemaphoreHandle_t s_refreshed;
+/* The core of that interrupt: the one m5_corep4x_display_new ran on. */
+static BaseType_t s_refresh_core;
+
+static bool IRAM_ATTR on_refresh(esp_lcd_panel_handle_t panel,
+                                 esp_lcd_dpi_panel_event_data_t *event,
+                                 void *context) {
+  (void)panel;
+  (void)event;
+  (void)context;
+  atomic_fetch_add(&s_refreshes, 1);
+  BaseType_t woken = pdFALSE;
+  xSemaphoreGiveFromISR(s_refreshed, &woken);
+  return woken == pdTRUE;
+}
 
 esp_err_t m5_corep4x_backlight_set(uint32_t percent) {
   if (percent > 100) {
@@ -111,6 +136,18 @@ esp_err_t m5_corep4x_display_new(uint32_t fb_count, m5_corep4x_display_t *out) {
   ESP_GOTO_ON_ERROR(
       m5_corep4x_st7102_new(out->io, &device, &vendor, &out->panel), failed,
       TAG, "panel");
+  if (!s_refreshed) {
+    s_refreshed = xSemaphoreCreateBinary();
+    ESP_GOTO_ON_FALSE(s_refreshed, ESP_ERR_NO_MEM, failed, TAG,
+                      "refresh semaphore");
+  }
+  s_refresh_core = xPortGetCoreID();
+  const esp_lcd_dpi_panel_event_callbacks_t callbacks = {
+      .on_frame_buf_complete = on_refresh,
+  };
+  ESP_GOTO_ON_ERROR(
+      esp_lcd_dpi_panel_register_event_callbacks(out->panel, &callbacks, NULL),
+      failed, TAG, "refresh callback");
   ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(out->panel), failed, TAG, "reset");
   ESP_GOTO_ON_ERROR(esp_lcd_panel_init(out->panel), failed, TAG, "init");
   ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(out->panel, true), failed, TAG,
@@ -144,6 +181,46 @@ void m5_corep4x_display_del(m5_corep4x_display_t *d) {
     esp_ldo_release_channel(s_phy_power);
     s_phy_power = NULL;
   }
+}
+
+uint32_t m5_corep4x_display_refreshes(void) {
+  return (uint32_t)atomic_load(&s_refreshes);
+}
+
+bool m5_corep4x_display_wait_refresh(uint32_t after, uint32_t timeout_ms) {
+  if (!s_refreshed) {
+    return false;
+  }
+  const TickType_t timeout = pdMS_TO_TICKS(timeout_ms);
+  const TickType_t start = xTaskGetTickCount();
+  /* The count wraps: compare the distance. */
+  while ((int32_t)(m5_corep4x_display_refreshes() - after) <= 0) {
+    const TickType_t waited = xTaskGetTickCount() - start;
+    if (waited >= timeout ||
+        xSemaphoreTake(s_refreshed, timeout - waited) != pdTRUE) {
+      return (int32_t)(m5_corep4x_display_refreshes() - after) > 0;
+    }
+  }
+  return true;
+}
+
+esp_err_t m5_corep4x_display_show(m5_corep4x_display_t *d,
+                                  const void *framebuffer, uint32_t *after) {
+  ESP_RETURN_ON_FALSE(d && d->panel && framebuffer && after,
+                      ESP_ERR_INVALID_ARG, TAG, "arguments");
+  /* The refresh interrupt reads the named framebuffer and then counts. On
+   * its core it cannot run between the two statements below; a caller on
+   * the other core may name the framebuffer between the interrupt's read
+   * and its count, so it waits one refresh more. */
+  const uint32_t margin = xPortGetCoreID() == s_refresh_core ? 0U : 1U;
+  /* draw_bitmap with a pointer into a framebuffer copies no pixel: it
+   * writes the cache of the rows it is given back to memory and names the
+   * framebuffer. One row: the caller has written the pixels to memory. */
+  ESP_RETURN_ON_ERROR(esp_lcd_panel_draw_bitmap(
+                          d->panel, 0, 0, M5_COREP4X_LCD_WIDTH, 1, framebuffer),
+                      TAG, "show");
+  *after = m5_corep4x_display_refreshes() + margin;
+  return ESP_OK;
 }
 
 esp_err_t m5_corep4x_touch_new(esp_lcd_touch_handle_t *out) {

@@ -51,6 +51,7 @@ factory bundles a copy).
 | `m5_corep4x_power_off`, `m5_corep4x_reboot` | PM1 SYS_CMD 0xA1 / 0xA2 after 120 ms |
 | `m5_corep4x_sd_detected`, `m5_corep4x_sd_detect_enable` | microSD detect on IOE1 IO13 (low = inserted), pull-up on or off |
 | `m5_corep4x_display_new`, `m5_corep4x_display_del` | LCD power, reset (100 ms low, 120 ms), LDO3 at 2.5 V for the DSI PHY, 2-lane DSI at 700 Mbps, ST7102 RGB565 DPI panel at 24 MHz (HSYNC 2, HBP 40, HFP 40, VSYNC 4, VBP 8, VFP 200) with 1 to 3 PSRAM frame buffers; delete turns the panel off, cuts LCD power and releases the LDO |
+| `m5_corep4x_display_refreshes`, `_display_wait_refresh`, `_display_show` | Refresh count of the panel (one per frame buffer the DSI host has read, 61.7 Hz) and a wait for it; with two or three frame buffers, the frame buffer the panel reads from its next refresh on, and the refresh count after which it no longer reads the one before |
 | `m5_corep4x_backlight_set` | IOE1 PWM channel 0 on IO9, 50 kHz, 12-bit duty; IO9 push-pull |
 | `m5_corep4x_touch_new`, `_touch_info`, `_touch_sleep`, `_touch_wake`, `_touch_power_down` | CST3530 at 0x58, interrupt GPIO1, up to 5 contacts; information block 0xD0030000; sleep 0xD00022AB; wake by reset pulse; power down holds the reset low |
 | `m5_corep4x_pmic_irq_start`, `_pmic_irq_take`, `_wake_source` | PM1 GPIO2 as IRQ output to GPIO0, button and GPIO IRQ status, wake source register |

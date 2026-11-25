@@ -194,6 +194,23 @@ esp_err_t m5_corep4x_display_new(uint32_t fb_count, m5_corep4x_display_t *out);
 /* Panel off and deleted with its DBI IO and DSI bus, LCD power off, the
  * DSI PHY LDO released. */
 void m5_corep4x_display_del(m5_corep4x_display_t *display);
+/* Refreshes the panel has completed since m5_corep4x_display_new: the DSI
+ * host reads one framebuffer per refresh, 61.7 times a second, and counts
+ * when it has read the last row. The count wraps. */
+uint32_t m5_corep4x_display_refreshes(void);
+/* Blocks until the count has passed `after`, at most timeout_ms. False on a
+ * timeout and without a display. One task waits at a time. */
+bool m5_corep4x_display_wait_refresh(uint32_t after, uint32_t timeout_ms);
+/* A display with two or three frame buffers: the panel reads `framebuffer`
+ * (one of esp_lcd_dpi_panel_get_frame_buffer) from its next refresh on. The
+ * call does not wait for it. `after` receives a refresh count: once the
+ * count has passed it (m5_corep4x_display_wait_refresh) the panel no longer
+ * reads the frame buffer it read before. The caller has written the pixels
+ * to memory: pixels written through the CPU cache need esp_cache_msync
+ * first. A call from the core m5_corep4x_display_new ran on returns the
+ * next refresh; a call from the other core the one after it. */
+esp_err_t m5_corep4x_display_show(m5_corep4x_display_t *display,
+                                  const void *framebuffer, uint32_t *after);
 /* IOE1 PWM channel 0 at 50 kHz on IO9; 0 turns the channel off. Values
  * above 100 clamp. */
 esp_err_t m5_corep4x_backlight_set(uint32_t percent);
