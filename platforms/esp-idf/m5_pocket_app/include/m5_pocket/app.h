@@ -170,10 +170,10 @@ typedef struct {
   /* Called on the app task after every frame with its PocketJS status. */
   void (*after_frame)(void *context, int32_t status);
   void *hook_context;
-  /* AOT mode: for each cadence slot a frame overran, up to this many, the
+  /* For each cadence slot a frame overran, up to this many, the
    * application's frame runs once more without presentation (before_frame,
    * input, guest turn, requests, core ticks; no after_frame), so its frame
-   * count keeps the cadence. 0 skips the slots; JS mode always skips. */
+   * count keeps the cadence. 0 skips the slots. */
   uint32_t catch_up_frames;
 } m5_pocket_app_config;
 

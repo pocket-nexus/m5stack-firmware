@@ -50,9 +50,7 @@ uint32_t m5_pocket_internal_stack_free_min(void);
  * creates the runtime, boots and presents; it sets app->cadence_hz. */
 esp_err_t m5_pocket_backend_boot(m5_pocket_app *app);
 int32_t m5_pocket_backend_tick(m5_pocket_app *app);
-/* A frame that is not presented, for a cadence slot the host missed, where
- * m5_pocket_backend_can_skip is true. */
-bool m5_pocket_backend_can_skip(void);
+/* A frame that is not presented, for a cadence slot the host missed. */
 int32_t m5_pocket_backend_skip(m5_pocket_app *app);
 void m5_pocket_backend_destroy(m5_pocket_app *app);
 /* Texture operations of m5_pocket_app_set_texture, on the app task between
