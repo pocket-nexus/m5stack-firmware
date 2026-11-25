@@ -22,10 +22,10 @@ used as it is.
 | `device.ts` | Device bridge state module (`docs/APP-HOST.md`): board values, requests |
 | `nav.ts`, `windows.ts`, `frame.ts`, `dialog.ts`, `ease.ts` | Swipes between the screens, window open/close motion and hotspots, the dashed window frame, `corep4_ui_dialog`, LVGL's ease-in/ease-out curves |
 | `power.ts`, `sleep.ts`, `off.ts`, `touch.ts`, `sd.ts`, `i2c.ts`, `imu.ts`, `rec.ts`, `music.ts`, `net.ts`, `timer.ts`, `ir.ts` | One model per window (`net.ts`: PING, WiFi, USB) |
-| `*View.tsx`, `WindowFrame.tsx`, `Dialog.tsx`, `Button.tsx`, `GpioPopup.tsx`, `RecSetDialog.tsx`, `TouchCanvas.tsx`, `TimeTile.tsx` | Views |
+| `*View.tsx`, `WindowFrame.tsx`, `Dashes.tsx`, `Dialog.tsx`, `Button.tsx`, `GpioPopup.tsx`, `RecSetDialog.tsx`, `TouchCanvas.tsx`, `TimeTile.tsx` | Views |
 | `wrap.ts` | Montserrat Medium advance widths: line wrapping and `LV_LABEL_LONG_DOT` truncation as LVGL measures them |
 | `assets/`, `images.json` | Pictures (below); the screens and canvases are stored as RGB565 (PSP PSM 5650) |
-| `tools/convert-assets.ts` | LVGL C image arrays to PNG; the canvas pictures and two symbols |
+| `tools/convert-assets.ts` | LVGL C image arrays to PNG; the canvas pictures, two symbols and the dash strips |
 | `tools/preview.ts` | Simulator screenshots of a scripted tour |
 
 ## Assets
@@ -35,6 +35,7 @@ used as it is.
 | `startup.png`, `info.png`, `function.png` | `corep4_lvgl_ui_out/images/ui_img_corep4x_ui_{startup,info,function}_png.c` of M5CoreP4X-UserDemo (MIT, Copyright (c) 2026 M5Stack Technology CO LTD), decoded by `tools/convert-assets.ts`; info and function are RGB565A8, blended over the theme's 0xF5F5F5 |
 | `touch-canvas.png`, `imu-canvas.png` | Drawn by `tools/convert-assets.ts`: the empty 5x5 grid and the IMU view's background, shown until the board uploads its first texture |
 | `rec-canvas.png` | The idle Waveform card as `programs/corep4x/main/audio_draw.c` draws it |
+| `dash-h.png`, `dash-v.png` | Drawn by `tools/convert-assets.ts`: 512x2 and 2x512 strips of 7 px 0xCBD5E1 dashes and 5 px gaps, from which `frame.ts` cuts every dashed edge of the window frame |
 | `refresh.png`, `check.png` | `LV_SYMBOL_REFRESH` and `LV_SYMBOL_OK` of LVGL 9's `lv_font_montserrat_14` (MIT; Font Awesome 5 Free, SIL OFL 1.1) |
 
 PocketJS textures are power-of-two sized and at most 512 px on a side: each
