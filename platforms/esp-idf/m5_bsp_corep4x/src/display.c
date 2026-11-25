@@ -35,13 +35,16 @@ esp_err_t m5_corep4x_backlight_set(uint32_t percent) {
     percent = 100;
   }
   /* set_lcd_brightness: frequency, duty on channel 0 (disabled at 0 %), then
-   * IO9 push-pull. */
+   * IO9 push-pull. The expander comes out of a power cycle with IO9 open
+   * drain, which leaves the backlight off. */
   ESP_RETURN_ON_ERROR(m5_corep4x_ioe1_set_pwm_frequency(BACKLIGHT_PWM_HZ), TAG,
                       "PWM frequency");
   ESP_RETURN_ON_ERROR(m5_corep4x_ioe1_set_pwm_duty(BACKLIGHT_PWM_CHANNEL,
                                                    (uint8_t)percent, false,
                                                    percent > 0),
                       TAG, "PWM duty");
+  ESP_RETURN_ON_ERROR(m5_corep4x_ioe1_drive(M5_COREP4X_IOE1_LCD_BL_PWM, false),
+                      TAG, "IO9 push-pull");
   return ESP_OK;
 }
 

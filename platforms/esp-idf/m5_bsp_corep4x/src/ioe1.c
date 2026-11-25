@@ -293,6 +293,14 @@ esp_err_t m5_corep4x_ioe1_output(uint8_t pin, bool open_drain) {
   return err;
 }
 
+esp_err_t m5_corep4x_ioe1_drive(uint8_t pin, bool open_drain) {
+  ESP_RETURN_ON_FALSE(pin < PIN_COUNT, ESP_ERR_INVALID_ARG, TAG, "pin");
+  ESP_RETURN_ON_ERROR(lock(), TAG, "not started");
+  esp_err_t err = set_bit16(REG_GPIO_DRV_L, (uint16_t)(1u << pin), open_drain);
+  unlock();
+  return err;
+}
+
 static esp_err_t input_locked(uint8_t pin, bool pull_up) {
   const uint16_t bit = (uint16_t)(1u << pin);
   ESP_RETURN_ON_ERROR(set_bit16(REG_GPIO_MODE_L, bit, false), TAG, "GPIO_MODE");
