@@ -175,6 +175,17 @@ typedef struct {
    * input, guest turn, requests, core ticks; no after_frame), so its frame
    * count keeps the cadence. 0 skips the slots. */
   uint32_t catch_up_frames;
+  /* The display's refresh as the cadence (optional), for a display that
+   * shows a frame at its next refresh. Called on the app task after every
+   * frame: it blocks until the display's next refresh and returns the
+   * refreshes since its last return, 1 when the frame took less than one.
+   * Each refresh is a cadence slot: the frame after it starts at the
+   * refresh, and the refreshes a frame overran count as skipped slots
+   * (catch_up_frames). The application still counts tick_hz frames a
+   * second, so a display that refreshes at another rate runs it at that
+   * rate. A return of 0 (no refresh in time) leaves that frame to the
+   * host's timer. */
+  uint32_t (*wait_refresh)(void *context);
 } m5_pocket_app_config;
 
 /* The mode this firmware was built in. */

@@ -171,6 +171,22 @@ static void destroy_devices(m5_pocket_app *app) {
   app->display_object = NULL;
 }
 
+/* Cadence slots that got no presented frame. Up to catch_up_frames of them
+ * still run the application's frame without presentation, so its frame
+ * count, and every animation it counts in frames, keeps the cadence; the
+ * rest are dropped. */
+static void skip_slots(m5_pocket_app *app, int64_t missed) {
+  const m5_pocket_app_config *config = &app->config;
+  app->stats.frames_skipped += (uint32_t)missed;
+  for (int64_t i = 0; i < missed && i < config->catch_up_frames; i++) {
+    if (config->before_frame)
+      config->before_frame(config->hook_context);
+    if (m5_pocket_backend_skip(app) != POCKET_STATUS_OK)
+      break;
+    app->stats.frames_caught_up++;
+  }
+}
+
 static void run(void *argument) {
   m5_pocket_app *app = argument;
   const m5_pocket_app_config *config = &app->config;
@@ -203,23 +219,24 @@ static void run(void *argument) {
       }
       if (config->after_frame)
         config->after_frame(config->hook_context, status);
+      if (config->wait_refresh) {
+        /* The display's refreshes are the slots: the next frame starts at
+         * the refresh after this one, and a frame that took several
+         * refreshes missed all but one of them. */
+        const uint32_t refreshes = config->wait_refresh(config->hook_context);
+        if (refreshes) {
+          skip_slots(app, (int64_t)refreshes - 1);
+          next = esp_timer_get_time();
+          continue;
+        }
+      }
       next += period;
       if (now >= next) {
-        /* Behind schedule: the slots already missed get no presented frame.
-         * Up to catch_up_frames of them still run the application's frame
-         * without presentation, so its frame count, and every animation it
-         * counts in frames, keeps the cadence; the rest are dropped. */
+        /* Behind schedule: the slots already missed get no presented
+         * frame. */
         const int64_t missed = (now - next) / period + 1;
-        app->stats.frames_skipped += (uint32_t)missed;
         next += missed * period;
-        for (int64_t i = 0; i < missed && i < config->catch_up_frames; i++) {
-          if (config->before_frame)
-            config->before_frame(config->hook_context);
-          const int32_t skip = m5_pocket_backend_skip(app);
-          if (skip != POCKET_STATUS_OK)
-            break;
-          app->stats.frames_caught_up++;
-        }
+        skip_slots(app, missed);
       }
       const int64_t wait_us = next - esp_timer_get_time();
       if (wait_us > 0)
@@ -320,10 +337,12 @@ esp_err_t m5_pocket_app_start(const m5_pocket_app_config *config,
     release(app);
     return err;
   }
-  ESP_LOGI(TAG, "%s: %s mode, %" PRIu32 " Hz, display buffers %u bytes",
+  ESP_LOGI(TAG, "%s: %s mode, %" PRIu32 " Hz%s, display buffers %u bytes",
            config->image->name,
            m5_pocket_app_build_mode() == M5_POCKET_APP_MODE_AOT ? "AOT" : "JS",
-           app->cadence_hz, (unsigned)app->devices.display_bytes);
+           app->cadence_hz,
+           config->wait_refresh ? " on the display's refresh" : "",
+           (unsigned)app->devices.display_bytes);
   *out = app;
   return ESP_OK;
 }

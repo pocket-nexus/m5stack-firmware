@@ -77,8 +77,8 @@ defaults in `device.ts`; there is no simulation.
 Gestures are model code on `pointerX`, `pointerY` and `pointerDown`: the
 screen swipes (50 px with a minimum speed, as LVGL's gesture detection), the
 POWER slider, the MUSIC volume slider, the SD list drag, the IR byte tiles
-(one step per 12 px). The application runs at 60 Hz; the factory's durations
-are counted in frames (`ease.ts`).
+(one step per 12 px). The application counts 60 frames a second; the
+factory's durations are counted in frames (`ease.ts`).
 
 ## Screens reproduced
 
@@ -106,6 +106,9 @@ are counted in frames (`ease.ts`).
 
 ## Differences from the factory firmware
 
+- **Frame rate**: the board runs one frame of the application at each
+  refresh of the panel, 61.7 a second, so a duration counted in frames is
+  2.8 % shorter than the factory's.
 - **Font sizes**: the factory's Montserrat 28 (POWER toggles, MUSIC title)
   uses the 24 px slot and Montserrat 44 (TIMER values) the 36 px slot.
 - **WiFi**: the A172 Stamp-AddOn C6 For P4 module is not driven. The window
