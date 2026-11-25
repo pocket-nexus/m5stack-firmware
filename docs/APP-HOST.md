@@ -183,11 +183,13 @@ the internal-stack helper task.
 
 A frame that overruns its slot skips the slots it ran into; the
 application's frame count is its clock, so its animations slow down. With
-`catch_up_frames` set, AOT mode runs the application's frame once more
+`catch_up_frames` set, the host runs the application's frame once more
 without presentation for each skipped slot, up to that many
 (`before_frame`, input, guest turn, requests, core ticks; no
-`after_frame`): the frame count keeps the cadence while the panel shows
-fewer frames. JS mode always skips.
+`after_frame`; the runtime's `pocket_runtime_advance` and
+`pocket_runtime_skip_presentation`, or their Rust counterparts in AOT
+mode): the frame count keeps the cadence while the panel shows fewer
+frames. A frame whose guest turn takes most of the slot gains little.
 
 ### Flash operations from the hooks
 

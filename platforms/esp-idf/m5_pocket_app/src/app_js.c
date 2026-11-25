@@ -262,12 +262,14 @@ int32_t m5_pocket_backend_tick(m5_pocket_app *app) {
   return status;
 }
 
-/* The runtime's C API presents every frame it runs. */
-bool m5_pocket_backend_can_skip(void) { return false; }
-
 int32_t m5_pocket_backend_skip(m5_pocket_app *app) {
-  (void)app;
-  return POCKET_STATUS_UNSUPPORTED;
+  js_backend *js = app->backend;
+  int32_t status = pocket_runtime_advance(js->runtime);
+  if (status == POCKET_STATUS_OK)
+    status = pocket_runtime_skip_presentation(js->runtime);
+  if (status != POCKET_STATUS_OK && app->stats.frame_errors == 0)
+    ESP_LOGE(TAG, "guest: %s", pocket_guest_idf_error(js->guest));
+  return status;
 }
 
 pocket_runtime *m5_pocket_backend_runtime(m5_pocket_app *app) {

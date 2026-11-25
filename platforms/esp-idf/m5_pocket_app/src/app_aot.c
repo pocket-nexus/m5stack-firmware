@@ -35,8 +35,6 @@ int32_t m5_pocket_backend_tick(m5_pocket_app *app) {
   return m5_pocket_aot_tick(app->backend);
 }
 
-bool m5_pocket_backend_can_skip(void) { return true; }
-
 int32_t m5_pocket_backend_skip(m5_pocket_app *app) {
   return m5_pocket_aot_skip(app->backend);
 }

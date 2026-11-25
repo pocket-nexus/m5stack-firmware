@@ -212,9 +212,7 @@ static void run(void *argument) {
         const int64_t missed = (now - next) / period + 1;
         app->stats.frames_skipped += (uint32_t)missed;
         next += missed * period;
-        const int64_t catch_up =
-            m5_pocket_backend_can_skip() ? config->catch_up_frames : 0;
-        for (int64_t i = 0; i < missed && i < catch_up; i++) {
+        for (int64_t i = 0; i < missed && i < config->catch_up_frames; i++) {
           if (config->before_frame)
             config->before_frame(config->hook_context);
           const int32_t skip = m5_pocket_backend_skip(app);
