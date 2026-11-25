@@ -132,7 +132,7 @@ baked.
 Sizes are logical px; the atlas is rasterised at the host contract's
 `display.rasterDensity` (Tab5: 2; StopWatch, StickS3, AtomS3: 1).
 
-Limits (PocketJS v0.17.0 to the pinned `618c1ba9`, same slot table):
+Limits (PocketJS v0.17.0 to the pinned `4f0dabf5`, same slot table):
 
 - **No arbitrary text sizes.** `text-[108px]`, `text-[64px]`, `text-[16px]`,
   `text-3xl` and `text-6xl` are unknown utilities: the class string does not

@@ -2,7 +2,7 @@
 
 ```text
 m5stack-firmware/
-├─ third_party/pocketjs/      PocketJS checkout pinned to 618c1ba9, after v0.17.0 (submodule)
+├─ third_party/pocketjs/      PocketJS checkout pinned to 4f0dabf5, after v0.17.0 (submodule)
 ├─ platforms/esp-idf/         ESP-IDF components owned by this repository
 │  ├─ m5_bsp_<board>/         board support taken from M5Stack sources
 │  └─ m5_pocket_app/          application host: JS/AOT mode, device bridge,
