@@ -31,6 +31,8 @@ interface Entry {
 }
 
 let entries: Entry[] = [];
+/** Counts the listings parsed into `entries`. */
+let listing: i32 = 0;
 export let current: string = ROOT;
 let selected: i32 = -1;
 let lastTap: i32 = -1;
@@ -52,6 +54,7 @@ export function open(): void {
   selected = -1;
   scroll = 0;
   entries = [];
+  listing = listing + 1;
   listedSeen = device.sdListed;
   device.request(`sdList ${ROOT}`);
 }
@@ -82,6 +85,7 @@ function parse(text: string): void {
     i = end + 1;
   }
   entries = out;
+  listing = listing + 1;
 }
 
 /** One frame: a new listing from the board, the double-tap clock and the
@@ -154,6 +158,11 @@ export function back(): void {
   }
   current = len(codePoints(next)) < len(codePoints(ROOT)) ? ROOT : next;
   device.request(`sdList ${current}`);
+}
+
+/** Changes when rows() would: the view takes new rows only then. */
+export function rowsKey(): string {
+  return `${ready() ? 1 : 0}|${listing}|${selected}|${scroll}`;
 }
 
 export function rows(): Row[] {

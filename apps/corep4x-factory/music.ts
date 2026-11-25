@@ -5,7 +5,7 @@
 // the target heights 18..122); the bars rise with 0.55 and fall with 0.22 of
 // the difference per 50 ms. The volume slider (0..100) sets the codec's
 // output volume. Closing the window does not stop the music.
-import { f32, i32, imod, len, push, round, type Color } from "@pocketjs/framework/solid/std";
+import { copy, f32, i32, imod, len, push, round, type Color } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 
 /** device.musicState */
@@ -17,16 +17,18 @@ export const PAUSED: i32 = 4;
 export const OTHER: i32 = 5;
 export const NOT_READY: i32 = 6;
 
-/** One spectrum bar as drawn: screen x, top and height. */
+/** One spectrum bar: screen x and colour. Its height is barHeights()[id]. */
 export interface Bar {
   id: i32;
   left: i32;
-  top: i32;
-  height: i32;
   sky: boolean;
 }
 
 export let heights: f32[] = [];
+/** The whole-pixel heights the bars show. */
+let shown: i32[] = [];
+/** Counts the changes of `shown`: the view takes new bars only then. */
+export let revision: i32 = 0;
 let fresh: boolean = true;
 let tickFrames: i32 = 0;
 
@@ -39,9 +41,12 @@ let wasDown: boolean = false;
 
 export function open(): void {
   heights = [];
+  shown = [];
   for (let i: i32 = 0; i < 24; i++) {
     push(heights, 18);
+    push(shown, 18);
   }
+  revision = revision + 1;
   fresh = true;
   tickFrames = 0;
   device.request("music 1");
@@ -65,6 +70,7 @@ export function step(x: i32, y: i32, down: boolean): void {
   tickFrames = tickFrames + 2;
   if (tickFrames >= 3) {
     tickFrames = tickFrames - 3;
+    let changed: boolean = false;
     for (let i: i32 = 0; i < 24; i++) {
       const playing = device.musicState === PLAYING;
       const target: f32 = playing && i < len(device.musicBars) ? f32(device.musicBars[i]) : f32(18);
@@ -72,8 +78,16 @@ export function step(x: i32, y: i32, down: boolean): void {
       let next: f32 = fresh ? target : h + (target - h) * (target > h ? f32(0.55) : f32(0.22));
       next = next < 18 ? 18 : next > 122 ? 122 : next;
       heights[i] = next;
+      const whole = i32(round(next));
+      if (whole !== shown[i]) {
+        shown[i] = whole;
+        changed = true;
+      }
     }
     fresh = false;
+    if (changed) {
+      revision = revision + 1;
+    }
   }
   if (down && !wasDown) {
     dragging = x >= SLIDER_LEFT - 14 && x <= SLIDER_LEFT + SLIDER_WIDTH + 14 && y >= SLIDER_TOP - 10 && y <= SLIDER_TOP + 28;
@@ -92,15 +106,21 @@ export function step(x: i32, y: i32, down: boolean): void {
 }
 
 /** Bars at x = 64 + 15 i, 8 px wide, growing up from y 273; every second
- *  pair is sky blue (i % 4 in {1, 2}). */
+ *  pair is sky blue (i % 4 in {1, 2}). The bars do not change; their
+ *  heights are a separate list, so a new height updates one binding per
+ *  bar instead of every bar's row. */
 export function bars(): Bar[] {
   const out: Bar[] = [];
-  for (let i: i32 = 0; i < len(heights); i++) {
-    const h = i32(round(heights[i]));
+  for (let i: i32 = 0; i < 24; i++) {
     const phase = imod(i, 4);
-    push(out, { id: i, left: 64 + 15 * i, top: 273 - h, height: h, sky: phase === 1 || phase === 2 });
+    push(out, { id: i, left: 64 + 15 * i, sky: phase === 1 || phase === 2 });
   }
   return out;
+}
+
+/** The bar heights in whole pixels. */
+export function barHeights(): i32[] {
+  return copy(shown);
 }
 
 export function knob(): f32 {

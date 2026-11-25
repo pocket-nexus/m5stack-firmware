@@ -1,5 +1,5 @@
 import { For, Text, View } from "@pocketjs/framework/solid/components";
-import type { Color, f32, Px } from "@pocketjs/framework/solid/std";
+import type { Color, f32, i32, Px } from "@pocketjs/framework/solid/std";
 import Button from "./Button.tsx";
 import type { Bar } from "./music";
 
@@ -8,6 +8,7 @@ import type { Bar } from "./music";
  *  progress bar, the times, the status line, PLAY/PAUSE and the volume box. */
 export default function MusicView(props: {
   bars: Bar[];
+  heights: i32[];
   playing: boolean;
   progress: Px;
   elapsed: string;
@@ -32,10 +33,10 @@ export default function MusicView(props: {
       <Text class="absolute left-[50] top-[81] text-2xl text-[#111827]">CandyWind</Text>
       <Text class="absolute left-[52] top-[115] text-base text-[#64748B]">Mono 44.1 kHz 45 s</Text>
       <For each={props.bars} by={bar => bar.id}>
-        {bar => (
+        {(bar, index) => (
           <View
             class={bar().sky ? "absolute w-[8] rounded-[4] bg-[#0EA5E9]" : "absolute w-[8] rounded-[4] bg-[#2563EB]"}
-            style={{ insetL: bar().left, insetT: bar().top, height: bar().height, opacity: props.barOpacity }}
+            style={{ insetL: bar().left, insetT: 273 - (props.heights[index()] ?? 18), height: props.heights[index()] ?? 18, opacity: props.barOpacity }}
           />
         )}
       </For>

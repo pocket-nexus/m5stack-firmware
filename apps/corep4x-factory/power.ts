@@ -171,9 +171,6 @@ export interface Pin {
   label: string;
   /** Two-line signal text sits 5 px higher. */
   twoLines: boolean;
-  output: boolean;
-  /** The level dot: 0 low, 1 high input, 2 high output. */
-  dot: i32;
 }
 
 // m5_corep4_pinmap.h COREP4_M5BUS_P1..P30: the GPIO number, or -1 with the
@@ -211,6 +208,41 @@ function gpioLevel(gpio: i32): boolean {
 /** The 30 pin cards: group g holds pins 10g+1..10g+10, odd pins in column
  *  L (x 29 + 152 g), even pins in column R (x 97 + 152 g), cards 53 px
  *  apart from y 109. */
+/** The dot of pin `i`: 0 off, 1 input high, 2 output high. */
+function pinDot(i: i32): i32 {
+  if (BUS_KIND[i] !== KIND_GPIO) {
+    return 0;
+  }
+  const draftHere = popupPin === i + 1;
+  const output = draftHere ? draftOutput : appliedOutput[i];
+  const level = draftHere ? draftLevel : appliedLevel[i];
+  if (output) {
+    return level ? 2 : 0;
+  }
+  return gpioLevel(BUS_GPIO[i]) ? 1 : 0;
+}
+
+/** The level dot of each pin: 0 low, 1 high input, 2 high output. */
+export function pinDots(): i32[] {
+  const out: i32[] = [];
+  for (let i: i32 = 0; i < 30; i++) {
+    push(out, pinDot(i));
+  }
+  return out;
+}
+
+/** Each pin's applied mode: true for an output (the amber card). */
+export function pinOutputs(): boolean[] {
+  const out: boolean[] = [];
+  for (let i: i32 = 0; i < 30; i++) {
+    push(out, BUS_KIND[i] === KIND_GPIO && appliedOutput[i]);
+  }
+  return out;
+}
+
+/** The 30 cards. They do not change; the dots and modes are separate lists,
+ *  so a level change updates one binding per card instead of every card. */
+
 export function pins(): Pin[] {
   const out: Pin[] = [];
   for (let i: i32 = 0; i < 30; i++) {
@@ -220,17 +252,6 @@ export function pins(): Pin[] {
     const row = idiv(inGroup, 2);
     const gpio = BUS_GPIO[i];
     const kind = BUS_KIND[i];
-    const draftHere = popupPin === i + 1;
-    const output = kind === KIND_GPIO && (draftHere ? draftOutput : appliedOutput[i]);
-    const level = draftHere ? draftLevel : appliedLevel[i];
-    let dot: i32 = 0;
-    if (kind === KIND_GPIO) {
-      if (output) {
-        dot = level ? 2 : 0;
-      } else {
-        dot = gpioLevel(gpio) ? 1 : 0;
-      }
-    }
     push(out, {
       id: i + 1,
       left: 29 + group * 152 + column * 68,
@@ -239,8 +260,6 @@ export function pins(): Pin[] {
       gpio: gpio,
       label: kind === KIND_GPIO ? `GP-${gpio < 10 ? "0" : ""}${gpio}` : BUS_TEXT[i],
       twoLines: kind === KIND_TEXT || BUS_TEXT[i] === "P4_3V3\nL3B" || BUS_TEXT[i] === "5V\nINOUT",
-      output: kind === KIND_GPIO && appliedOutput[i],
-      dot: dot,
     });
   }
   return out;

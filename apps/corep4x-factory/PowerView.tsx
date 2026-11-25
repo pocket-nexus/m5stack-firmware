@@ -16,6 +16,8 @@ export default function PowerView(props: {
   vbat: string;
   charge: i32;
   pins: Pin[];
+  pinDots: i32[];
+  pinOutputs: boolean[];
   onToggle: (rail: i32) => void;
   onCharge: (value: i32) => void;
   onPin: (pin: i32) => void;
@@ -90,11 +92,11 @@ export default function PowerView(props: {
               <Text class="text-2xs text-black">R</Text>
             </View>
             <For each={props.pins} by={pin => pin.id}>
-              {pin => (
+              {(pin, index) => (
                 <View
                   class={
                     pin().kind === 0
-                      ? pin().output
+                      ? (props.pinOutputs[index()] ?? false)
                         ? "absolute w-[50] h-[50] rounded-[3] border-[1] bg-[#FEF3C7] border-[#FBBF24]"
                         : "absolute w-[50] h-[50] rounded-[3] border-[1] bg-[#DCFCE7] border-[#86EFAC]"
                       : pin().kind === 1
@@ -114,9 +116,9 @@ export default function PowerView(props: {
                   <Show when={pin().kind === 0}>
                     <View
                       class={
-                        pin().dot === 2
+                        (props.pinDots[index()] ?? 0) === 2
                           ? "absolute left-[32] top-[6] w-[10] h-[10] rounded-full border-[1] bg-[#DC2626] border-[#DC2626]"
-                          : pin().dot === 1
+                          : (props.pinDots[index()] ?? 0) === 1
                             ? "absolute left-[32] top-[6] w-[10] h-[10] rounded-full border-[1] bg-[#2563EB] border-[#2563EB]"
                             : "absolute left-[32] top-[6] w-[10] h-[10] rounded-full border-[1] bg-[#CBD5E1] border-[#94A3B8]"
                       }

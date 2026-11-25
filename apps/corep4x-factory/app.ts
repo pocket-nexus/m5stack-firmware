@@ -4,7 +4,7 @@
 // state and the root model republishes it after every frame. Hardware goes
 // through ./device only.
 import { createSignal } from "solid-js";
-import { f32, frames, i32, idiv, len, push, removeAt, type Color, type f64, type Px } from "@pocketjs/framework/solid/std";
+import { copy, f32, frames, i32, idiv, len, push, removeAt, type Color, type f64, type Px } from "@pocketjs/framework/solid/std";
 import * as device from "./device";
 import * as dialog from "./dialog";
 import type { PlacedButton } from "./dialog";
@@ -398,6 +398,8 @@ export const [powerIndicator, setPowerIndicator] = createSignal<Px>(0);
 export const [powerVbat, setPowerVbat] = createSignal<string>("-.--V");
 export const [powerCharge, setPowerCharge] = createSignal<i32>(1);
 export const [powerPins, setPowerPins] = createSignal<Pin[]>([]);
+export const [powerPinDots, setPowerPinDots] = createSignal<i32[]>([]);
+export const [powerPinOutputs, setPowerPinOutputs] = createSignal<boolean[]>([]);
 export const [gpioOpen, setGpioOpen] = createSignal<boolean>(false);
 export const [gpioTitle, setGpioTitle] = createSignal<string>("");
 export const [gpioStatus, setGpioStatus] = createSignal<string>("");
@@ -408,8 +410,16 @@ export const [gpioPull, setGpioPull] = createSignal<i32>(0);
 
 let gpioConfigsSeen: i32 = 0;
 
+let pinDotsShown: i32[] = [];
+let pinOutputsShown: boolean[] = [];
+
+let railsShown: boolean[] = [];
+
 function publishPower(): void {
-  setPowerRails(device.rails);
+  if (!sameFlags(device.rails, railsShown)) {
+    railsShown = copy(device.rails);
+    setPowerRails(copy(device.rails));
+  }
   setPowerBacklight(device.backlight);
   const knob = power.knobX(device.backlight);
   setPowerKnob((knob - f32(16)) * PX);
@@ -417,7 +427,16 @@ function publishPower(): void {
   setPowerVbat(power.vbatText());
   setPowerCharge(device.charge);
   if (tab === 2) {
-    setPowerPins(power.pins());
+    const dots = power.pinDots();
+    if (!sameNumbers(dots, pinDotsShown)) {
+      pinDotsShown = dots;
+      setPowerPinDots(dots);
+    }
+    const outputs = power.pinOutputs();
+    if (!sameFlags(outputs, pinOutputsShown)) {
+      pinOutputsShown = outputs;
+      setPowerPinOutputs(outputs);
+    }
   }
   setGpioOpen(power.popupPin > 0);
   if (power.popupPin > 0) {
@@ -476,8 +495,14 @@ export function gpioClose(): void {
 export const [timerValues, setTimerValues] = createSignal<string[]>(["2026", "01", "01", "00", "00", "00"]);
 export const [timerEnabled, setTimerEnabled] = createSignal<boolean>(true);
 
+let timerShown: string[] = [];
+
 function publishTimer(): void {
-  setTimerValues([timer.text(0), timer.text(1), timer.text(2), timer.text(3), timer.text(4), timer.text(5)]);
+  const values = [timer.text(0), timer.text(1), timer.text(2), timer.text(3), timer.text(4), timer.text(5)];
+  if (!sameStrings(values, timerShown)) {
+    timerShown = values;
+    setTimerValues(values);
+  }
   setTimerEnabled(device.rtcReady);
   setActionShown(device.ntpReady);
 }
@@ -493,10 +518,15 @@ export const [i2cSummary, setI2cSummary] = createSignal<string>("");
 export const [i2cSummaryColor, setI2cSummaryColor] = createSignal<Color>("#64748B");
 export const [i2cBubbles, setI2cBubbles] = createSignal<Bubble[]>([]);
 
+let i2cRevision: i32 = -1;
+
 function publishI2c(): void {
   setI2cSummary(i2c.summary);
   setI2cSummaryColor(i2c.summaryError ? "#DC2626" : "#64748B");
-  setI2cBubbles(i2c.bubbles);
+  if (i2c.revision !== i2cRevision) {
+    i2cRevision = i2c.revision;
+    setI2cBubbles(i2c.bubbles);
+  }
 }
 
 export function i2cScan(bus: i32): void {
@@ -518,9 +548,15 @@ export const [sdStatusText, setSdStatusText] = createSignal<string>("");
 let sdTestsSeen: i32 = 0;
 let sdTestTextSeen: string = "";
 
+let sdKey: string = "";
+
 function publishSd(): void {
   setSdPath(sd.pathText());
-  setSdRows(sd.rows());
+  const key = sd.rowsKey();
+  if (key !== sdKey) {
+    sdKey = key;
+    setSdRows(sd.rows());
+  }
   setSdBack(sd.backEnabled());
   setSdSize(sd.sizeText());
   setSdStatusText(device.sdStatus);
@@ -631,6 +667,8 @@ export const [recSetText, setRecSetText] = createSignal<string>("");
 let recTextureSeen: i32 = -2;
 let recSpectrumSeen: boolean = false;
 
+let recDbShown: string[] = [];
+
 function publishRec(): void {
   if (device.recTexture !== recTextureSeen) {
     recTextureSeen = device.recTexture;
@@ -642,7 +680,11 @@ function publishRec(): void {
   }
   setRecSpectrum(rec.spectrum);
   setRecShowRef(rec.showRef);
-  setRecDb([device.recDb0, device.recDb1, device.recDb2]);
+  const db = [device.recDb0, device.recDb1, device.recDb2];
+  if (!sameStrings(db, recDbShown)) {
+    recDbShown = db;
+    setRecDb(db);
+  }
   const b = rec.buttons();
   setRecText(b.recText);
   setRecBg(b.recBg);
@@ -684,6 +726,7 @@ export function recCloseSet(): void {
 // ---- MUSIC -----------------------------------------------------------------------
 
 export const [musicBars, setMusicBars] = createSignal<Bar[]>([]);
+export const [musicHeights, setMusicHeights] = createSignal<i32[]>([]);
 export const [musicPlaying, setMusicPlaying] = createSignal<boolean>(false);
 export const [musicProgress, setMusicProgress] = createSignal<Px>(0);
 export const [musicElapsed, setMusicElapsed] = createSignal<string>("0:00");
@@ -700,10 +743,15 @@ export const [musicIndicator, setMusicIndicator] = createSignal<Px>(0);
 export const [musicSliderEnabled, setMusicSliderEnabled] = createSignal<boolean>(true);
 export const [musicBarOpacity, setMusicBarOpacity] = createSignal<f32>(0.6);
 
+let musicRevision: i32 = -1;
+
 function publishMusic(): void {
   const state = device.musicState;
   const playing = state === music.PLAYING;
-  setMusicBars(music.bars());
+  if (music.revision !== musicRevision) {
+    musicRevision = music.revision;
+    setMusicHeights(music.barHeights());
+  }
   setMusicPlaying(playing);
   setMusicProgress(music.progress() * f32(432) * PX);
   setMusicElapsed(music.elapsedText());
@@ -739,11 +787,17 @@ export const [pingSummary, setPingSummary] = createSignal<string>("");
 export const [pingSummaryColor, setPingSummaryColor] = createSignal<Color>("#64748B");
 export const [usbResult, setUsbResult] = createSignal<string>("");
 
+let pingKey: string = "";
+
 function publishPing(): void {
   setPingEthText(net.ethText());
   setPingEthDot(net.ethDot());
   setPingEthDetail(net.ethDetail());
-  setPingTargets(net.targets());
+  const key = net.targetsKey();
+  if (key !== pingKey) {
+    pingKey = key;
+    setPingTargets(net.targets());
+  }
   setPingEnabled(!device.pingRunning);
   setPingSummary(wrap(net.summaryText(), 414, 16));
   setPingSummaryColor(net.summaryColor());
@@ -774,13 +828,19 @@ export const [irAddressText, setIrAddressText] = createSignal<string>("");
 export const [irCommandText, setIrCommandText] = createSignal<string>("");
 export const [irRaw, setIrRaw] = createSignal<string>("");
 
+let irBytesShown: string[] = [];
+
 function publishIr(): void {
   setIrStatus(ir.statusText());
   setIrStatusColor(ir.statusColor());
   setIrResultText(dots(ir.resultText(), 410, 14));
   setIrResultColor(ir.resultColor());
   const b = ir.bytes();
-  setIrBytes([ir.hex2(b[0]), ir.hex2(b[1]), ir.hex2(b[2]), ir.hex2(b[3])]);
+  const bytes = [ir.hex2(b[0]), ir.hex2(b[1]), ir.hex2(b[2]), ir.hex2(b[3])];
+  if (!sameStrings(bytes, irBytesShown)) {
+    irBytesShown = bytes;
+    setIrBytes(bytes);
+  }
   setIrPressed(ir.pressed);
   setIrAuto(ir.autoInc);
   setIrRepeatOn(ir.repeat);
@@ -825,6 +885,44 @@ function publishIndicator(): void {
 }
 
 // ---- frame -----------------------------------------------------------------------
+
+/** The models republish every frame; a new array re-runs every binding that
+ *  reads it, so arrays are published only when their content changed. */
+function sameStrings(a: string[], b: string[]): boolean {
+  if (len(a) !== len(b)) {
+    return false;
+  }
+  for (let i: i32 = 0; i < len(a); i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function sameNumbers(a: i32[], b: i32[]): boolean {
+  if (len(a) !== len(b)) {
+    return false;
+  }
+  for (let i: i32 = 0; i < len(a); i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function sameFlags(a: boolean[], b: boolean[]): boolean {
+  if (len(a) !== len(b)) {
+    return false;
+  }
+  for (let i: i32 = 0; i < len(a); i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 function publishAll(): void {
   const id = windows.open;
@@ -936,6 +1034,8 @@ function step(): void {
 export async function start(): Promise<void> {
   device.request("hello");
   setWinPlaceholder(frame.placeholder());
+  setMusicBars(music.bars());
+  setPowerPins(power.pins());
   publishScreens();
   // Bounded loop: over two years of frames at 30 Hz, one step each.
   for (let i: i32 = 0; i < 2147483647; i++) {
