@@ -2,12 +2,13 @@
 // ui_info.c, ui_function.c): Startup in the middle, Info to its left,
 // Function to its right. A swipe right on Startup loads Info, a swipe left
 // loads Function; the way back is the opposite swipe. Each change is
-// lv_screen_load_anim MOVE_LEFT/MOVE_RIGHT over 500 ms on the linear path:
-// both screens slide by the screen width. LVGL fires the gesture while the
-// finger moves, once the movement since the press (summed over reads that
-// move at least 3 px) exceeds 50 px, then waits for the release. LVGL reads
-// the touch controller every LV_DEF_REFR_PERIOD (33 ms); the recogniser
-// samples the contact at that period, whatever the frame rate.
+// lv_screen_load_anim MOVE_LEFT/MOVE_RIGHT on the linear path: both screens
+// slide by the screen width. The factory's slide takes 500 ms; this one
+// takes MOVE_MS. LVGL fires the gesture while the finger moves, once the
+// movement since the press (summed over reads that move at least 3 px)
+// exceeds 50 px, then waits for the release. LVGL reads the touch controller
+// every LV_DEF_REFR_PERIOD (33 ms); the recogniser samples the contact at
+// that period, whatever the frame rate.
 import { abs, f32, type i32 } from "@pocketjs/framework/solid/std";
 import { framesIn, progress } from "./ease";
 
@@ -16,7 +17,7 @@ export const INFO: i32 = 1;
 export const FUNCTION: i32 = 2;
 
 const WIDTH: f32 = 480;
-const MOVE_MS: f32 = 500;
+const MOVE_MS: f32 = 300;
 const GESTURE_LIMIT: i32 = 50;
 const GESTURE_MIN_VELOCITY: i32 = 3;
 const READ_MS: i32 = 33;
