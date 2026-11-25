@@ -67,7 +67,8 @@ the `device.ts` fields of the application; the two lists change together.
 
 Partitions (`partitions.csv`, 16 MiB flash): `nvs` 24 KiB, `phy_init` 4 KiB,
 `factory` 12 MiB, `storage` 3 MiB SPIFFS mounted at `/webspiffs` for the
-REC window's recording, formatted when it is first mounted.
+REC window's recording. The flash image carries an empty SPIFFS for
+`storage`.
 
 ## Device bridge
 

@@ -196,8 +196,10 @@ static uint32_t record_duration_ms(size_t bytes) {
 /* ---- storage ----------------------------------------------------------- */
 
 /* ensure_rec_storage_mounted; call with s_file_lock held. The factory
- * mounts without formatting (its image carries a SPIFFS of web assets);
- * this firmware formats a partition that holds no SPIFFS yet. */
+ * mounts without formatting (its image carries a SPIFFS of web assets).
+ * This firmware's flash image carries an empty SPIFFS (main/CMakeLists.txt);
+ * a partition that holds none, after an application-only flash, is
+ * formatted here, which erases 3 MiB while the UI waits on the flash. */
 static esp_err_t mount_locked(void) {
   if (esp_spiffs_mounted(REC_PARTITION)) {
     return ESP_OK;

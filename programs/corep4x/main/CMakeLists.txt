@@ -70,3 +70,10 @@ m5_pocket_app(
     NAME corep4x
     HOST_CONFIG "../../../apps/corep4x-factory/pocket.host.config.ts"
     AOT_CRATE "../aot")
+
+# An empty SPIFFS for the "storage" partition, written with the application
+# (and into the merged release image): the first recording finds a file
+# system and does not format the 3 MiB partition while the UI runs.
+set(storage_dir "${CMAKE_BINARY_DIR}/storage_empty")
+file(MAKE_DIRECTORY "${storage_dir}")
+spiffs_create_partition_image(storage "${storage_dir}" FLASH_IN_PROJECT)
