@@ -8,7 +8,7 @@
 // through their anti-aliased corners on the device.
 //
 //   bun apps/corep4x-factory/tools/convert-assets.ts \
-//     <M5CoreP4X-UserDemo>/components/m5_corep4_component/corep4_lvgl_ui_out/images
+//     [<M5CoreP4X-UserDemo>/components/m5_corep4_component/corep4_lvgl_ui_out/images]
 //
 // Source: m5stack/M5CoreP4X-UserDemo commit
 // cd1e1bd0bfd4b6e51a4898999b33a9392ea11f65 (MIT),
@@ -19,13 +19,14 @@
 // upload) and two symbols of LVGL 9's lv_font_montserrat_14 (MIT; the
 // symbols are Font Awesome 5 Free, SIL OFL 1.1), 4 bits per pixel: the IMU
 // window's LV_SYMBOL_REFRESH (U+F021, 14x15, 0x111827) and the checkbox
-// mark LV_SYMBOL_OK (U+F00C, 14x11, white).
+// mark LV_SYMBOL_OK (U+F00C, 14x11, white). And the two strips the window
+// frame's dashed lines are cut from (frame.ts). Without an argument it
+// writes only the pictures it draws.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { encodePng, type Picture } from "./png.ts";
 
 const source = process.argv[2];
-if (!source) throw new Error("usage: convert-assets.ts <images directory>");
 const out = join(import.meta.dir, "..", "assets");
 const SCREEN: [number, number, number] = [0xf5, 0xf5, 0xf5];
 
@@ -114,6 +115,20 @@ const CHECK = [
   0x20, 0x0, 0x0, 0x0, 0x8, 0xff, 0xe2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7d, 0x20, 0x0, 0x0, 0x0,
 ];
 
+/** The dash strip of the window frame: 512x2 (or 2x512), 7 px of 0xCBD5E1
+ *  and 5 px clear, repeated from the first pixel. */
+function dashStrip(vertical: boolean): Picture {
+  const width = vertical ? 2 : 512;
+  const height = vertical ? 512 : 2;
+  const rgba = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if ((vertical ? y : x) % 12 < 7) rgba.set([0xcb, 0xd5, 0xe1, 255], (y * width + x) * 4);
+    }
+  }
+  return { width, height, rgba };
+}
+
 /** A glyph in a 16x16 texture: alpha from its 4-bit coverage. */
 function glyph(bits: number[], width: number, height: number, rgb: number[]): Picture {
   const size = 16;
@@ -129,13 +144,17 @@ writeFileSync(join(out, "touch-canvas.png"), encodePng(touchCanvas()));
 writeFileSync(join(out, "imu-canvas.png"), encodePng(imuCanvas()));
 writeFileSync(join(out, "refresh.png"), encodePng(glyph(REFRESH, 14, 15, [0x11, 0x18, 0x27])));
 writeFileSync(join(out, "check.png"), encodePng(glyph(CHECK, 14, 11, [255, 255, 255])));
-console.log("touch-canvas.png, imu-canvas.png, refresh.png, check.png");
+writeFileSync(join(out, "dash-h.png"), encodePng(dashStrip(false)));
+writeFileSync(join(out, "dash-v.png"), encodePng(dashStrip(true)));
+console.log("touch-canvas.png, imu-canvas.png, refresh.png, check.png, dash-h.png, dash-v.png");
 
-for (const [file, name] of [
-  ["ui_img_corep4x_ui_startup_png", "startup"],
-  ["ui_img_corep4x_ui_info_png", "info"],
-  ["ui_img_corep4x_ui_function_png", "function"],
-] as const) {
-  writeFileSync(join(out, `${name}.png`), encodePng(pad(readLvglImage(file), 512)));
-  console.log(`${name}.png: 512x512 from 480x480`);
+if (source) {
+  for (const [file, name] of [
+    ["ui_img_corep4x_ui_startup_png", "startup"],
+    ["ui_img_corep4x_ui_info_png", "info"],
+    ["ui_img_corep4x_ui_function_png", "function"],
+  ] as const) {
+    writeFileSync(join(out, `${name}.png`), encodePng(pad(readLvglImage(file), 512)));
+    console.log(`${name}.png: 512x512 from 480x480`);
+  }
 }

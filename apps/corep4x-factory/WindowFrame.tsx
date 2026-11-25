@@ -1,7 +1,8 @@
 import { Show, type JSX } from "solid-js";
 import { For, Image, Text, View } from "@pocketjs/framework/solid/components";
 import type { Color, f32, i32, Px } from "@pocketjs/framework/solid/std";
-import type { Dash } from "./frame";
+import Dashes from "./Dashes.tsx";
+import type { Edge } from "./frame";
 
 /** A function window (ui_function_window.cpp). The backdrop's corner, size
  *  and opacity are animated; every part keeps its screen position relative
@@ -18,9 +19,9 @@ export default function WindowFrame(props: {
   pages: i32;
   tabs: string[];
   tab: i32;
-  outline: Dash[];
-  tabEdges: Dash[];
-  placeholder: Dash[];
+  outline: Edge[];
+  tabEdges: Edge[];
+  placeholder: Edge[];
   actionShown: boolean;
   actionPlaceholder: boolean;
   actionText: string;
@@ -65,9 +66,7 @@ export default function WindowFrame(props: {
       <View class="absolute left-[300] top-[4] w-[170] h-[48] bg-white">
         <Show when={props.actionPlaceholder}>
           <View class="absolute left-[6] top-[5] w-[76] h-[38] rounded-[6] bg-[#F3F4F6]">
-            <For each={props.placeholder} by={dash => dash.id}>
-              {dash => <View class="absolute bg-[#CBD5E1]" style={{ insetL: dash().x, insetT: dash().y, width: dash().w, height: dash().h }} />}
-            </For>
+            <Dashes edges={props.placeholder} />
           </View>
         </Show>
         <Show when={!props.actionPlaceholder && props.actionShown}>
@@ -95,12 +94,8 @@ export default function WindowFrame(props: {
           <Text class="text-sm text-center text-white">Exit</Text>
         </View>
       </View>
-      <For each={props.outline} by={dash => dash.id}>
-        {dash => <View class="absolute bg-[#CBD5E1]" style={{ insetL: dash().x, insetT: dash().y, width: dash().w, height: dash().h }} />}
-      </For>
-      <For each={props.tabEdges} by={dash => dash.id}>
-        {dash => <View class="absolute bg-[#CBD5E1]" style={{ insetL: dash().x, insetT: dash().y, width: dash().w, height: dash().h }} />}
-      </For>
+      <Dashes edges={props.outline} />
+      <Dashes edges={props.tabEdges} />
     </View>
   );
 }
