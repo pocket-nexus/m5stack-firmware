@@ -59,6 +59,8 @@ import {
   powerKnob,
   powerPin,
   powerPins,
+  powerPinDots,
+  powerPinOutputs,
   powerRails,
   powerSetCharge,
   powerToggle,
@@ -105,6 +107,7 @@ import {
   irToggleRepeat,
   musicBarOpacity,
   musicBars,
+  musicHeights,
   musicButtonBg,
   musicButtonEnabled,
   musicButtonFg,
@@ -313,6 +316,8 @@ export default function App() {
               vbat={powerVbat()}
               charge={powerCharge()}
               pins={powerPins()}
+              pinDots={powerPinDots()}
+              pinOutputs={powerPinOutputs()}
               onToggle={powerToggle}
               onCharge={powerSetCharge}
               onPin={powerPin}
@@ -362,6 +367,7 @@ export default function App() {
           <Show when={win() === 11}>
             <MusicView
               bars={musicBars()}
+              heights={musicHeights()}
               playing={musicPlaying()}
               progress={musicProgress()}
               elapsed={musicElapsed()}

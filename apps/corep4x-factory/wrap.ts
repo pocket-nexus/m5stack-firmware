@@ -4,7 +4,7 @@
 // PocketJS draws "\n" as a line break but does not wrap by itself, so the
 // models wrap strings with these Montserrat Medium advances (thousandths of
 // an em for code points 32..126, from fonts/Montserrat-Medium.ttf).
-import { codePoints, f32, fromCodePoint, i32, len, push } from "@pocketjs/framework/solid/std";
+import { codePoints, f32, fromCodePoint, i32, imod, len, push } from "@pocketjs/framework/solid/std";
 
 const ADVANCE: i32[] = [
   269, 268, 391, 703, 621, 843, 686, 210, 337, 338, 400, 582, 227, 383, 227, 352, 667, 370, 574, 572, 669, 574, 617, 598, 644,
@@ -33,8 +33,53 @@ function breaks(code: i32): boolean {
   return code === 32 || code === 44 || code === 46 || code === 59 || code === 58 || code === 45 || code === 95 || code === 41 || code === 93 || code === 125;
 }
 
+// The models ask for the same strings in every frame: the last results,
+// replaced in turn.
+const CACHE: i32 = 32;
+let cacheText: string[] = [];
+let cacheMax: i32[] = [];
+let cacheSize: i32[] = [];
+let cacheDots: boolean[] = [];
+let cacheResult: string[] = [];
+let cacheNext: i32 = 0;
+
+function cached(text: string, max: i32, size: i32, dotted: boolean): i32 {
+  for (let i: i32 = 0; i < len(cacheText); i++) {
+    if (cacheText[i] === text && cacheMax[i] === max && cacheSize[i] === size && cacheDots[i] === dotted) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function remember(text: string, max: i32, size: i32, dotted: boolean, result: string): string {
+  if (len(cacheText) < CACHE) {
+    push(cacheText, text);
+    push(cacheMax, max);
+    push(cacheSize, size);
+    push(cacheDots, dotted);
+    push(cacheResult, result);
+  } else {
+    cacheText[cacheNext] = text;
+    cacheMax[cacheNext] = max;
+    cacheSize[cacheNext] = size;
+    cacheDots[cacheNext] = dotted;
+    cacheResult[cacheNext] = result;
+    cacheNext = imod(cacheNext + 1, CACHE);
+  }
+  return result;
+}
+
 /** The text with "\n" inserted where an LVGL label of `max` px wraps it. */
 export function wrap(text: string, max: i32, size: i32): string {
+  const hit = cached(text, max, size, false);
+  if (hit >= 0) {
+    return cacheResult[hit];
+  }
+  return remember(text, max, size, false, wrapped(text, max, size));
+}
+
+function wrapped(text: string, max: i32, size: i32): string {
   const codes = codePoints(text);
   const out: i32[] = [];
   let lineWidth: f32 = 0;
@@ -93,6 +138,14 @@ export function wrap(text: string, max: i32, size: i32): string {
 /** LV_LABEL_LONG_DOT on a one-line label of `max` px: the text, or its
  *  longest prefix that fits followed by "...". */
 export function dots(text: string, max: i32, size: i32): string {
+  const hit = cached(text, max, size, true);
+  if (hit >= 0) {
+    return cacheResult[hit];
+  }
+  return remember(text, max, size, true, dotted(text, max, size));
+}
+
+function dotted(text: string, max: i32, size: i32): string {
   if (width(text, size) <= f32(max)) {
     return text;
   }

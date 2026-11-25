@@ -106,6 +106,15 @@ function gatewayInfo(): string {
   return "Gateway (--)";
 }
 
+/** Changes when targets() would: the view takes new rows only then. */
+export function targetsKey(): string {
+  let flags = "";
+  for (let i: i32 = 0; i < 4; i++) {
+    flags = flags + (checked[i] ? "1" : "0");
+  }
+  return `${device.pingRows}|${flags}|${gatewayInfo()}`;
+}
+
 export function targets(): Target[] {
   const out: Target[] = [];
   for (let i: i32 = 0; i < 4; i++) {

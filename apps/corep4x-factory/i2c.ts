@@ -30,11 +30,14 @@ let scanBus: i32 = 0;
 export let summary: string = IDLE_SUMMARY;
 export let summaryError: boolean = false;
 export let bubbles: Bubble[] = [];
+/** Counts the assignments of `bubbles`: the view takes them only then. */
+export let revision: i32 = 0;
 
 export function open(): void {
   summary = IDLE_SUMMARY;
   summaryError = false;
   bubbles = [];
+  revision = revision + 1;
 }
 
 export function clean(): void {
@@ -53,6 +56,7 @@ export function scan(bus: i32): void {
   summary = `Scanning ${TITLES[bus]} bus...`;
   summaryError = false;
   bubbles = [];
+  revision = revision + 1;
   device.request(`i2cScan ${bus}`);
 }
 
@@ -106,12 +110,14 @@ export function scanned(status: i32): void {
     summary = "Scan failed: cannot create worker task";
     summaryError = true;
     bubbles = [];
+    revision = revision + 1;
     return;
   }
   if (status < 0) {
     summary = `Scan failed: ${title} bus not ready`;
     summaryError = true;
     bubbles = [];
+    revision = revision + 1;
     return;
   }
   const count = len(device.i2cAddresses);
@@ -163,4 +169,5 @@ export function scanned(status: i32): void {
     }
   }
   bubbles = out;
+  revision = revision + 1;
 }
